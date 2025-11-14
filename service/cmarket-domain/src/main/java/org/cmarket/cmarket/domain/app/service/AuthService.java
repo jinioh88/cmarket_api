@@ -85,5 +85,15 @@ public interface AuthService {
      * @throws IllegalArgumentException 사용자가 존재하지 않거나 이미 탈퇴한 경우
      */
     void withdraw(WithdrawalCommand command);
+    
+    /**
+     * 닉네임 중복 확인
+     * 
+     * 닉네임이 이미 사용 중인지 확인합니다.
+     * 
+     * @param nickname 확인할 닉네임
+     * @return 사용 가능하면 true, 중복이면 false
+     */
+    boolean isNicknameAvailable(String nickname);
 }
 

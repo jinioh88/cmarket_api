@@ -103,6 +103,7 @@ public class SecurityConfig {
                     "/api/auth/logout",
                     "/api/auth/email/**",
                     "/api/auth/password/reset/**",  // 비밀번호 재설정 엔드포인트
+                    "/api/auth/nickname/check",  // 닉네임 중복 확인 엔드포인트
                     "/oauth2/**",  // OAuth2 로그인 엔드포인트
                     "/login/oauth2/**",  // OAuth2 로그인 리다이렉트 엔드포인트
                     "/actuator/health",

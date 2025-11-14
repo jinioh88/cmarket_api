@@ -1,5 +1,12 @@
 package org.cmarket.cmarket.web.exception;
 
+import org.cmarket.cmarket.domain.app.exception.AuthenticationFailedException;
+import org.cmarket.cmarket.domain.app.exception.EmailAlreadyExistsException;
+import org.cmarket.cmarket.domain.app.exception.ExpiredVerificationCodeException;
+import org.cmarket.cmarket.domain.app.exception.InvalidPasswordException;
+import org.cmarket.cmarket.domain.app.exception.InvalidVerificationCodeException;
+import org.cmarket.cmarket.domain.app.exception.NicknameAlreadyExistsException;
+import org.cmarket.cmarket.domain.app.exception.UserNotFoundException;
 import org.cmarket.cmarket.web.response.ErrorResponse;
 import org.cmarket.cmarket.web.response.ResponseCode;
 import org.slf4j.Logger;
@@ -70,6 +77,111 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(EmailAlreadyExistsException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Email already exists: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.CONFLICT,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+    
+    @ExceptionHandler(NicknameAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleNicknameAlreadyExistsException(NicknameAlreadyExistsException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Nickname already exists: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.CONFLICT,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+    
+    @ExceptionHandler(InvalidVerificationCodeException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidVerificationCodeException(InvalidVerificationCodeException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Invalid verification code: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.BAD_REQUEST,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    @ExceptionHandler(ExpiredVerificationCodeException.class)
+    public ResponseEntity<ErrorResponse> handleExpiredVerificationCodeException(ExpiredVerificationCodeException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Expired verification code: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.BAD_REQUEST,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPasswordException(InvalidPasswordException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Invalid password: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.BAD_REQUEST,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] User not found: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.NOT_FOUND,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+    
+    @ExceptionHandler(AuthenticationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationFailedException(AuthenticationFailedException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Authentication failed: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.UNAUTHORIZED,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
     
     @ExceptionHandler(Exception.class)

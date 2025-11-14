@@ -24,11 +24,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -375,6 +377,32 @@ public class AuthController {
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
                         "회원 탈퇴가 완료되었습니다."
+                ));
+    }
+    
+    /**
+     * 닉네임 중복 확인
+     * 
+     * GET /api/auth/nickname/check?nickname={nickname}
+     * 
+     * 닉네임이 이미 사용 중인지 확인합니다.
+     * 
+     * @param nickname 확인할 닉네임
+     * @return 사용 가능 여부 (true: 사용 가능, false: 중복)
+     */
+    @GetMapping("/nickname/check")
+    public ResponseEntity<SuccessResponse<Boolean>> checkNickname(
+            @RequestParam String nickname
+    ) {
+        // 1. 앱 서비스 호출 (닉네임 중복 확인)
+        boolean isAvailable = authService.isNicknameAvailable(nickname);
+        
+        // 2. 응답 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        isAvailable ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다.",
+                        isAvailable
                 ));
     }
 }

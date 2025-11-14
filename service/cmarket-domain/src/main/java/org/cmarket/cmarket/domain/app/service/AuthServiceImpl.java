@@ -233,6 +233,12 @@ public class AuthServiceImpl implements AuthService {
         // deleteUserRelatedData(user.getId());
     }
     
+    @Override
+    public boolean isNicknameAvailable(String nickname) {
+        // 닉네임 중복 확인 (소프트 삭제된 사용자 제외)
+        return !userRepository.existsByNickname(nickname);
+    }
+    
     /**
      * 만 14세 이상 검증
      * 
