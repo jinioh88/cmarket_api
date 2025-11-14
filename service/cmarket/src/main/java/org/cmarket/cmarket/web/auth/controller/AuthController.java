@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.web.controller;
+package org.cmarket.cmarket.web.auth.controller;
 
 import org.cmarket.cmarket.domain.auth.app.dto.EmailVerificationVerifyCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.LoginCommand;
@@ -6,17 +6,18 @@ import org.cmarket.cmarket.domain.auth.app.dto.SignUpCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.WithdrawalCommand;
 import org.cmarket.cmarket.domain.auth.app.service.AuthService;
 import org.cmarket.cmarket.domain.auth.app.service.EmailVerificationService;
+import org.cmarket.cmarket.web.auth.dto.EmailVerificationSendRequest;
+import org.cmarket.cmarket.web.auth.dto.EmailVerificationVerifyRequest;
+import org.cmarket.cmarket.web.auth.dto.LoginRequest;
+import org.cmarket.cmarket.web.auth.dto.LoginResponse;
+import org.cmarket.cmarket.web.auth.dto.PasswordResetRequest;
+import org.cmarket.cmarket.web.auth.dto.PasswordResetSendRequest;
+import org.cmarket.cmarket.web.auth.dto.SignUpRequest;
+import org.cmarket.cmarket.web.auth.dto.UserWebDto;
+import org.cmarket.cmarket.web.auth.dto.WithdrawalRequest;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.common.security.JwtTokenProvider;
-import org.cmarket.cmarket.web.dto.EmailVerificationSendRequest;
-import org.cmarket.cmarket.web.dto.EmailVerificationVerifyRequest;
-import org.cmarket.cmarket.web.dto.LoginRequest;
-import org.cmarket.cmarket.web.dto.PasswordResetRequest;
-import org.cmarket.cmarket.web.dto.PasswordResetSendRequest;
-import org.cmarket.cmarket.web.dto.SignUpRequest;
-import org.cmarket.cmarket.web.dto.UserWebDto;
-import org.cmarket.cmarket.web.dto.WithdrawalRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -175,7 +176,7 @@ public class AuthController {
      * - 사용자 정보와 토큰을 함께 반환
      */
     @PostMapping("/login")
-    public ResponseEntity<SuccessResponse<org.cmarket.cmarket.web.dto.LoginResponse>> login(
+    public ResponseEntity<SuccessResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request
     ) {
         // 웹 DTO → 앱 DTO 변환
@@ -208,7 +209,7 @@ public class AuthController {
         UserWebDto userWebDto = UserWebDto.fromDto(loginResponse.getUser());
         
         // 웹 응답 생성
-        org.cmarket.cmarket.web.dto.LoginResponse loginWebResponse = org.cmarket.cmarket.web.dto.LoginResponse.builder()
+        LoginResponse loginWebResponse = LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .user(userWebDto)

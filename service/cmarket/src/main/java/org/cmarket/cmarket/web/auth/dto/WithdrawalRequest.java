@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.web.dto;
+package org.cmarket.cmarket.web.auth.dto;
 
 import org.cmarket.cmarket.domain.auth.model.WithdrawalReasonType;
 

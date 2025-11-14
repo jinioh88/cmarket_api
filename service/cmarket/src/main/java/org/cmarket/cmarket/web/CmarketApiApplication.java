@@ -12,8 +12,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * @EnableJpaRepositories: 도메인 모듈의 레포지토리를 스캔하도록 설정
  */
 @SpringBootApplication(scanBasePackages = "org.cmarket")
-@EntityScan(basePackages = "org.cmarket.cmarket.domain.model")
-@EnableJpaRepositories(basePackages = "org.cmarket.cmarket.domain.repository")
+@EntityScan(basePackages = "org.cmarket.cmarket.domain.auth.model")
+@EnableJpaRepositories(basePackages = "org.cmarket.cmarket.domain.auth.repository")
 public class CmarketApiApplication {
 
 	public static void main(String[] args) {

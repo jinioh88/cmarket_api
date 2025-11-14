@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.web.dto;
+package org.cmarket.cmarket.web.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
