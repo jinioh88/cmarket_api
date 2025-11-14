@@ -2,11 +2,14 @@ package org.cmarket.cmarket.web.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -29,6 +32,33 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+    
+    private final JwtTokenProvider jwtTokenProvider;
+    private final org.cmarket.cmarket.domain.repository.TokenBlacklistRepository tokenBlacklistRepository;
+    private final AuthenticationConfiguration authenticationConfiguration;
+    
+    public SecurityConfig(
+            JwtTokenProvider jwtTokenProvider,
+            org.cmarket.cmarket.domain.repository.TokenBlacklistRepository tokenBlacklistRepository,
+            AuthenticationConfiguration authenticationConfiguration
+    ) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.tokenBlacklistRepository = tokenBlacklistRepository;
+        this.authenticationConfiguration = authenticationConfiguration;
+    }
+    
+    /**
+     * AuthenticationManager 빈 등록
+     * 
+     * 로그인 시 사용자 인증을 위해 사용됩니다.
+     * Spring Security 6에서는 AuthenticationConfiguration을 통해 자동으로 설정됩니다.
+     * 
+     * @return AuthenticationManager
+     */
+    @Bean
+    public AuthenticationManager authenticationManager() throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -65,8 +95,12 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             );
         
-        // JWT 인증 필터는 Step 6에서 구현 후 추가 예정
-        // http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // JWT 인증 필터 등록
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(
+                jwtTokenProvider,
+                tokenBlacklistRepository
+        );
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         
         return http.build();
     }
