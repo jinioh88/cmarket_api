@@ -9,7 +9,6 @@ import org.cmarket.cmarket.domain.app.service.EmailVerificationService;
 import org.cmarket.cmarket.web.dto.EmailVerificationSendRequest;
 import org.cmarket.cmarket.web.dto.EmailVerificationVerifyRequest;
 import org.cmarket.cmarket.web.dto.LoginRequest;
-import org.cmarket.cmarket.web.dto.LoginResponse;
 import org.cmarket.cmarket.web.dto.SignUpRequest;
 import org.cmarket.cmarket.web.dto.UserWebDto;
 import org.cmarket.cmarket.web.response.ResponseCode;
@@ -23,6 +22,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -223,6 +223,52 @@ public class AuthController {
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
                         loginWebResponse
+                ));
+    }
+    
+    /**
+     * 로그아웃
+     * 
+     * POST /api/auth/logout
+     * 
+     * 현재 사용 중인 JWT 토큰을 블랙리스트에 등록하여 무효화합니다.
+     * - Authorization 헤더에서 토큰 추출
+     * - 토큰을 TokenBlacklist에 저장
+     * - 이후 해당 토큰으로는 인증 불가능
+     * 
+     * 참고: POST 메서드를 사용하는 이유는 로그아웃이 서버 상태를 변경하는 작업이기 때문입니다.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<SuccessResponse<String>> logout(
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        // 1. Authorization 헤더에서 토큰 추출
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("인증 토큰이 필요합니다.");
+        }
+        
+        String token = authorization.substring(7);  // "Bearer " 제거
+        
+        // 2. 토큰 유효성 검증
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+        }
+        
+        // 3. 토큰에서 만료 시간 추출
+        java.util.Date expirationDate = jwtTokenProvider.getExpirationDateFromToken(token);
+        java.time.LocalDateTime expiresAt = java.time.LocalDateTime.ofInstant(
+                expirationDate.toInstant(),
+                java.time.ZoneId.systemDefault()
+        );
+        
+        // 4. 앱 서비스 호출 (토큰을 블랙리스트에 추가)
+        authService.logout(token, expiresAt);
+        
+        // 5. 응답 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        "로그아웃되었습니다."
                 ));
     }
 }

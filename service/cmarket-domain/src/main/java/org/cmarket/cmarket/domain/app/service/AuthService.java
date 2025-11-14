@@ -31,5 +31,15 @@ public interface AuthService {
      * @throws IllegalArgumentException 이메일/비밀번호 불일치 시
      */
     LoginResponse login(LoginCommand command);
+    
+    /**
+     * 로그아웃
+     * 
+     * 현재 사용 중인 JWT 토큰을 블랙리스트에 등록하여 무효화합니다.
+     * 
+     * @param token JWT 토큰
+     * @param expiresAt 토큰 만료 시간
+     */
+    void logout(String token, java.time.LocalDateTime expiresAt);
 }
 

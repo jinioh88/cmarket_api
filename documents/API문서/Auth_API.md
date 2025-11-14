@@ -11,6 +11,7 @@
 - [이메일 인증코드 검증](#2-이메일-인증코드-검증)
 - [회원가입](#3-회원가입)
 - [로그인](#4-로그인)
+- [로그아웃](#5-로그아웃)
 
 ---
 
@@ -738,6 +739,146 @@ console.log(response.data);
 
 ---
 
+## 5. 로그아웃
+
+현재 사용 중인 JWT 토큰을 블랙리스트에 등록하여 무효화합니다.
+
+### 엔드포인트
+
+```
+POST /api/auth/logout
+```
+
+### 설명
+
+- 현재 사용 중인 JWT Access Token을 블랙리스트에 등록하여 무효화합니다.
+- 로그아웃된 토큰은 이후 API 요청에서 사용할 수 없습니다.
+- 로그아웃 후에는 새로운 Access Token을 발급받기 위해 다시 로그인해야 합니다.
+- **주의**: 이미 로그아웃된 토큰으로 다시 로그아웃을 시도하면 인증 실패(401)가 발생할 수 있습니다.
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` 형식 |
+
+### Request Body
+
+없음 (헤더에 토큰만 포함)
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | String | 응답 데이터 ("로그아웃되었습니다.") |
+
+#### 성공 응답 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": "로그아웃되었습니다."
+}
+```
+
+### 에러 응답
+
+#### 400 Bad Request - 입력값 검증 실패
+
+**에러 메시지 예시:**
+- `"인증 토큰이 필요합니다."` - Authorization 헤더가 없거나 Bearer 형식이 아닐 때
+- `"유효하지 않은 토큰입니다."` - 토큰이 유효하지 않거나 만료되었을 때
+
+#### 401 Unauthorized - 인증 실패
+
+**에러 메시지 예시:**
+- 이미 로그아웃된 토큰으로 다시 로그아웃을 시도할 때 발생할 수 있습니다.
+- 토큰이 블랙리스트에 등록되어 있어 인증이 실패합니다.
+
+#### 에러 응답 예시
+
+```json
+{
+  "code": {
+    "code": 400,
+    "message": "잘못된 요청"
+  },
+  "message": "인증 토큰이 필요합니다.",
+  "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
+  "timestamp": "2025-11-14T15:45:00"
+}
+```
+
+### 사용 예시
+
+#### cURL
+
+```bash
+curl -X POST http://localhost:8080/api/auth/logout \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+#### JavaScript (Fetch API)
+
+```javascript
+const accessToken = localStorage.getItem('accessToken');
+
+const response = await fetch('http://localhost:8080/api/auth/logout', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+const data = await response.json();
+console.log(data);
+
+// 로그아웃 성공 시 토큰 삭제
+if (response.ok) {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+}
+```
+
+#### JavaScript (Axios)
+
+```javascript
+const accessToken = localStorage.getItem('accessToken');
+
+const response = await axios.post('http://localhost:8080/api/auth/logout', null, {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+console.log(response.data);
+
+// 로그아웃 성공 시 토큰 삭제
+if (response.status === 200) {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+}
+```
+
+### 주의사항
+
+1. **토큰 무효화**: 로그아웃된 토큰은 즉시 무효화되며, 이후 해당 토큰으로는 어떤 API도 호출할 수 없습니다.
+2. **재로그인 필요**: 로그아웃 후에는 새로운 Access Token을 발급받기 위해 다시 로그인해야 합니다.
+3. **중복 로그아웃**: 이미 로그아웃된 토큰으로 다시 로그아웃을 시도하면 인증 실패(401)가 발생할 수 있습니다.
+4. **Refresh Token**: 현재 구현에서는 Access Token만 블랙리스트에 등록됩니다. Refresh Token도 무효화하려면 별도 처리가 필요합니다.
+
+---
+
 ## 주의사항
 
 ### 인증코드 유효성
@@ -766,4 +907,5 @@ console.log(response.data);
 | 2025-11-14 | 1.0.0 | 초기 문서 작성 |
 | 2025-11-14 | 1.1.0 | 회원가입 API 추가 |
 | 2025-11-14 | 1.2.0 | 로그인 API 추가 |
+| 2025-11-14 | 1.3.0 | 로그아웃 API 추가 |
 

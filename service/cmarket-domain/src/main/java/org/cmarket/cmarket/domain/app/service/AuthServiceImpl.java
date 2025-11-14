@@ -5,14 +5,17 @@ import org.cmarket.cmarket.domain.app.dto.LoginResponse;
 import org.cmarket.cmarket.domain.app.dto.SignUpCommand;
 import org.cmarket.cmarket.domain.app.dto.UserDto;
 import org.cmarket.cmarket.domain.model.AuthProvider;
+import org.cmarket.cmarket.domain.model.TokenBlacklist;
 import org.cmarket.cmarket.domain.model.User;
 import org.cmarket.cmarket.domain.model.UserRole;
+import org.cmarket.cmarket.domain.repository.TokenBlacklistRepository;
 import org.cmarket.cmarket.domain.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 
 /**
@@ -28,13 +31,16 @@ public class AuthServiceImpl implements AuthService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
     
     public AuthServiceImpl(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            TokenBlacklistRepository tokenBlacklistRepository
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.tokenBlacklistRepository = tokenBlacklistRepository;
     }
     
     @Override
@@ -109,6 +115,23 @@ public class AuthServiceImpl implements AuthService {
         return LoginResponse.builder()
                 .user(userDto)
                 .build();
+    }
+    
+    @Override
+    public void logout(String token, LocalDateTime expiresAt) {
+        // 1. 토큰이 이미 블랙리스트에 있는지 확인
+        if (tokenBlacklistRepository.existsByToken(token)) {
+            // 이미 블랙리스트에 있으면 중복 처리 방지
+            return;
+        }
+        
+        // 2. TokenBlacklist 엔티티 생성 및 저장
+        TokenBlacklist tokenBlacklist = TokenBlacklist.builder()
+                .token(token)
+                .expiresAt(expiresAt)
+                .build();
+        
+        tokenBlacklistRepository.save(tokenBlacklist);
     }
     
     /**
