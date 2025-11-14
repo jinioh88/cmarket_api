@@ -1,10 +1,11 @@
-package org.cmarket.cmarket.web.security;
+package org.cmarket.cmarket.web.common.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.cmarket.cmarket.domain.model.User;
+
+import org.cmarket.cmarket.domain.auth.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;

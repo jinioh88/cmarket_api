@@ -1,7 +1,7 @@
-package org.cmarket.cmarket.domain.repository;
+package org.cmarket.cmarket.domain.auth.repository;
 
-import org.cmarket.cmarket.domain.model.AuthProvider;
-import org.cmarket.cmarket.domain.model.User;
+import org.cmarket.cmarket.domain.auth.model.AuthProvider;
+import org.cmarket.cmarket.domain.auth.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

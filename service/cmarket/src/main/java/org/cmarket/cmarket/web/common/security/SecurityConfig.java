@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.web.security;
+package org.cmarket.cmarket.web.common.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,14 +34,14 @@ import java.util.List;
 public class SecurityConfig {
     
     private final JwtTokenProvider jwtTokenProvider;
-    private final org.cmarket.cmarket.domain.repository.TokenBlacklistRepository tokenBlacklistRepository;
+    private final org.cmarket.cmarket.domain.auth.repository.TokenBlacklistRepository tokenBlacklistRepository;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     
     public SecurityConfig(
             JwtTokenProvider jwtTokenProvider,
-            org.cmarket.cmarket.domain.repository.TokenBlacklistRepository tokenBlacklistRepository,
+            org.cmarket.cmarket.domain.auth.repository.TokenBlacklistRepository tokenBlacklistRepository,
             AuthenticationConfiguration authenticationConfiguration,
             CustomOAuth2UserService customOAuth2UserService,
             OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler

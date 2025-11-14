@@ -1,7 +1,7 @@
-package org.cmarket.cmarket.domain.app.service;
+package org.cmarket.cmarket.domain.auth.app.service;
 
-import org.cmarket.cmarket.domain.app.dto.EmailVerificationSendCommand;
-import org.cmarket.cmarket.domain.app.dto.EmailVerificationVerifyCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.EmailVerificationSendCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.EmailVerificationVerifyCommand;
 
 /**
  * 이메일 인증 서비스 인터페이스

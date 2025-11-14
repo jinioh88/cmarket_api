@@ -1,6 +1,6 @@
-package org.cmarket.cmarket.domain.repository;
+package org.cmarket.cmarket.domain.auth.repository;
 
-import org.cmarket.cmarket.domain.model.TokenBlacklist;
+import org.cmarket.cmarket.domain.auth.model.TokenBlacklist;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;

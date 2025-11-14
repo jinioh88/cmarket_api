@@ -1,7 +1,7 @@
-package org.cmarket.cmarket.web.security;
+package org.cmarket.cmarket.web.common.security;
 
-import org.cmarket.cmarket.domain.model.User;
-import org.cmarket.cmarket.domain.repository.UserRepository;
+import org.cmarket.cmarket.domain.auth.model.User;
+import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

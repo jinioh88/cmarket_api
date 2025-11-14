@@ -1,11 +1,14 @@
 package org.cmarket.cmarket.web.controller;
 
-import org.cmarket.cmarket.domain.app.dto.EmailVerificationVerifyCommand;
-import org.cmarket.cmarket.domain.app.dto.LoginCommand;
-import org.cmarket.cmarket.domain.app.dto.SignUpCommand;
-import org.cmarket.cmarket.domain.app.dto.WithdrawalCommand;
-import org.cmarket.cmarket.domain.app.service.AuthService;
-import org.cmarket.cmarket.domain.app.service.EmailVerificationService;
+import org.cmarket.cmarket.domain.auth.app.dto.EmailVerificationVerifyCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.LoginCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.SignUpCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.WithdrawalCommand;
+import org.cmarket.cmarket.domain.auth.app.service.AuthService;
+import org.cmarket.cmarket.domain.auth.app.service.EmailVerificationService;
+import org.cmarket.cmarket.web.common.response.ResponseCode;
+import org.cmarket.cmarket.web.common.response.SuccessResponse;
+import org.cmarket.cmarket.web.common.security.JwtTokenProvider;
 import org.cmarket.cmarket.web.dto.EmailVerificationSendRequest;
 import org.cmarket.cmarket.web.dto.EmailVerificationVerifyRequest;
 import org.cmarket.cmarket.web.dto.LoginRequest;
@@ -14,9 +17,6 @@ import org.cmarket.cmarket.web.dto.PasswordResetSendRequest;
 import org.cmarket.cmarket.web.dto.SignUpRequest;
 import org.cmarket.cmarket.web.dto.UserWebDto;
 import org.cmarket.cmarket.web.dto.WithdrawalRequest;
-import org.cmarket.cmarket.web.response.ResponseCode;
-import org.cmarket.cmarket.web.response.SuccessResponse;
-import org.cmarket.cmarket.web.security.JwtTokenProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -151,7 +151,7 @@ public class AuthController {
                 .build();
         
         // 앱 서비스 호출
-        org.cmarket.cmarket.domain.app.dto.UserDto userDto = authService.signUp(command);
+        org.cmarket.cmarket.domain.auth.app.dto.UserDto userDto = authService.signUp(command);
         
         // 앱 DTO → 웹 DTO 변환
         UserWebDto userWebDto = UserWebDto.fromDto(userDto);
@@ -185,7 +185,7 @@ public class AuthController {
                 .build();
         
         // 앱 서비스 호출 (사용자 조회 및 비밀번호 검증)
-        org.cmarket.cmarket.domain.app.dto.LoginResponse loginResponse = authService.login(command);
+        org.cmarket.cmarket.domain.auth.app.dto.LoginResponse loginResponse = authService.login(command);
         
         // AuthenticationManager를 사용하여 인증 처리
         Authentication authentication = authenticationManager.authenticate(

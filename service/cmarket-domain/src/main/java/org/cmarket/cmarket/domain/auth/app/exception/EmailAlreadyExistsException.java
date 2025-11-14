@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.app.exception;
+package org.cmarket.cmarket.domain.auth.app.exception;
 
 /**
  * 이메일 중복 예외

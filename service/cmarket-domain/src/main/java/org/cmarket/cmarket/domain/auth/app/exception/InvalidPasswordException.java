@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.app.exception;
+package org.cmarket.cmarket.domain.auth.app.exception;
 
 /**
  * 잘못된 비밀번호 예외

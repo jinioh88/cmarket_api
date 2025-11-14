@@ -1,11 +1,12 @@
-package org.cmarket.cmarket.web.security;
+package org.cmarket.cmarket.web.common.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.cmarket.cmarket.domain.model.AuthProvider;
-import org.cmarket.cmarket.domain.model.User;
-import org.cmarket.cmarket.domain.model.UserRole;
-import org.cmarket.cmarket.domain.repository.UserRepository;
+
+import org.cmarket.cmarket.domain.auth.model.AuthProvider;
+import org.cmarket.cmarket.domain.auth.model.User;
+import org.cmarket.cmarket.domain.auth.model.UserRole;
+import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;

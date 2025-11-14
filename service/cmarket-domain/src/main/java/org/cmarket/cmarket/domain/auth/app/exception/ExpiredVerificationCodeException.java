@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.app.exception;
+package org.cmarket.cmarket.domain.auth.app.exception;
 
 /**
  * 만료된 인증코드 예외

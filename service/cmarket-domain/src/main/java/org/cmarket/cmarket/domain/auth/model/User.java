@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.model;
+package org.cmarket.cmarket.domain.auth.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

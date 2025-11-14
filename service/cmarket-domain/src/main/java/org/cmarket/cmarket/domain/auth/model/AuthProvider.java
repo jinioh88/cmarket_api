@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.model;
+package org.cmarket.cmarket.domain.auth.model;
 
 /**
  * 인증 제공자 Enum (가입 경로)

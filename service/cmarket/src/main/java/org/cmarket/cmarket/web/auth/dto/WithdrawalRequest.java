@@ -1,11 +1,12 @@
 package org.cmarket.cmarket.web.dto;
 
+import org.cmarket.cmarket.domain.auth.model.WithdrawalReasonType;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.cmarket.cmarket.domain.model.WithdrawalReasonType;
 
 /**
  * 회원 탈퇴 요청 DTO

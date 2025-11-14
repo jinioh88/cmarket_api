@@ -1,6 +1,6 @@
-package org.cmarket.cmarket.web.service;
+package org.cmarket.cmarket.web.auth.service;
 
-import org.cmarket.cmarket.domain.app.service.EmailService;
+import org.cmarket.cmarket.domain.auth.app.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

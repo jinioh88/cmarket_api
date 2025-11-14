@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.web.filter;
+package org.cmarket.cmarket.web.common.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

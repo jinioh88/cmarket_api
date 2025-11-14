@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.model;
+package org.cmarket.cmarket.domain.auth.model;
 
 /**
  * 회원 탈퇴 사유 Enum

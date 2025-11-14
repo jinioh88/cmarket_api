@@ -1,6 +1,6 @@
-package org.cmarket.cmarket.domain.repository;
+package org.cmarket.cmarket.domain.auth.repository;
 
-import org.cmarket.cmarket.domain.model.EmailVerification;
+import org.cmarket.cmarket.domain.auth.model.EmailVerification;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;

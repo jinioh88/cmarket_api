@@ -1,7 +1,8 @@
-package org.cmarket.cmarket.web.security;
+package org.cmarket.cmarket.web.common.security;
 
 import lombok.Getter;
-import org.cmarket.cmarket.domain.model.User;
+
+import org.cmarket.cmarket.domain.auth.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

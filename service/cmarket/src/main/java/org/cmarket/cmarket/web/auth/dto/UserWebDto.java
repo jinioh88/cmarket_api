@@ -27,7 +27,7 @@ public class UserWebDto {
      * @param userDto 앱 DTO
      * @return 웹 DTO
      */
-    public static UserWebDto fromDto(org.cmarket.cmarket.domain.app.dto.UserDto userDto) {
+    public static UserWebDto fromDto(org.cmarket.cmarket.domain.auth.app.dto.UserDto userDto) {
         return UserWebDto.builder()
                 .id(userDto.getId())
                 .email(userDto.getEmail())

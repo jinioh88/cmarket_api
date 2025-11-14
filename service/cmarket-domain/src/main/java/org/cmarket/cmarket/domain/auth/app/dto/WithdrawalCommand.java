@@ -1,8 +1,9 @@
-package org.cmarket.cmarket.domain.app.dto;
+package org.cmarket.cmarket.domain.auth.app.dto;
+
+import org.cmarket.cmarket.domain.auth.model.WithdrawalReasonType;
 
 import lombok.Builder;
 import lombok.Getter;
-import org.cmarket.cmarket.domain.model.WithdrawalReasonType;
 
 /**
  * 회원 탈퇴 명령 DTO

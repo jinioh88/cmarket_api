@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.web.response;
+package org.cmarket.cmarket.web.common.response;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

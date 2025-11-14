@@ -1,10 +1,10 @@
-package org.cmarket.cmarket.domain.app.service;
+package org.cmarket.cmarket.domain.auth.app.service;
 
-import org.cmarket.cmarket.domain.app.dto.LoginCommand;
-import org.cmarket.cmarket.domain.app.dto.LoginResponse;
-import org.cmarket.cmarket.domain.app.dto.SignUpCommand;
-import org.cmarket.cmarket.domain.app.dto.UserDto;
-import org.cmarket.cmarket.domain.app.dto.WithdrawalCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.LoginCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.LoginResponse;
+import org.cmarket.cmarket.domain.auth.app.dto.SignUpCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.UserDto;
+import org.cmarket.cmarket.domain.auth.app.dto.WithdrawalCommand;
 
 /**
  * 인증 서비스 인터페이스

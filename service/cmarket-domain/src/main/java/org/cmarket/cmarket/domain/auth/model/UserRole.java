@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.model;
+package org.cmarket.cmarket.domain.auth.model;
 
 /**
  * 사용자 권한 Enum

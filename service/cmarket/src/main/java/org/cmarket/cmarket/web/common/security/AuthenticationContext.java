@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.web.security;
+package org.cmarket.cmarket.web.common.security;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

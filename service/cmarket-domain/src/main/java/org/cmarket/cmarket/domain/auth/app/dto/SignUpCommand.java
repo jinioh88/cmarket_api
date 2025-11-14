@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.app.dto;
+package org.cmarket.cmarket.domain.auth.app.dto;
 
 import lombok.Builder;
 import lombok.Getter;

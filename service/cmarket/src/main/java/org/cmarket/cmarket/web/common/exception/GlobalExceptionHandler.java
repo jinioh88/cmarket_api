@@ -1,14 +1,14 @@
-package org.cmarket.cmarket.web.exception;
+package org.cmarket.cmarket.web.common.exception;
 
-import org.cmarket.cmarket.domain.app.exception.AuthenticationFailedException;
-import org.cmarket.cmarket.domain.app.exception.EmailAlreadyExistsException;
-import org.cmarket.cmarket.domain.app.exception.ExpiredVerificationCodeException;
-import org.cmarket.cmarket.domain.app.exception.InvalidPasswordException;
-import org.cmarket.cmarket.domain.app.exception.InvalidVerificationCodeException;
-import org.cmarket.cmarket.domain.app.exception.NicknameAlreadyExistsException;
-import org.cmarket.cmarket.domain.app.exception.UserNotFoundException;
-import org.cmarket.cmarket.web.response.ErrorResponse;
-import org.cmarket.cmarket.web.response.ResponseCode;
+import org.cmarket.cmarket.domain.auth.app.exception.AuthenticationFailedException;
+import org.cmarket.cmarket.domain.auth.app.exception.EmailAlreadyExistsException;
+import org.cmarket.cmarket.domain.auth.app.exception.ExpiredVerificationCodeException;
+import org.cmarket.cmarket.domain.auth.app.exception.InvalidPasswordException;
+import org.cmarket.cmarket.domain.auth.app.exception.InvalidVerificationCodeException;
+import org.cmarket.cmarket.domain.auth.app.exception.NicknameAlreadyExistsException;
+import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
+import org.cmarket.cmarket.web.common.response.ErrorResponse;
+import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;

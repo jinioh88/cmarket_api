@@ -1,9 +1,9 @@
-package org.cmarket.cmarket.domain.app.service;
+package org.cmarket.cmarket.domain.auth.app.service;
 
-import org.cmarket.cmarket.domain.app.dto.EmailVerificationSendCommand;
-import org.cmarket.cmarket.domain.app.dto.EmailVerificationVerifyCommand;
-import org.cmarket.cmarket.domain.model.EmailVerification;
-import org.cmarket.cmarket.domain.repository.EmailVerificationRepository;
+import org.cmarket.cmarket.domain.auth.app.dto.EmailVerificationSendCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.EmailVerificationVerifyCommand;
+import org.cmarket.cmarket.domain.auth.model.EmailVerification;
+import org.cmarket.cmarket.domain.auth.repository.EmailVerificationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

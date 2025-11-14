@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.app.service;
+package org.cmarket.cmarket.domain.auth.app.service;
 
 /**
  * 이메일 발송 서비스 인터페이스
