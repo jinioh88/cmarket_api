@@ -1,0 +1,29 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    // Domain 모듈 의존
+    implementation project(':service:cmarket-domain')
+    
+    // Spring Boot Web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    // DevTools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    
+    // Database (H2 for development)
+    runtimeOnly 'com.h2database:h2'
+    
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+

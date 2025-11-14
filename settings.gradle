@@ -1,0 +1,4 @@
+rootProject.name = 'cmarket_api'
+
+include 'service:cmarket-domain'
+include 'service:cmarket'
