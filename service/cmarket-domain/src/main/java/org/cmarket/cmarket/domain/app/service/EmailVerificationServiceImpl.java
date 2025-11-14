@@ -48,12 +48,11 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
                 .build();
         
         emailVerificationRepository.save(emailVerification);
-        
+
         return verificationCode;
     }
     
     @Override
-    @Transactional(readOnly = true)
     public boolean verifyCode(EmailVerificationVerifyCommand command) {
         String email = command.getEmail();
         String verificationCode = command.getVerificationCode();

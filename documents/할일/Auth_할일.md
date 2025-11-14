@@ -419,19 +419,6 @@
 - **출력물**:
   - `service/cmarket/src/main/java/org/cmarket/cmarket/web/exception/GlobalExceptionHandler.java` (수정)
 
-#### 11-5. 테스트용 API 및 인증 테스트
-- **작업 내용**:
-  - 테스트용 API 생성: `GET /api/auth/me` (내 정보 조회)
-  - SecurityContextHolder에서 현재 인증된 사용자 정보를 꺼내 반환하는 API
-  - SecurityConfig 수정: `/api/auth/me`는 `authenticated()` 또는 `hasRole("USER")`로 설정
-  - 테스트 시나리오:
-    - 실패 테스트: 토큰 없이 `/api/auth/me` 호출 (401 Unauthorized 응답 확인)
-    - 성공 테스트 (일반 로그인): `/api/auth/login`으로 토큰을 받고, 이 토큰을 Authorization 헤더에 넣어 `/api/auth/me` 호출 (200 OK 응답 확인)
-    - 성공 테스트 (OAuth): 브라우저에서 구글/카카오 로그인 후, 리다이렉트된 URL에서 토큰을 추출하고, 이 토큰을 헤더에 넣어 `/api/auth/me` 호출 (200 OK 응답 확인)
-- **출력물**:
-  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/controller/AuthController.java` (GET /api/auth/me 추가)
-  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/dto/UserInfoResponse.java` (또는 UserWebDto 재사용)
-
 ---
 
 ## 구현 시 주의사항

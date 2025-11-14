@@ -36,15 +36,21 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final org.cmarket.cmarket.domain.repository.TokenBlacklistRepository tokenBlacklistRepository;
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     
     public SecurityConfig(
             JwtTokenProvider jwtTokenProvider,
             org.cmarket.cmarket.domain.repository.TokenBlacklistRepository tokenBlacklistRepository,
-            AuthenticationConfiguration authenticationConfiguration
+            AuthenticationConfiguration authenticationConfiguration,
+            CustomOAuth2UserService customOAuth2UserService,
+            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
     ) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.tokenBlacklistRepository = tokenBlacklistRepository;
         this.authenticationConfiguration = authenticationConfiguration;
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
     }
     
     /**
@@ -80,6 +86,14 @@ public class SecurityConfig {
             // HTTP Basic 인증 비활성화
             .httpBasic(httpBasic -> httpBasic.disable())
             
+            // OAuth2 로그인 설정
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+                .successHandler(oAuth2LoginSuccessHandler)
+            )
+            
             // 접근 권한 설정
             .authorizeHttpRequests(auth -> auth
                 // 인증 없이 접근 가능한 엔드포인트
@@ -88,6 +102,9 @@ public class SecurityConfig {
                     "/api/auth/login",
                     "/api/auth/logout",
                     "/api/auth/email/**",
+                    "/api/auth/password/reset/**",  // 비밀번호 재설정 엔드포인트
+                    "/oauth2/**",  // OAuth2 로그인 엔드포인트
+                    "/login/oauth2/**",  // OAuth2 로그인 리다이렉트 엔드포인트
                     "/actuator/health",
                     "/error"
                 ).permitAll()

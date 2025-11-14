@@ -12,6 +12,7 @@
 - [회원가입](#3-회원가입)
 - [로그인](#4-로그인)
 - [로그아웃](#5-로그아웃)
+- [소셜 로그인](#6-소셜-로그인)
 
 ---
 
@@ -158,45 +159,6 @@ POST /api/auth/email/verification/send
 }
 ```
 
-### 사용 예시
-
-#### cURL
-
-```bash
-curl -X POST http://localhost:8080/api/auth/email/verification/send \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com"
-  }'
-```
-
-#### JavaScript (Fetch API)
-
-```javascript
-const response = await fetch('http://localhost:8080/api/auth/email/verification/send', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    email: 'user@example.com'
-  })
-});
-
-const data = await response.json();
-console.log(data);
-```
-
-#### JavaScript (Axios)
-
-```javascript
-const response = await axios.post('http://localhost:8080/api/auth/email/verification/send', {
-  email: 'user@example.com'
-});
-
-console.log(response.data);
-```
-
 ---
 
 ## 2. 이메일 인증코드 검증
@@ -289,48 +251,6 @@ POST /api/auth/email/verification/verify
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
 }
-```
-
-### 사용 예시
-
-#### cURL
-
-```bash
-curl -X POST http://localhost:8080/api/auth/email/verification/verify \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "verificationCode": "123456"
-  }'
-```
-
-#### JavaScript (Fetch API)
-
-```javascript
-const response = await fetch('http://localhost:8080/api/auth/email/verification/verify', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    email: 'user@example.com',
-    verificationCode: '123456'
-  })
-});
-
-const data = await response.json();
-console.log(data);
-```
-
-#### JavaScript (Axios)
-
-```javascript
-const response = await axios.post('http://localhost:8080/api/auth/email/verification/verify', {
-  email: 'user@example.com',
-  verificationCode: '123456'
-});
-
-console.log(response.data);
 ```
 
 ---
@@ -465,63 +385,6 @@ POST /api/auth/signup
 }
 ```
 
-### 사용 예시
-
-#### cURL
-
-```bash
-curl -X POST http://localhost:8080/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "MyPassword123!",
-    "name": "홍길동",
-    "nickname": "길동이",
-    "birthDate": "2000-01-01",
-    "addressSido": "서울특별시",
-    "addressGugun": "강남구"
-  }'
-```
-
-#### JavaScript (Fetch API)
-
-```javascript
-const response = await fetch('http://localhost:8080/api/auth/signup', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    email: 'user@example.com',
-    password: 'MyPassword123!',
-    name: '홍길동',
-    nickname: '길동이',
-    birthDate: '2000-01-01',
-    addressSido: '서울특별시',
-    addressGugun: '강남구'
-  })
-});
-
-const data = await response.json();
-console.log(data);
-```
-
-#### JavaScript (Axios)
-
-```javascript
-const response = await axios.post('http://localhost:8080/api/auth/signup', {
-  email: 'user@example.com',
-  password: 'MyPassword123!',
-  name: '홍길동',
-  nickname: '길동이',
-  birthDate: '2000-01-01',
-  addressSido: '서울특별시',
-  addressGugun: '강남구'
-});
-
-console.log(response.data);
-```
-
 ---
 
 ## 4. 로그인
@@ -639,60 +502,6 @@ POST /api/auth/login
   "message": "이메일 또는 비밀번호가 일치하지 않습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
-}
-```
-
-### 사용 예시
-
-#### cURL
-
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "MyPassword123!"
-  }'
-```
-
-#### JavaScript (Fetch API)
-
-```javascript
-const response = await fetch('http://localhost:8080/api/auth/login', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    email: 'user@example.com',
-    password: 'MyPassword123!'
-  })
-});
-
-const data = await response.json();
-console.log(data);
-
-// 토큰 저장
-if (data.data && data.data.accessToken) {
-  localStorage.setItem('accessToken', data.data.accessToken);
-  localStorage.setItem('refreshToken', data.data.refreshToken);
-}
-```
-
-#### JavaScript (Axios)
-
-```javascript
-const response = await axios.post('http://localhost:8080/api/auth/login', {
-  email: 'user@example.com',
-  password: 'MyPassword123!'
-});
-
-console.log(response.data);
-
-// 토큰 저장
-if (response.data.data && response.data.data.accessToken) {
-  localStorage.setItem('accessToken', response.data.data.accessToken);
-  localStorage.setItem('refreshToken', response.data.data.refreshToken);
 }
 ```
 
@@ -819,63 +628,160 @@ POST /api/auth/logout
 }
 ```
 
-### 사용 예시
-
-#### cURL
-
-```bash
-curl -X POST http://localhost:8080/api/auth/logout \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-#### JavaScript (Fetch API)
-
-```javascript
-const accessToken = localStorage.getItem('accessToken');
-
-const response = await fetch('http://localhost:8080/api/auth/logout', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${accessToken}`
-  }
-});
-
-const data = await response.json();
-console.log(data);
-
-// 로그아웃 성공 시 토큰 삭제
-if (response.ok) {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-}
-```
-
-#### JavaScript (Axios)
-
-```javascript
-const accessToken = localStorage.getItem('accessToken');
-
-const response = await axios.post('http://localhost:8080/api/auth/logout', null, {
-  headers: {
-    'Authorization': `Bearer ${accessToken}`
-  }
-});
-
-console.log(response.data);
-
-// 로그아웃 성공 시 토큰 삭제
-if (response.status === 200) {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-}
-```
-
 ### 주의사항
 
 1. **토큰 무효화**: 로그아웃된 토큰은 즉시 무효화되며, 이후 해당 토큰으로는 어떤 API도 호출할 수 없습니다.
 2. **재로그인 필요**: 로그아웃 후에는 새로운 Access Token을 발급받기 위해 다시 로그인해야 합니다.
 3. **중복 로그아웃**: 이미 로그아웃된 토큰으로 다시 로그아웃을 시도하면 인증 실패(401)가 발생할 수 있습니다.
 4. **Refresh Token**: 현재 구현에서는 Access Token만 블랙리스트에 등록됩니다. Refresh Token도 무효화하려면 별도 처리가 필요합니다.
+
+---
+
+## 6. 소셜 로그인
+
+구글, 카카오 소셜 로그인을 지원합니다. OAuth2 표준을 따르며, 별도의 컨트롤러 없이 Spring Security가 자동으로 처리합니다.
+
+### 엔드포인트
+
+#### 구글 로그인
+```
+GET /oauth2/authorization/google
+```
+
+#### 카카오 로그인
+```
+GET /oauth2/authorization/kakao
+```
+
+### 설명
+
+- 소셜 로그인은 **리다이렉트 방식**으로 동작합니다.
+- 프론트엔드에서 위 엔드포인트로 사용자를 리다이렉트하면, Spring Security가 자동으로 OAuth2 제공자(구글/카카오)로 리다이렉트합니다.
+- 사용자가 소셜 로그인을 완료하면, 백엔드가 JWT 토큰을 생성하여 프론트엔드로 리다이렉트합니다.
+- **최초 로그인 시 자동 회원가입**이 진행됩니다.
+- 이미 가입된 이메일로 다른 Provider(일반 로그인 등)로 로그인하려고 하면 에러가 발생합니다.
+
+### 동작 흐름
+
+1. **프론트엔드**: 사용자를 `/oauth2/authorization/google` 또는 `/oauth2/authorization/kakao`로 리다이렉트
+2. **백엔드**: OAuth2 제공자(구글/카카오)로 자동 리다이렉트
+3. **사용자**: 소셜 로그인 완료 (구글/카카오 로그인)
+4. **OAuth2 제공자**: 백엔드의 `/login/oauth2/code/{registrationId}`로 리다이렉트
+5. **백엔드**: 
+   - 사용자 정보 조회 또는 자동 회원가입
+   - JWT 토큰 생성 (Access Token, Refresh Token)
+   - 프론트엔드로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
+6. **프론트엔드**: 리다이렉트된 URL에서 토큰 추출 및 저장
+
+### Request
+
+없음 (리다이렉트 방식)
+
+### Response
+
+#### 성공 시 리다이렉트
+
+로그인 성공 시 프론트엔드로 다음과 같은 형식으로 리다이렉트됩니다:
+
+```
+{oauth2.redirect-uri}?accessToken={accessToken}&refreshToken={refreshToken}
+```
+
+**예시:**
+```
+http://localhost:3000/oauth-redirect?accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+#### 리다이렉트 URL 설정
+
+`application.properties`에서 리다이렉트 URL을 설정할 수 있습니다:
+
+```properties
+oauth2.redirect-uri=http://localhost:3000/oauth-redirect
+```
+
+### 에러 응답
+
+#### 이메일 미제공
+
+카카오 로그인 시 이메일 제공에 동의하지 않으면 다음 에러가 발생합니다:
+
+```
+이메일 정보가 필요합니다. 소셜 로그인 시 이메일 제공에 동의해주세요.
+```
+
+#### 이미 가입된 이메일
+
+일반 회원가입으로 이미 가입된 이메일로 소셜 로그인을 시도하면 다음 에러가 발생합니다:
+
+```
+이미 가입된 이메일입니다. 일반 로그인을 사용해주세요.
+```
+
+### 사용 예시
+
+#### HTML (링크 방식)
+
+```html
+<!-- 구글 로그인 -->
+<a href="http://localhost:8080/oauth2/authorization/google">구글 로그인</a>
+
+<!-- 카카오 로그인 -->
+<a href="http://localhost:8080/oauth2/authorization/kakao">카카오 로그인</a>
+```
+
+#### JavaScript (리다이렉트 방식)
+
+```javascript
+// 구글 로그인
+function loginWithGoogle() {
+  window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+}
+
+// 카카오 로그인
+function loginWithKakao() {
+  window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
+}
+```
+
+#### React (리다이렉트 처리)
+
+```javascript
+import { useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+
+function OAuthRedirect() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const accessToken = searchParams.get('accessToken');
+    const refreshToken = searchParams.get('refreshToken');
+
+    if (accessToken && refreshToken) {
+      // 토큰 저장
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+
+      // 메인 페이지로 이동
+      navigate('/');
+    } else {
+      // 에러 처리
+      navigate('/login?error=oauth_failed');
+    }
+  }, [searchParams, navigate]);
+
+  return <div>로그인 처리 중...</div>;
+}
+```
+
+### 주의사항
+
+1. **리다이렉트 URL 설정**: `application.properties`의 `oauth2.redirect-uri`를 프론트엔드 주소로 설정해야 합니다.
+2. **이메일 필수**: 카카오 로그인 시 이메일 제공에 동의해야 합니다. 동의하지 않으면 로그인이 실패합니다.
+3. **자동 회원가입**: 최초 로그인 시 자동으로 회원가입이 진행되며, 닉네임은 이메일 앞부분 또는 소셜 프로필의 닉네임을 사용합니다.
+4. **닉네임 중복 처리**: 자동 생성된 닉네임이 중복되면 자동으로 숫자를 붙여 고유한 닉네임을 생성합니다.
+5. **Provider 구분**: 같은 이메일이라도 Provider가 다르면 별도의 계정으로 처리됩니다. 예: 일반 로그인과 구글 로그인은 별도 계정.
 
 ---
 
@@ -908,4 +814,5 @@ if (response.status === 200) {
 | 2025-11-14 | 1.1.0 | 회원가입 API 추가 |
 | 2025-11-14 | 1.2.0 | 로그인 API 추가 |
 | 2025-11-14 | 1.3.0 | 로그아웃 API 추가 |
+| 2025-11-14 | 1.4.0 | 소셜 로그인 API 추가 |
 

@@ -4,6 +4,7 @@ import org.cmarket.cmarket.domain.app.dto.LoginCommand;
 import org.cmarket.cmarket.domain.app.dto.LoginResponse;
 import org.cmarket.cmarket.domain.app.dto.SignUpCommand;
 import org.cmarket.cmarket.domain.app.dto.UserDto;
+import org.cmarket.cmarket.domain.app.dto.WithdrawalCommand;
 
 /**
  * 인증 서비스 인터페이스
@@ -41,5 +42,48 @@ public interface AuthService {
      * @param expiresAt 토큰 만료 시간
      */
     void logout(String token, java.time.LocalDateTime expiresAt);
+    
+    /**
+     * 이메일 인증코드 발송
+     * 
+     * 회원가입 또는 비밀번호 재설정 시 사용되는 이메일 인증코드를 발송합니다.
+     * 
+     * @param email 사용자 이메일
+     * @return 생성된 인증코드
+     */
+    String sendEmailVerificationCode(String email);
+    
+    /**
+     * 비밀번호 재설정 인증코드 발송
+     * 
+     * 이메일로 사용자를 조회하고, 존재하면 인증코드를 발송합니다.
+     * 
+     * @param email 사용자 이메일
+     * @throws IllegalArgumentException 사용자가 존재하지 않을 때
+     */
+    void sendPasswordResetCode(String email);
+    
+    /**
+     * 비밀번호 재설정
+     * 
+     * 이메일 인증이 완료된 상태에서 비밀번호를 변경합니다.
+     * 클라이언트에서 이미 인증코드 검증을 완료한 후 호출됩니다.
+     * 
+     * @param email 사용자 이메일
+     * @param newPassword 새 비밀번호
+     * @throws IllegalArgumentException 이메일 인증이 완료되지 않았거나 사용자가 존재하지 않을 때
+     */
+    void resetPassword(String email, String newPassword);
+    
+    /**
+     * 회원 탈퇴
+     * 
+     * 사용자 계정을 소프트 삭제 처리합니다.
+     * 탈퇴 사유를 저장하고 deletedAt을 설정합니다.
+     * 
+     * @param command 회원 탈퇴 명령 (email 포함)
+     * @throws IllegalArgumentException 사용자가 존재하지 않거나 이미 탈퇴한 경우
+     */
+    void withdraw(WithdrawalCommand command);
 }
 

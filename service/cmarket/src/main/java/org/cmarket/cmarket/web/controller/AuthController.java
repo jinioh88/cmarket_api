@@ -1,25 +1,30 @@
 package org.cmarket.cmarket.web.controller;
 
-import org.cmarket.cmarket.domain.app.dto.EmailVerificationSendCommand;
 import org.cmarket.cmarket.domain.app.dto.EmailVerificationVerifyCommand;
 import org.cmarket.cmarket.domain.app.dto.LoginCommand;
 import org.cmarket.cmarket.domain.app.dto.SignUpCommand;
+import org.cmarket.cmarket.domain.app.dto.WithdrawalCommand;
 import org.cmarket.cmarket.domain.app.service.AuthService;
 import org.cmarket.cmarket.domain.app.service.EmailVerificationService;
 import org.cmarket.cmarket.web.dto.EmailVerificationSendRequest;
 import org.cmarket.cmarket.web.dto.EmailVerificationVerifyRequest;
 import org.cmarket.cmarket.web.dto.LoginRequest;
+import org.cmarket.cmarket.web.dto.PasswordResetRequest;
+import org.cmarket.cmarket.web.dto.PasswordResetSendRequest;
 import org.cmarket.cmarket.web.dto.SignUpRequest;
 import org.cmarket.cmarket.web.dto.UserWebDto;
+import org.cmarket.cmarket.web.dto.WithdrawalRequest;
 import org.cmarket.cmarket.web.response.ResponseCode;
 import org.cmarket.cmarket.web.response.SuccessResponse;
 import org.cmarket.cmarket.web.security.JwtTokenProvider;
-import org.cmarket.cmarket.web.service.EmailService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -37,24 +42,21 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/auth")
 public class AuthController {
     
-    private final EmailVerificationService emailVerificationService;
-    private final EmailService emailService;
     private final AuthService authService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailVerificationService emailVerificationService;  // 검증용으로만 사용
     
     public AuthController(
-            EmailVerificationService emailVerificationService,
-            EmailService emailService,
             AuthService authService,
             AuthenticationManager authenticationManager,
-            JwtTokenProvider jwtTokenProvider
+            JwtTokenProvider jwtTokenProvider,
+            EmailVerificationService emailVerificationService
     ) {
-        this.emailVerificationService = emailVerificationService;
-        this.emailService = emailService;
         this.authService = authService;
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.emailVerificationService = emailVerificationService;
     }
     
     /**
@@ -71,16 +73,8 @@ public class AuthController {
     public ResponseEntity<SuccessResponse<String>> sendVerificationCode(
             @Valid @RequestBody EmailVerificationSendRequest request
     ) {
-        // 웹 DTO → 앱 DTO 변환
-        EmailVerificationSendCommand command = EmailVerificationSendCommand.builder()
-                .email(request.getEmail())
-                .build();
-        
-        // 인증코드 생성 및 저장
-        String verificationCode = emailVerificationService.sendVerificationCode(command);
-        
-        // 이메일 발송
-        emailService.sendVerificationCode(request.getEmail(), verificationCode);
+        // 앱 서비스 호출 (인증코드 생성 및 이메일 발송)
+        authService.sendEmailVerificationCode(request.getEmail());
         
         // 응답 반환
         return ResponseEntity.status(HttpStatus.OK)
@@ -269,6 +263,118 @@ public class AuthController {
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
                         "로그아웃되었습니다."
+                ));
+    }
+    
+    /**
+     * 비밀번호 재설정 인증코드 발송
+     * 
+     * 사용자가 비밀번호를 잊었을 때, 이메일로 인증코드를 발송합니다.
+     * 
+     * @param request 비밀번호 재설정 인증코드 발송 요청
+     * @return 성공 응답
+     */
+    @PostMapping("/password/reset/send")
+    public ResponseEntity<SuccessResponse<String>> sendPasswordResetCode(
+            @Valid @RequestBody PasswordResetSendRequest request
+    ) {
+        // 1. 앱 서비스 호출 (이메일로 사용자 조회 및 인증코드 발송)
+        authService.sendPasswordResetCode(request.getEmail());
+        
+        // 2. 응답 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        "인증 번호를 발송했습니다."
+                ));
+    }
+    
+    /**
+     * 비밀번호 재설정
+     * 
+     * 인증코드를 검증하고 비밀번호를 변경합니다.
+     * 
+     * @param request 비밀번호 재설정 요청
+     * @return 성공 응답
+     */
+    @PatchMapping("/password/reset")
+    public ResponseEntity<SuccessResponse<String>> resetPassword(
+            @Valid @RequestBody PasswordResetRequest request
+    ) {
+        // 1. 비밀번호 일치 확인
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+        
+        // 2. 앱 서비스 호출 (이메일 인증 상태 확인 및 비밀번호 변경)
+        authService.resetPassword(
+                request.getEmail(),
+                request.getNewPassword()
+        );
+        
+        // 3. 응답 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        "비밀번호가 변경되었습니다."
+                ));
+    }
+    
+    /**
+     * 회원 탈퇴
+     * 
+     * 현재 로그인한 사용자의 계정을 소프트 삭제 처리합니다.
+     * 탈퇴 사유를 저장하고, 즉시 로그아웃 처리됩니다.
+     * 
+     * @param request 회원 탈퇴 요청
+     * @param authentication 현재 인증된 사용자 정보
+     * @param authorization Authorization 헤더 (로그아웃 처리용)
+     * @return 성공 응답
+     */
+    @DeleteMapping("/withdraw")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<String>> withdraw(
+            @Valid @RequestBody WithdrawalRequest request,
+            Authentication authentication,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        // 1. 현재 로그인한 사용자 이메일 추출
+        // JwtAuthenticationFilter에서 principal은 email (String)으로 설정됨
+        String email = (String) authentication.getPrincipal();
+        
+        // 2. 웹 DTO → 앱 DTO 변환
+        WithdrawalCommand command = WithdrawalCommand.builder()
+                .email(email)
+                .reason(request.getReason())
+                .detailReason(request.getDetailReason())
+                .build();
+        
+        // 3. 앱 서비스 호출 (탈퇴 사유 저장 및 소프트 삭제 처리)
+        authService.withdraw(command);
+        
+        // 4. 로그아웃 처리 (토큰 블랙리스트 추가)
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            String token = authorization.substring(7);  // "Bearer " 제거
+            
+            // 토큰 유효성 검증
+            if (jwtTokenProvider.validateToken(token)) {
+                // 토큰에서 만료 시간 추출
+                java.util.Date expirationDate = jwtTokenProvider.getExpirationDateFromToken(token);
+                java.time.LocalDateTime expiresAt = java.time.LocalDateTime.ofInstant(
+                        expirationDate.toInstant(),
+                        java.time.ZoneId.systemDefault()
+                );
+                
+                // 토큰을 블랙리스트에 추가
+                authService.logout(token, expiresAt);
+            }
+        }
+        
+        // 5. 응답 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        "회원 탈퇴가 완료되었습니다."
                 ));
     }
 }

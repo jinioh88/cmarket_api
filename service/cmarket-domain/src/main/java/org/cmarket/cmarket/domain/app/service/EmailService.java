@@ -1,10 +1,12 @@
-package org.cmarket.cmarket.web.service;
+package org.cmarket.cmarket.domain.app.service;
 
 /**
  * 이메일 발송 서비스 인터페이스
  * 
  * 주요 기능:
  * - 인증코드 발송: 회원가입 및 비밀번호 재설정 시 사용
+ * 
+ * 구현체는 웹 계층에 위치합니다.
  */
 public interface EmailService {
     

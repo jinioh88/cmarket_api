@@ -46,8 +46,8 @@ public class User {
     @Column(nullable = false, unique = true, length = 10)
     private String nickname;
     
-    @Column(nullable = false)
-    private LocalDate birthDate;
+    @Column
+    private LocalDate birthDate;  // 소셜 로그인 사용자는 null일 수 있음
     
     @Column(length = 50)
     private String addressSido;  // 시/도
@@ -150,6 +150,22 @@ public class User {
         this.nickname = nickname;
         this.addressSido = addressSido;
         this.addressGugun = addressGugun;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    /**
+     * 이름 업데이트
+     */
+    public void updateName(String name) {
+        this.name = name;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    /**
+     * 닉네임 업데이트
+     */
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
         this.updatedAt = LocalDateTime.now();
     }
 }
