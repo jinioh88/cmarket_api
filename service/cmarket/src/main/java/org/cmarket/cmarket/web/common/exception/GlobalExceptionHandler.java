@@ -7,6 +7,7 @@ import org.cmarket.cmarket.domain.auth.app.exception.InvalidPasswordException;
 import org.cmarket.cmarket.domain.auth.app.exception.InvalidVerificationCodeException;
 import org.cmarket.cmarket.domain.auth.app.exception.NicknameAlreadyExistsException;
 import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
+import org.cmarket.cmarket.domain.profile.app.exception.BlockedUserNotFoundException;
 import org.cmarket.cmarket.web.common.response.ErrorResponse;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.slf4j.Logger;
@@ -182,6 +183,21 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+    
+    @ExceptionHandler(BlockedUserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleBlockedUserNotFoundException(BlockedUserNotFoundException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Blocked user not found: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.NOT_FOUND,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
     
     @ExceptionHandler(Exception.class)

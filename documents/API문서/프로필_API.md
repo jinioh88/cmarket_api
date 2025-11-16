@@ -1,0 +1,685 @@
+# 프로필 API 문서
+
+> 반려동물 용품 중고거래 서비스 - **프로필** API 문서
+
+본 문서는 프로필 관련 API에 대한 상세 설명을 제공합니다.
+
+---
+
+## 목차
+
+- [공통 사항](#공통-사항)
+- [마이페이지 조회](#1-마이페이지-조회)
+- [프로필 정보 수정](#2-프로필-정보-수정)
+- [유저 프로필 조회](#3-유저-프로필-조회)
+- [차단한 유저 목록 조회](#4-차단한-유저-목록-조회)
+- [유저 차단 해제](#5-유저-차단-해제)
+
+---
+
+## 공통 사항
+
+### Base URL
+```
+http://localhost:8080
+```
+
+### 공통 응답 형식
+
+#### 성공 응답
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": { ... }
+}
+```
+
+#### 에러 응답
+```json
+{
+  "code": {
+    "code": 400,
+    "message": "잘못된 요청"
+  },
+  "message": "에러 메시지",
+  "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
+  "timestamp": "2025-11-14T15:45:00"
+}
+```
+
+### HTTP 상태 코드
+
+| 코드 | 설명 |
+|------|------|
+| 200 | 성공 |
+| 400 | 잘못된 요청 (입력값 검증 실패) |
+| 401 | 인증 필요 |
+| 404 | 리소스를 찾을 수 없음 |
+| 409 | 충돌 (예: 닉네임 중복) |
+| 500 | 서버 오류 |
+
+### 공통 헤더
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Content-Type | String | 예 | application/json |
+| Authorization | String | 예 | `Bearer <Access Token>` 형식 (모든 API 인증 필요) |
+| X-Trace-Id | String | 아니오 | 요청 추적 ID (자동 생성) |
+
+### ResponseCode Enum
+
+모든 API 응답에서 사용되는 `ResponseCode` enum의 값들입니다.
+
+| 코드 | 메시지 | 설명 |
+|------|--------|------|
+| 200 | 성공 | 요청이 성공적으로 처리됨 |
+| 201 | 생성됨 | 리소스가 성공적으로 생성됨 |
+| 204 | 내용 없음 | 요청은 성공했지만 반환할 내용이 없음 |
+| 400 | 잘못된 요청 | 요청 파라미터가 잘못되었거나 검증 실패 |
+| 401 | 인증 필요 | 인증이 필요하거나 인증 정보가 유효하지 않음 |
+| 403 | 권한 없음 | 인증은 되었지만 권한이 없음 |
+| 404 | 찾을 수 없음 | 요청한 리소스를 찾을 수 없음 |
+| 409 | 충돌 | 리소스 충돌 (예: 중복된 닉네임) |
+| 500 | 서버 오류 | 서버 내부 오류 발생 |
+
+---
+
+## 1. 마이페이지 조회
+
+현재 로그인한 사용자의 마이페이지 정보를 조회합니다.
+
+### 엔드포인트
+
+```
+GET /api/profile/me
+```
+
+### 설명
+
+- 현재 로그인한 사용자의 프로필 정보를 조회합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 찜한 상품, 등록한 상품, 판매 요청 목록은 현재 빈 리스트로 반환됩니다 (향후 Product 도메인에서 구현 예정).
+
+### Request
+
+| 항목 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| - | - | - | Request Body 없음 |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 마이페이지 정보 |
+| data.profileImageUrl | String | 프로필 이미지 URL (nullable) |
+| data.nickname | String | 닉네임 |
+| data.name | String | 이름 |
+| data.introduction | String | 소개글 (nullable, 최대 1000자) |
+| data.birthDate | String | 생년월일 (ISO 8601 형식: YYYY-MM-DD, nullable) |
+| data.email | String | 이메일 |
+| data.addressSido | String | 거주지 시/도 (nullable) |
+| data.addressGugun | String | 거주지 구/군 (nullable) |
+| data.createdAt | String | 가입일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.favoriteProducts | Array | 찜한 상품 목록 (현재 빈 배열, 향후 구현 예정) |
+| data.myProducts | Array | 등록한 상품 목록 (현재 빈 배열, 향후 구현 예정) |
+| data.purchaseRequests | Array | 판매 요청 목록 (현재 빈 배열, 향후 구현 예정) |
+| data.blockedUsers | Array | 차단한 유저 목록 |
+| data.blockedUsers[].blockedUserId | Long | 차단한 유저 ID |
+| data.blockedUsers[].nickname | String | 차단한 유저 닉네임 |
+| data.blockedUsers[].profileImageUrl | String | 차단한 유저 프로필 이미지 URL (nullable) |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+GET /api/profile/me HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+### Response 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": {
+    "profileImageUrl": "https://s3.amazonaws.com/profile/user123.jpg",
+    "nickname": "길동이",
+    "name": "홍길동",
+    "introduction": "반려동물을 사랑하는 사람입니다.",
+    "birthDate": "1990-01-01",
+    "email": "hong@example.com",
+    "addressSido": "서울특별시",
+    "addressGugun": "강남구",
+    "createdAt": "2024-01-15T10:30:00",
+    "favoriteProducts": [],
+    "myProducts": [],
+    "purchaseRequests": [],
+    "blockedUsers": [
+      {
+        "blockedUserId": 5,
+        "nickname": "차단된유저",
+        "profileImageUrl": "https://s3.amazonaws.com/profile/user5.jpg"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 2. 프로필 정보 수정
+
+현재 로그인한 사용자의 프로필 정보를 수정합니다.
+
+### 엔드포인트
+
+```
+PATCH /api/profile/me
+```
+
+### 설명
+
+- 현재 로그인한 사용자의 프로필 정보를 수정합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 닉네임, 지역, 프로필 이미지 URL, 소개글을 수정할 수 있습니다.
+- 닉네임은 중복 검증이 수행되며, 본인의 기존 닉네임은 중복 체크에서 제외됩니다.
+- 프로필 이미지는 별도 업로드 API를 통해 업로드한 후 URL을 전달해야 합니다.
+
+### Request
+
+#### Request Body
+
+| 필드명 | 타입 | 필수 | 설명 | 제약조건 |
+|--------|------|------|------|----------|
+| nickname | String | 예 | 닉네임 | 1자 이상 10자 이하, 공백 불가 |
+| addressSido | String | 아니오 | 거주지 시/도 | - |
+| addressGugun | String | 아니오 | 거주지 구/군 | - |
+| profileImageUrl | String | 아니오 | 프로필 이미지 URL | - |
+| introduction | String | 아니오 | 소개글 | 최대 1000자 |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+| Content-Type | String | 예 | application/json |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 수정된 사용자 정보 |
+| data.id | Long | 사용자 ID |
+| data.email | String | 이메일 |
+| data.name | String | 이름 |
+| data.nickname | String | 닉네임 |
+| data.birthDate | String | 생년월일 (ISO 8601 형식: YYYY-MM-DD, nullable) |
+| data.addressSido | String | 거주지 시/도 (nullable) |
+| data.addressGugun | String | 거주지 구/군 (nullable) |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 400 | 입력값 검증 실패 (닉네임 길이, 소개글 길이 등) |
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 409 | 닉네임이 이미 사용 중임 |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+PATCH /api/profile/me HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "nickname": "새로운닉네임",
+  "addressSido": "서울특별시",
+  "addressGugun": "강남구",
+  "profileImageUrl": "https://s3.amazonaws.com/profile/new-image.jpg",
+  "introduction": "안녕하세요. 반려동물을 사랑하는 사람입니다."
+}
+```
+
+### Response 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": {
+    "id": 1,
+    "email": "hong@example.com",
+    "name": "홍길동",
+    "nickname": "새로운닉네임",
+    "birthDate": "1990-01-01",
+    "addressSido": "서울특별시",
+    "addressGugun": "강남구"
+  }
+}
+```
+
+---
+
+## 3. 유저 프로필 조회
+
+특정 사용자의 프로필 정보를 조회합니다.
+
+### 엔드포인트
+
+```
+GET /api/profile/{userId}
+```
+
+### 설명
+
+- 특정 사용자의 공개 프로필 정보를 조회합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 등록한 상품 목록은 현재 빈 리스트로 반환됩니다 (향후 Product 도메인에서 구현 예정).
+- 소프트 삭제된 사용자는 조회할 수 없습니다.
+
+### Request
+
+#### Path Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 |
+|-----------|------|------|------|
+| userId | Long | 예 | 조회할 사용자 ID |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 유저 프로필 정보 |
+| data.profileImageUrl | String | 프로필 이미지 URL (nullable) |
+| data.addressSido | String | 거주지 시/도 (nullable) |
+| data.addressGugun | String | 거주지 구/군 (nullable) |
+| data.nickname | String | 닉네임 |
+| data.createdAt | String | 가입일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.introduction | String | 소개글 (nullable, 최대 1000자) |
+| data.products | Array | 등록한 상품 목록 (현재 빈 배열, 향후 구현 예정) |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 (삭제된 사용자 포함) |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+GET /api/profile/5 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+### Response 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": {
+    "profileImageUrl": "https://s3.amazonaws.com/profile/user5.jpg",
+    "addressSido": "서울특별시",
+    "addressGugun": "강남구",
+    "nickname": "다른유저",
+    "createdAt": "2024-02-01T09:15:00",
+    "introduction": "반려동물 용품을 판매하고 있습니다.",
+    "products": []
+  }
+}
+```
+
+---
+
+## 4. 차단한 유저 목록 조회
+
+현재 로그인한 사용자가 차단한 유저 목록을 조회합니다.
+
+### 엔드포인트
+
+```
+GET /api/profile/me/blocked-users
+```
+
+### 설명
+
+- 현재 로그인한 사용자가 차단한 유저 목록을 조회합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 페이지네이션을 지원합니다.
+- 최신순으로 정렬됩니다 (차단한 날짜 기준 내림차순).
+- 삭제된 사용자는 목록에서 제외됩니다.
+
+### Request
+
+#### Query Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 | 기본값 |
+|-----------|------|------|------|--------|
+| page | Integer | 아니오 | 페이지 번호 (0부터 시작) | 0 |
+| size | Integer | 아니오 | 페이지 크기 | 10 |
+| sort | String | 아니오 | 정렬 기준 (예: createdAt,desc) | createdAt,desc |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 차단한 유저 목록 정보 |
+| data.blockedUsers | Object | 페이지네이션 결과 |
+| data.blockedUsers.page | Integer | 현재 페이지 번호 (0부터 시작) |
+| data.blockedUsers.size | Integer | 페이지 크기 |
+| data.blockedUsers.total | Long | 전체 항목 수 |
+| data.blockedUsers.content | Array | 차단한 유저 목록 |
+| data.blockedUsers.content[].blockedUserId | Long | 차단한 유저 ID |
+| data.blockedUsers.content[].nickname | String | 차단한 유저 닉네임 |
+| data.blockedUsers.content[].profileImageUrl | String | 차단한 유저 프로필 이미지 URL (nullable) |
+| data.blockedUsers.totalPages | Integer | 전체 페이지 수 |
+| data.blockedUsers.hasNext | Boolean | 다음 페이지 존재 여부 |
+| data.blockedUsers.hasPrevious | Boolean | 이전 페이지 존재 여부 |
+| data.blockedUsers.totalElements | Long | 전체 항목 수 (total과 동일) |
+| data.blockedUsers.numberOfElements | Integer | 현재 페이지의 항목 수 |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+GET /api/profile/me/blocked-users?page=0&size=10 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+### Response 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": {
+    "blockedUsers": {
+      "page": 0,
+      "size": 10,
+      "total": 2,
+      "content": [
+        {
+          "blockedUserId": 5,
+          "nickname": "차단된유저1",
+          "profileImageUrl": "https://s3.amazonaws.com/profile/user5.jpg"
+        },
+        {
+          "blockedUserId": 7,
+          "nickname": "차단된유저2",
+          "profileImageUrl": null
+        }
+      ],
+      "totalPages": 1,
+      "hasNext": false,
+      "hasPrevious": false,
+      "totalElements": 2,
+      "numberOfElements": 2
+    }
+  }
+}
+```
+
+---
+
+## 5. 유저 차단 해제
+
+현재 로그인한 사용자가 차단한 유저를 차단 해제합니다.
+
+### 엔드포인트
+
+```
+DELETE /api/profile/me/blocked-users/{blockedUserId}
+```
+
+### 설명
+
+- 현재 로그인한 사용자가 차단한 유저를 차단 해제합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 차단 관계가 존재하지 않는 경우에도 성공으로 처리됩니다 (idempotent).
+- 동일한 요청을 여러 번 호출해도 안전합니다.
+
+### Request
+
+#### Path Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 |
+|-----------|------|------|------|
+| blockedUserId | Long | 예 | 차단 해제할 사용자 ID |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | null | 응답 데이터 없음 |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+DELETE /api/profile/me/blocked-users/5 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+### Response 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": null
+}
+```
+
+---
+
+## 주의사항
+
+### 인증
+
+모든 프로필 API는 인증이 필요합니다. 요청 시 `Authorization` 헤더에 유효한 JWT 토큰을 포함해야 합니다.
+
+```
+Authorization: Bearer <Access Token>
+```
+
+### 프로필 이미지 업로드
+
+프로필 이미지를 업로드하려면 별도의 이미지 업로드 API를 사용해야 합니다. 업로드된 이미지의 URL을 `profileImageUrl` 필드에 전달하면 됩니다.
+
+### 페이지네이션
+
+차단한 유저 목록 조회 API는 페이지네이션을 지원합니다. `page`와 `size` 파라미터를 사용하여 원하는 페이지를 조회할 수 있습니다.
+
+- `page`: 페이지 번호 (0부터 시작)
+- `size`: 페이지 크기 (기본값: 10)
+
+### 향후 구현 예정 기능
+
+다음 기능들은 현재 빈 리스트로 반환되며, 향후 Product 도메인에서 구현 예정입니다:
+
+- 찜한 상품 목록 (`favoriteProducts`)
+- 등록한 상품 목록 (`myProducts`, `products`)
+- 판매 요청 목록 (`purchaseRequests`)
+
+---
+
+## 에러 코드 상세
+
+### 400 Bad Request
+
+입력값 검증 실패 시 반환됩니다.
+
+```json
+{
+  "code": {
+    "code": 400,
+    "message": "잘못된 요청"
+  },
+  "message": "닉네임은 1자 이상 10자 이하여야 합니다.",
+  "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af"
+}
+```
+
+### 401 Unauthorized
+
+인증이 필요하거나 토큰이 유효하지 않을 때 반환됩니다.
+
+```json
+{
+  "code": {
+    "code": 401,
+    "message": "인증 필요"
+  },
+  "message": "인증되지 않은 사용자입니다.",
+  "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af"
+}
+```
+
+### 404 Not Found
+
+요청한 리소스를 찾을 수 없을 때 반환됩니다.
+
+```json
+{
+  "code": {
+    "code": 404,
+    "message": "찾을 수 없음"
+  },
+  "message": "사용자를 찾을 수 없습니다.",
+  "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af"
+}
+```
+
+### 409 Conflict
+
+리소스 충돌이 발생했을 때 반환됩니다 (예: 닉네임 중복).
+
+```json
+{
+  "code": {
+    "code": 409,
+    "message": "충돌"
+  },
+  "message": "이미 사용 중인 닉네임입니다.",
+  "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af"
+}
+```
+
+---
+
+## 참고사항
+
+- 모든 날짜/시간 필드는 ISO 8601 형식을 따릅니다.
+- `nullable`로 표시된 필드는 `null` 값이 반환될 수 있습니다.
+- 페이지네이션은 0부터 시작합니다.
+- 차단 해제 API는 idempotent하므로 동일한 요청을 여러 번 호출해도 안전합니다.
+

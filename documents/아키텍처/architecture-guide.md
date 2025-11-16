@@ -37,8 +37,9 @@
 
 ## 3) 표준 컨트롤러 패턴
 
+### 기본 패턴 (Path Variable 사용)
+
 ```java
-@PreAuthorize("isAuthenticated()")
 @PostMapping("/employees/{employeeId}/allowance-setting")
 public ResponseEntity<SuccessResponse<AllowanceSettingWebDto>> create(
     @PathVariable Long employeeId,
@@ -57,7 +58,62 @@ public ResponseEntity<SuccessResponse<AllowanceSettingWebDto>> create(
 }
 ```
 
-> GET/PATCH/DELETE도 동일 패턴 적용 (인증 → 시설 검증 → 앱 서비스 호출 → 웹 DTO 변환 → 표준 응답).
+### 현재 로그인한 사용자 정보 사용 패턴
+
+인증이 필요한 API에서 현재 로그인한 사용자 정보를 사용해야 할 때는 `SecurityUtils`를 사용합니다.
+
+```java
+@PreAuthorize("isAuthenticated()")
+@GetMapping("/api/profile/me")
+public ResponseEntity<SuccessResponse<MyPageResponse>> getMyPage() {
+  // 현재 로그인한 사용자의 이메일 추출
+  String email = SecurityUtils.getCurrentUserEmail();
+  
+  // 앱 서비스 호출 (email을 기반으로 사용자 정보 조회)
+  MyPageDto myPageDto = profileService.getMyPage(email);
+  
+  // 앱 DTO → 웹 DTO 변환
+  MyPageResponse response = MyPageResponse.fromDto(myPageDto);
+  
+  return ResponseEntity.status(HttpStatus.OK)
+      .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+}
+
+@PreAuthorize("isAuthenticated()")
+@PatchMapping("/api/profile/me")
+public ResponseEntity<SuccessResponse<UserWebDto>> updateProfile(
+    @Valid @RequestBody ProfileUpdateRequest req
+) {
+  // 현재 로그인한 사용자의 이메일 추출
+  String email = SecurityUtils.getCurrentUserEmail();
+  
+  // 웹 DTO → 앱 DTO 변환
+  ProfileUpdateCommand cmd = ProfileUpdateCommand.builder()
+      .email(email)
+      .nickname(req.getNickname())
+      .addressSido(req.getAddressSido())
+      .addressGugun(req.getAddressGugun())
+      .profileImageUrl(req.getProfileImageUrl())
+      .introduction(req.getIntroduction())
+      .build();
+  
+  // 앱 서비스 호출
+  UserDto userDto = profileService.updateProfile(cmd);
+  
+  // 앱 DTO → 웹 DTO 변환
+  UserWebDto userWebDto = UserWebDto.fromDto(userDto);
+  
+  return ResponseEntity.status(HttpStatus.OK)
+      .body(new SuccessResponse<>(ResponseCode.SUCCESS, userWebDto));
+}
+```
+
+**SecurityUtils 주요 메서드:**
+- `SecurityUtils.getCurrentUserEmail()`: 현재 로그인한 사용자의 이메일 반환
+- `SecurityUtils.getCurrentAuthentication()`: 현재 Authentication 객체 반환
+- `SecurityUtils.isAuthenticated()`: 인증 여부 확인
+
+> GET/PATCH/DELETE도 동일 패턴 적용 (인증 → 현재 사용자 정보 추출 → 앱 서비스 호출 → 웹 DTO 변환 → 표준 응답).
 
 ---
 

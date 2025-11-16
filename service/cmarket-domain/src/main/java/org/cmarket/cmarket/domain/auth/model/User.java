@@ -82,6 +82,12 @@ public class User {
     @Column(length = 500)
     private String withdrawalDetailReason;  // 탈퇴 상세 사유 (선택, 2~500자)
     
+    @Column(length = 500)
+    private String profileImageUrl;  // 프로필 이미지 URL (S3 저장 경로)
+    
+    @Column(length = 1000)
+    private String introduction;  // 소개글 (최대 1000자)
+    
     @Builder
     public User(
             String email,
@@ -166,6 +172,30 @@ public class User {
      */
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    /**
+     * 프로필 정보 업데이트
+     * 
+     * @param nickname 닉네임
+     * @param addressSido 시/도
+     * @param addressGugun 구/군
+     * @param profileImageUrl 프로필 이미지 URL
+     * @param introduction 소개글
+     */
+    public void updateProfile(
+            String nickname,
+            String addressSido,
+            String addressGugun,
+            String profileImageUrl,
+            String introduction
+    ) {
+        this.nickname = nickname;
+        this.addressSido = addressSido;
+        this.addressGugun = addressGugun;
+        this.profileImageUrl = profileImageUrl;
+        this.introduction = introduction;
         this.updatedAt = LocalDateTime.now();
     }
 }

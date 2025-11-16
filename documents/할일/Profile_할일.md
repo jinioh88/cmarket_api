@@ -171,46 +171,9 @@
 
 ---
 
-### Step 6: 비밀번호 변경 구현
+### Step 6: 차단한 유저 목록 조회 구현
 
-#### 6-1. 비밀번호 변경 웹 DTO 및 앱 DTO 생성
-- **작업 내용**:
-  - 웹 DTO: `PasswordChangeRequest` (currentPassword, newPassword, confirmPassword)
-  - 검증 어노테이션 추가:
-    - newPassword: @NotBlank, @Pattern (비밀번호 유효성 검사 정규식)
-    - confirmPassword: @NotBlank
-  - 앱 DTO: `PasswordChangeCommand`
-- **출력물**:
-  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/profile/dto/PasswordChangeRequest.java`
-  - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/profile/app/dto/PasswordChangeCommand.java`
-
-#### 6-2. 비밀번호 변경 앱 서비스 구현
-- **작업 내용**:
-  - `ProfileService.changePassword()` 메서드 구현
-  - 사용자 조회
-  - 현재 비밀번호 검증 (PasswordEncoder 사용)
-  - 새 비밀번호 유효성 검증 (대소문자, 숫자, 특수기호 포함)
-  - 새 비밀번호와 확인 비밀번호 일치 확인
-  - User 엔티티의 `changePassword()` 메서드 호출 (암호화된 비밀번호로 저장)
-- **출력물**:
-  - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/profile/app/service/ProfileService.java` (메서드 추가)
-
-#### 6-3. 비밀번호 변경 컨트롤러 구현
-- **작업 내용**:
-  - `PATCH /api/profile/me/password` 엔드포인트
-  - 인증 필수 (`@PreAuthorize("isAuthenticated()")`)
-  - 현재 로그인한 사용자 정보 추출
-  - 웹 DTO → 앱 DTO 변환
-  - 앱 서비스 호출
-  - `SuccessResponse` 반환
-- **출력물**:
-  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/profile/controller/ProfileController.java` (메서드 추가)
-
----
-
-### Step 7: 차단한 유저 목록 조회 구현
-
-#### 7-1. 차단한 유저 목록 조회 웹 DTO 및 앱 DTO 생성
+#### 6-1. 차단한 유저 목록 조회 웹 DTO 및 앱 DTO 생성
 - **작업 내용**:
   - 웹 DTO: `BlockedUserListResponse` (차단한 유저 목록, 페이지네이션 정보)
   - 앱 DTO: `BlockedUserListDto` (동일한 필드)
@@ -220,7 +183,7 @@
   - `service/cmarket/src/main/java/org/cmarket/cmarket/web/profile/dto/BlockedUserListResponse.java`
   - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/profile/app/dto/BlockedUserListDto.java`
 
-#### 7-2. 차단한 유저 목록 조회 앱 서비스 구현
+#### 6-2. 차단한 유저 목록 조회 앱 서비스 구현
 - **작업 내용**:
   - `ProfileService.getBlockedUsers()` 메서드 구현
   - 현재 로그인한 사용자 ID로 차단 목록 조회 (페이지네이션, 최신순 정렬)
@@ -229,7 +192,7 @@
 - **출력물**:
   - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/profile/app/service/ProfileService.java` (메서드 추가)
 
-#### 7-3. 차단한 유저 목록 조회 컨트롤러 구현
+#### 6-3. 차단한 유저 목록 조회 컨트롤러 구현
 - **작업 내용**:
   - `GET /api/profile/me/blocked-users` 엔드포인트
   - 인증 필수 (`@PreAuthorize("isAuthenticated()")`)
@@ -243,9 +206,9 @@
 
 ---
 
-### Step 8: 유저 차단 해제 구현
+### Step 7: 유저 차단 해제 구현
 
-#### 8-1. 유저 차단 해제 앱 서비스 구현
+#### 7-1. 유저 차단 해제 앱 서비스 구현
 - **작업 내용**:
   - `ProfileService.unblockUser()` 메서드 구현
   - 현재 로그인한 사용자 ID와 차단 해제할 사용자 ID로 차단 관계 조회
@@ -253,7 +216,7 @@
 - **출력물**:
   - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/profile/app/service/ProfileService.java` (메서드 추가)
 
-#### 8-2. 유저 차단 해제 컨트롤러 구현
+#### 7-2. 유저 차단 해제 컨트롤러 구현
 - **작업 내용**:
   - `DELETE /api/profile/me/blocked-users/{blockedUserId}` 엔드포인트
   - 인증 필수 (`@PreAuthorize("isAuthenticated()")`)
@@ -265,20 +228,17 @@
 
 ---
 
-### Step 9: 커스텀 예외 클래스 생성
+### Step 8: 커스텀 예외 클래스 생성
 
-#### 9-1. Profile 관련 예외 클래스 생성
+#### 8-1. Profile 관련 예외 클래스 생성
 - **작업 내용**:
   - `NicknameAlreadyExistsException` (닉네임 중복 - Auth 도메인에 이미 있을 수 있음, 확인 필요)
   - `UserNotFoundException` (사용자 없음 - Auth 도메인에 이미 있을 수 있음, 확인 필요)
-  - `InvalidPasswordException` (비밀번호 유효성 검증 실패 - Auth 도메인에 이미 있을 수 있음, 확인 필요)
-  - `PasswordMismatchException` (비밀번호 불일치)
-  - `CurrentPasswordMismatchException` (현재 비밀번호 불일치)
   - `BlockedUserNotFoundException` (차단한 유저 없음)
 - **출력물**:
   - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/profile/app/exception/` 패키지 내 예외 클래스들
 
-#### 9-2. GlobalExceptionHandler에 커스텀 예외 처리 추가
+#### 8-2. GlobalExceptionHandler에 커스텀 예외 처리 추가
 - **작업 내용**:
   - 각 커스텀 예외에 대한 핸들러 메서드 추가
   - 적절한 HTTP 상태 코드 및 에러 메시지 반환
@@ -295,41 +255,36 @@
    - 도메인 모델은 웹 계층에서 직접 사용 금지
    - DTO 변환 필수
 
-2. **비밀번호 검증**:
-   - 10-30자, 대소문자/숫자/특수문자 포함
-   - 정규식 패턴: `^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,30}$`
-   - 새 비밀번호와 확인 비밀번호 일치 확인 필수
-
-3. **프로필 이미지**:
+2. **프로필 이미지**:
    - S3 업로드는 컨트롤러에서 처리 (아키텍처 가이드 준수)
    - 이미지 파일 형식 검증 (jpg, png, gif 등)
    - 이미지 크기 제한 (예: 5MB)
 
-4. **닉네임 중복 검증**:
+3. **닉네임 중복 검증**:
    - 프로필 수정 시 본인 닉네임은 중복 체크에서 제외
 
-5. **소개글**:
+4. **소개글**:
    - 최대 1000자 제한
 
-6. **차단 기능**:
+5. **차단 기능**:
    - 동일 사용자 중복 차단 방지 (복합 unique 제약조건)
    - 차단 목록은 최신순 정렬 (createdAt DESC)
    - 페이지네이션: 10개씩
 
-7. **예외 처리**:
+6. **예외 처리**:
    - 모든 예외는 GlobalExceptionHandler에서 처리
    - traceId 포함하여 로깅
    - 사용자 친화적인 에러 메시지 반환
 
-8. **인증/인가**:
+7. **인증/인가**:
    - 모든 엔드포인트는 인증 필수 (`@PreAuthorize("isAuthenticated()")`)
    - 본인 정보 수정/조회는 본인만 가능하도록 검증
 
-9. **Product 도메인 연동**:
+8. **Product 도메인 연동**:
    - 찜한 상품, 등록한 상품, 판매 요청 목록은 향후 Product 도메인에서 구현 예정
    - 현재는 빈 리스트 반환하거나 주석 처리
 
-10. **페이지네이션**:
+9. **페이지네이션**:
     - Spring Data `Page` 직노출 금지
     - `PageResult<T>` 전용 타입 사용 (아키텍처 가이드 준수)
 
@@ -337,15 +292,14 @@
 
 ## 완료 체크리스트
 
-- [ ] Step 1: 도메인 모델 확장 및 생성
-- [ ] Step 2: 도메인 레포지토리 인터페이스 생성
-- [ ] Step 3: 마이페이지 조회 구현 (FR-005)
-- [ ] Step 4: 프로필 정보 수정 구현 (FR-006)
-- [ ] Step 5: 유저 프로필 조회 구현 (FR-023)
-- [ ] Step 6: 비밀번호 변경 구현
-- [ ] Step 7: 차단한 유저 목록 조회 구현
-- [ ] Step 8: 유저 차단 해제 구현
-- [ ] Step 9: 커스텀 예외 클래스 생성
+- [x] Step 1: 도메인 모델 확장 및 생성
+- [x] Step 2: 도메인 레포지토리 인터페이스 생성
+- [x] Step 3: 마이페이지 조회 구현 (FR-005)
+- [x] Step 4: 프로필 정보 수정 구현 (FR-006)
+- [x] Step 5: 유저 프로필 조회 구현 (FR-023)
+- [x] Step 6: 차단한 유저 목록 조회 구현
+- [x] Step 7: 유저 차단 해제 구현
+- [x] Step 8: 커스텀 예외 클래스 생성
 
 ---
 
