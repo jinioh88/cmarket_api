@@ -2,6 +2,7 @@ package org.cmarket.cmarket.web.common.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -109,6 +110,12 @@ public class SecurityConfig {
                     "/actuator/health",
                     "/error"
                 ).permitAll()
+                
+                // 상품 관련 GET 요청은 인증 불필요 (목록, 상세 조회)
+                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                
+                // 이미지 조회는 인증 불필요
+                .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
                 
                 // 나머지 모든 요청은 인증 필요
                 .anyRequest().authenticated()

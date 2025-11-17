@@ -7,6 +7,7 @@ import org.cmarket.cmarket.domain.auth.app.exception.InvalidPasswordException;
 import org.cmarket.cmarket.domain.auth.app.exception.InvalidVerificationCodeException;
 import org.cmarket.cmarket.domain.auth.app.exception.NicknameAlreadyExistsException;
 import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
+import org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException;
 import org.cmarket.cmarket.domain.profile.app.exception.BlockedUserNotFoundException;
 import org.cmarket.cmarket.web.common.response.ErrorResponse;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
@@ -198,6 +199,85 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+    
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleProductNotFoundException(ProductNotFoundException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Product not found: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.NOT_FOUND,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+    
+    @ExceptionHandler(org.cmarket.cmarket.domain.product.app.exception.ProductAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleProductAccessDeniedException(
+            org.cmarket.cmarket.domain.product.app.exception.ProductAccessDeniedException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Product access denied: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.FORBIDDEN,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+    
+    @ExceptionHandler(org.cmarket.cmarket.domain.product.app.exception.ProductAlreadyDeletedException.class)
+    public ResponseEntity<ErrorResponse> handleProductAlreadyDeletedException(
+            org.cmarket.cmarket.domain.product.app.exception.ProductAlreadyDeletedException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Product already deleted: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.BAD_REQUEST,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    @ExceptionHandler(org.cmarket.cmarket.domain.product.app.exception.FavoriteNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleFavoriteNotFoundException(
+            org.cmarket.cmarket.domain.product.app.exception.FavoriteNotFoundException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Favorite not found: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.NOT_FOUND,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+    
+    @ExceptionHandler(org.cmarket.cmarket.domain.product.app.exception.InvalidProductTypeException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidProductTypeException(
+            org.cmarket.cmarket.domain.product.app.exception.InvalidProductTypeException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Invalid product type: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.BAD_REQUEST,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     
     @ExceptionHandler(Exception.class)

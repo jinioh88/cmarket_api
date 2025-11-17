@@ -32,7 +32,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     
     // DevTools
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+//    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     
     // Database (H2 for development)
     runtimeOnly 'com.h2database:h2'

@@ -1,0 +1,77 @@
+package org.cmarket.cmarket.web.product.dto;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.cmarket.cmarket.domain.product.app.dto.ProductRequestUpdateCommand;
+import org.cmarket.cmarket.domain.product.model.Category;
+import org.cmarket.cmarket.domain.product.model.PetDetailType;
+import org.cmarket.cmarket.domain.product.model.PetType;
+
+import java.util.List;
+
+/**
+ * 판매 요청 수정 요청 DTO
+ * 
+ * 판매 요청 수정 시 필요한 모든 정보를 받습니다.
+ */
+@Getter
+@NoArgsConstructor
+public class ProductRequestUpdateRequest {
+    
+    @NotNull(message = "동물 종류는 필수입니다.")
+    private PetType petType;
+    
+    @NotNull(message = "반려동물 상세 종류는 필수입니다.")
+    private PetDetailType petDetailType;
+    
+    @NotNull(message = "상품 카테고리는 필수입니다.")
+    private Category category;
+    
+    @NotBlank(message = "상품명은 필수입니다.")
+    @Size(min = 2, max = 50, message = "상품명은 2자 이상 50자 이하여야 합니다.")
+    private String title;
+    
+    @Size(max = 1000, message = "상품 설명은 최대 1000자까지 입력 가능합니다.")
+    private String description;
+    
+    @NotNull(message = "희망 가격은 필수입니다.")
+    @Min(value = 0, message = "희망 가격은 0 이상이어야 합니다.")
+    private Long desiredPrice;
+    
+//    @NotBlank(message = "대표 이미지는 필수입니다.")
+    private String mainImageUrl;
+    
+    @Size(max = 4, message = "서브 이미지는 최대 4장까지 등록 가능합니다.")
+    private List<String> subImageUrls;
+    
+    @NotBlank(message = "시/도는 필수입니다.")
+    private String addressSido;
+    
+    @NotBlank(message = "구/군은 필수입니다.")
+    private String addressGugun;
+    
+    /**
+     * 웹 DTO를 앱 DTO로 변환
+     * 
+     * @return ProductRequestUpdateCommand
+     */
+    public ProductRequestUpdateCommand toCommand() {
+        return ProductRequestUpdateCommand.builder()
+                .petType(this.petType)
+                .petDetailType(this.petDetailType)
+                .category(this.category)
+                .title(this.title)
+                .description(this.description)
+                .desiredPrice(this.desiredPrice)
+                .mainImageUrl(this.mainImageUrl)
+                .subImageUrls(this.subImageUrls)
+                .addressSido(this.addressSido)
+                .addressGugun(this.addressGugun)
+                .build();
+    }
+}
+

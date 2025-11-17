@@ -1,5 +1,6 @@
 package org.cmarket.cmarket.web.common.security;
 
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -43,7 +44,7 @@ public final class SecurityUtils {
     public static Authentication getCurrentAuthentication() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (!isAuthenticatedInternal(authentication)) {
             throw new IllegalStateException("인증되지 않은 사용자입니다.");
         }
         
@@ -57,7 +58,13 @@ public final class SecurityUtils {
      */
     public static boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null && authentication.isAuthenticated();
+        return isAuthenticatedInternal(authentication);
+    }
+    
+    private static boolean isAuthenticatedInternal(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
     }
 }
 
