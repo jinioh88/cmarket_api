@@ -95,5 +95,15 @@ public interface AuthService {
      * @return 사용 가능하면 true, 중복이면 false
      */
     boolean isNicknameAvailable(String nickname);
+
+    /**
+     * 이메일 중복 확인
+     * 
+     * 이메일이 이미 사용 중인지 확인합니다.
+     *
+     * @param email 확인할 이메일
+     * @return 사용 가능하면 true, 중복이면 false
+     */
+    boolean isEmailAvailable(String email);
 }
 

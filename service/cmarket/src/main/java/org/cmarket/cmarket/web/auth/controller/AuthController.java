@@ -24,6 +24,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -35,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 
 /**
  * 인증 관련 컨트롤러
@@ -42,6 +44,7 @@ import jakarta.validation.Valid;
  * 회원가입, 로그인, 이메일 인증 등의 인증 관련 API를 제공합니다.
  */
 @RestController
+@Validated
 @RequestMapping("/api/auth")
 public class AuthController {
     
@@ -60,6 +63,30 @@ public class AuthController {
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.emailVerificationService = emailVerificationService;
+    }
+    
+    /**
+     * 이메일 중복 확인
+     *
+     * GET /api/auth/email/check?email={email}
+     *
+     * 이메일이 이미 사용 중인지 확인합니다.
+     *
+     * @param email 확인할 이메일
+     * @return 사용 가능 여부 (true: 사용 가능, false: 중복)
+     */
+    @GetMapping("/email/check")
+    public ResponseEntity<SuccessResponse<Boolean>> checkEmail(
+            @RequestParam @Email String email
+    ) {
+        boolean isAvailable = authService.isEmailAvailable(email);
+        
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        isAvailable ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.",
+                        isAvailable
+                ));
     }
     
     /**

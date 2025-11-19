@@ -239,6 +239,12 @@ public class AuthServiceImpl implements AuthService {
         return !userRepository.existsByNickname(nickname);
     }
     
+    @Override
+    public boolean isEmailAvailable(String email) {
+        // 이메일 중복 확인
+        return !userRepository.existsByEmail(email);
+    }
+    
     /**
      * 만 14세 이상 검증
      * 

@@ -384,7 +384,16 @@
 
 ### Step 11: 추가 기능 및 개선
 
-#### 11-1. 닉네임 중복 확인 API
+#### 11-1. 이메일 중복 확인 API
+- **작업 내용**:
+  - 컨트롤러: `GET /api/auth/email/check?email={email}`
+  - 앱 서비스: 이메일 형식 검증 및 중복 확인
+  - 응답: `SuccessResponse<Boolean>` (true: 사용 가능, false: 중복)
+- **출력물**:
+  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/controller/AuthController.java` (일부)
+  - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/app/service/AuthService.java` (메서드 추가)
+
+#### 11-2. 닉네임 중복 확인 API
 - **작업 내용**:
   - 컨트롤러: `GET /api/auth/nickname/check?nickname={nickname}`
   - 앱 서비스: 닉네임 중복 확인
@@ -393,14 +402,14 @@
   - `service/cmarket/src/main/java/org/cmarket/cmarket/web/controller/AuthController.java` (일부)
   - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/app/service/AuthService.java` (메서드 추가)
 
-#### 11-2. 만료된 인증코드 정리 스케줄러 (선택)
+#### 11-3. 만료된 인증코드 정리 스케줄러 (선택)
 - **작업 내용**:
   - 주기적으로 만료된 EmailVerification, TokenBlacklist 삭제
   - `@Scheduled` 어노테이션 사용
 - **출력물**:
   - `service/cmarket/src/main/java/org/cmarket/cmarket/web/scheduler/CleanupScheduler.java`
 
-#### 11-3. 커스텀 예외 클래스 생성
+#### 11-4. 커스텀 예외 클래스 생성
 - **작업 내용**:
   - `EmailAlreadyExistsException`
   - `NicknameAlreadyExistsException`
@@ -412,7 +421,7 @@
 - **출력물**:
   - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/app/exception/` 패키지 내 예외 클래스들
 
-#### 11-4. GlobalExceptionHandler에 커스텀 예외 처리 추가
+#### 11-5. GlobalExceptionHandler에 커스텀 예외 처리 추가
 - **작업 내용**:
   - 각 커스텀 예외에 대한 핸들러 메서드 추가
   - 적절한 HTTP 상태 코드 및 에러 메시지 반환
@@ -486,10 +495,11 @@
 - [x] Step 9: 비밀번호 찾기 구현
 - [x] Step 10: 회원 탈퇴 구현 (FR-007)
 - [x] Step 11: 추가 기능 및 개선
-  - [x] 11-1. 닉네임 중복 확인 API
-  - [ ] 11-2. 만료된 인증코드 정리 스케줄러 (선택 - 미구현)
-  - [x] 11-3. 커스텀 예외 클래스 생성
-  - [x] 11-4. GlobalExceptionHandler에 커스텀 예외 처리 추가
+  - [ ] 11-1. 이메일 중복 확인 API (신규)
+  - [x] 11-2. 닉네임 중복 확인 API
+  - [ ] 11-3. 만료된 인증코드 정리 스케줄러 (선택 - 미구현)
+  - [x] 11-4. 커스텀 예외 클래스 생성
+  - [x] 11-5. GlobalExceptionHandler에 커스텀 예외 처리 추가
 
 ---
 
