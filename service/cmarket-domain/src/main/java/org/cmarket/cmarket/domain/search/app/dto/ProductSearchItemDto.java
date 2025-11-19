@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.domain.product.app.dto;
+package org.cmarket.cmarket.domain.search.app.dto;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -10,13 +10,13 @@ import org.cmarket.cmarket.domain.product.model.TradeStatus;
 import java.time.LocalDateTime;
 
 /**
- * 판매 요청 목록 항목 DTO
+ * 상품 검색 결과 항목 DTO
  * 
- * 판매 요청 목록에서 사용하는 개별 상품 정보 DTO입니다.
+ * 검색 결과에서 사용하는 개별 상품 정보 DTO입니다.
  */
 @Getter
 @Builder
-public class ProductRequestListItemDto {
+public class ProductSearchItemDto {
     private Long id;
     private String mainImageUrl;
     private PetDetailType petDetailType;
@@ -29,14 +29,14 @@ public class ProductRequestListItemDto {
     private Boolean isFavorite;
     
     /**
-     * Product 엔티티를 ProductRequestListItemDto로 변환
+     * Product 엔티티를 ProductSearchItemDto로 변환
      * 
      * @param product Product 엔티티
      * @param isFavorite 찜 여부
-     * @return ProductRequestListItemDto
+     * @return ProductSearchItemDto
      */
-    public static ProductRequestListItemDto fromEntity(Product product, Boolean isFavorite) {
-        return ProductRequestListItemDto.builder()
+    public static ProductSearchItemDto fromEntity(Product product, Boolean isFavorite) {
+        return ProductSearchItemDto.builder()
                 .id(product.getId())
                 .mainImageUrl(product.getMainImageUrl())
                 .petDetailType(product.getPetDetailType())

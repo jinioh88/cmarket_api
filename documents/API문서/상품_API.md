@@ -13,7 +13,7 @@
 2. [Enum 목록](#enum-목록)
 3. [판매 상품 API](#판매-상품-api)
    - [3-1. 판매 상품 등록](#3-1-판매-상품-등록-post-apiproducts)
-   - [3-2. 판매 상품 목록 조회](#3-2-판매-상품-목록-조회-get-apiproducts)
+   - [3-2. (Search 연계) 판매 상품 목록 조회](#3-2-search-연계-판매-상품-목록-조회)
    - [3-3. 판매 상품 상세 조회](#3-3-판매-상품-상세-조회-get-apiproductsid)
    - [3-4. 판매 상품 수정](#3-4-판매-상품-수정-patch-apiproductsid)
    - [3-5. 거래 상태 변경](#3-5-거래-상태-변경-patch-apiproductsidtrade-status)
@@ -22,7 +22,7 @@
    - [3-8. 관심 목록 조회](#3-8-관심-목록-조회-get-apiproductsfavorites)
 4. [판매 요청 API](#판매-요청-apis)
    - [4-1. 판매 요청 등록](#4-1-판매-요청-등록-post-apiproductsrequests)
-   - [4-2. 판매 요청 목록 조회](#4-2-판매-요청-목록-조회-get-apiproductsrequests)
+   - [4-2. (Search 연계) 판매 요청 목록 조회](#4-2-search-연계-판매-요청-목록-조회)
    - [4-3. 판매 요청 상세 조회](#4-3-판매-요청-상세-조회-get-apiproductsrequestsid)
    - [4-4. 판매 요청 수정](#4-4-판매-요청-수정-patch-apiproductsrequestsid)
 5. [내가 등록한 상품 목록](#내가-등록한-상품-목록-get-apiproductsme)
@@ -134,34 +134,11 @@ http://localhost:8080
 
 ---
 
-### 3-2. 판매 상품 목록 조회 (GET /api/products)
+### 3-2. (Search 연계) 판매 상품 목록 조회
 
-- **인증 필요**: 아니오 (로그인 시 찜 여부 포함)
-- **쿼리 파라미터**:
-
-| 파라미터 | 타입 | 기본값 | 설명 |
-|----------|------|--------|------|
-| page | int | 0 | 페이지 번호 |
-| size | int | 20 | 페이지 크기 |
-
-#### Response (`ProductListResponse`)
-
-- 페이지 정보 + `content` 배열
-
-`content` 항목 (`ProductListItemResponse`):
-
-| 필드 | 설명 |
-|------|------|
-| id | 상품 ID |
-| mainImageUrl | 대표 이미지 |
-| petDetailType | 동물 소분류 |
-| productStatus | 상품 상태 |
-| tradeStatus | 거래 상태 |
-| title | 제목 |
-| price | 가격 |
-| createdAt | 등록일 |
-| favoriteCount | 찜 개수 |
-| isFavorite | 로그인 사용자의 찜 여부 |
+- 판매 상품 목록 조회는 Search 도메인의 통합 검색 API(`/api/products/search`)를 사용합니다.
+- Product 영역에서는 별도의 목록 전용 엔드포인트나 DTO를 제공하지 않습니다.
+- 필요한 필터(상품 타입, 카테고리, 지역, 가격대 등)는 검색 API 쿼리 파라미터로 전달하세요.
 
 ---
 
@@ -271,26 +248,11 @@ Request Body는 [판매 상품 등록](#3-1-판매-상품-등록-post-apiproduct
 
 ---
 
-### 4-2. 판매 요청 목록 조회 (GET /api/products/requests)
+### 4-2. (Search 연계) 판매 요청 목록 조회
 
-- **인증 필요**: 아니오  
-- **쿼리 파라미터**: `page`, `size`
-- 응답 구조: `ProductRequestListResponse`
-
-`content` 항목 (`ProductRequestListItemResponse`) 필드:
-
-| 필드 | 설명 |
-|------|------|
-| id | 게시글 ID |
-| mainImageUrl | 대표 이미지 |
-| petDetailType | 동물 소분류 |
-| productStatus | 요청자가 원하는 상품 상태 |
-| tradeStatus | `BUYING/RESERVED/COMPLETED` |
-| title | 제목 |
-| price | 희망 가격 |
-| createdAt | 등록일 |
-| favoriteCount | 찜 개수 |
-| isFavorite | 로그인 사용자의 찜 여부 (현재 false 고정) |
+- 판매 요청 목록 조회는 Search 통합 검색 API(`/api/products/search?productType=REQUEST`)를 사용합니다.
+- Product 영역에서는 별도의 판매 요청 목록 전용 엔드포인트를 제공하지 않습니다.
+- 동물 종류, 카테고리, 희망 가격 등의 필터는 검색 API 쿼리 파라미터로 전달하세요.
 
 ---
 

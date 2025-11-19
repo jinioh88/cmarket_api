@@ -21,7 +21,7 @@ import java.util.Optional;
  * - 상품 존재 확인
  * - 소프트 삭제된 상품 제외 조회
  */
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, ProductRepositoryCustom {
     
     /**
      * 판매자별 상품 목록 조회 (판매 상품 + 판매 요청 모두 포함, 페이지네이션, 최신순 정렬)

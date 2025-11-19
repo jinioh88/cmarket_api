@@ -8,11 +8,9 @@ import org.cmarket.cmarket.web.common.security.SecurityUtils;
 import org.cmarket.cmarket.web.product.dto.FavoriteListResponse;
 import org.cmarket.cmarket.web.product.dto.ProductCreateRequest;
 import org.cmarket.cmarket.web.product.dto.ProductDetailResponse;
-import org.cmarket.cmarket.web.product.dto.ProductListResponse;
 import org.cmarket.cmarket.web.product.dto.MyProductListResponse;
 import org.cmarket.cmarket.web.product.dto.ProductRequestCreateRequest;
 import org.cmarket.cmarket.web.product.dto.ProductRequestDetailResponse;
-import org.cmarket.cmarket.web.product.dto.ProductRequestListResponse;
 import org.cmarket.cmarket.web.product.dto.ProductRequestUpdateRequest;
 import org.cmarket.cmarket.web.product.dto.ProductResponse;
 import org.cmarket.cmarket.web.product.dto.ProductUpdateRequest;
@@ -75,40 +73,6 @@ public class ProductController {
         
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new SuccessResponse<>(ResponseCode.CREATED, response));
-    }
-    
-    /**
-     * 판매 상품 목록 조회
-     * 
-     * GET /api/products
-     * 
-     * 등록된 판매 상품 목록을 조회합니다.
-     * - 최신순 정렬
-     * - 페이지네이션 지원 (기본값: page=0, size=20)
-     * - 로그인한 사용자는 찜 여부 표시
-     * 
-     * @param pageable 페이지네이션 정보 (기본값: page=0, size=20)
-     * @return 상품 목록 (페이지네이션 포함)
-     */
-    @GetMapping
-    public ResponseEntity<SuccessResponse<ProductListResponse>> getProductList(
-            @PageableDefault(size = 20) Pageable pageable
-    ) {
-        // 현재 로그인한 사용자 이메일 추출 (선택적, 비로그인 시 null)
-        String email = null;
-        if (SecurityUtils.isAuthenticated()) {
-            email = SecurityUtils.getCurrentUserEmail();
-        }
-        
-        // 앱 서비스 호출
-        org.cmarket.cmarket.domain.product.app.dto.ProductListDto productListDto = 
-                productService.getProductList(pageable, email);
-        
-        // 앱 DTO → 웹 DTO 변환
-        ProductListResponse response = ProductListResponse.fromDto(productListDto);
-        
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
     }
     
     /**
@@ -340,40 +304,6 @@ public class ProductController {
         
         // 앱 DTO → 웹 DTO 변환
         ProductResponse response = ProductResponse.fromDto(productDto);
-        
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
-    }
-    
-    /**
-     * 판매 요청 목록 조회
-     * 
-     * GET /api/products/requests
-     * 
-     * 등록된 판매 요청 목록을 조회합니다.
-     * - 최신순 정렬
-     * - 페이지네이션 지원 (기본값: page=0, size=20)
-     * - 로그인한 사용자는 찜 여부 표시
-     * 
-     * @param pageable 페이지네이션 정보 (기본값: page=0, size=20)
-     * @return 판매 요청 목록 (페이지네이션 포함)
-     */
-    @GetMapping("/requests")
-    public ResponseEntity<SuccessResponse<ProductRequestListResponse>> getProductRequestList(
-            @PageableDefault(size = 20) Pageable pageable
-    ) {
-        // 현재 로그인한 사용자 이메일 추출 (선택적, 비로그인 시 null)
-        String email = null;
-        if (SecurityUtils.isAuthenticated()) {
-            email = SecurityUtils.getCurrentUserEmail();
-        }
-        
-        // 앱 서비스 호출
-        org.cmarket.cmarket.domain.product.app.dto.ProductRequestListDto productRequestListDto = 
-                productService.getProductRequestList(pageable, email);
-        
-        // 앱 DTO → 웹 DTO 변환
-        ProductRequestListResponse response = ProductRequestListResponse.fromDto(productRequestListDto);
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));

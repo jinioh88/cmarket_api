@@ -20,18 +20,6 @@ public interface ProductService {
     ProductDto createProduct(String email, ProductCreateCommand command);
     
     /**
-     * 판매 상품 목록 조회
-     * 
-     * @param pageable 페이지네이션 정보
-     * @param email 현재 로그인한 사용자 이메일 (비로그인 시 null)
-     * @return 상품 목록 (페이지네이션 포함)
-     */
-    org.cmarket.cmarket.domain.product.app.dto.ProductListDto getProductList(
-            org.springframework.data.domain.Pageable pageable,
-            String email
-    );
-    
-    /**
      * 판매 상품 상세 조회
      * 
      * @param productId 상품 ID
@@ -118,18 +106,6 @@ public interface ProductService {
     org.cmarket.cmarket.domain.product.app.dto.ProductDto createProductRequest(
             String email,
             org.cmarket.cmarket.domain.product.app.dto.ProductRequestCreateCommand command
-    );
-    
-    /**
-     * 판매 요청 목록 조회
-     * 
-     * @param pageable 페이지네이션 정보
-     * @param email 현재 로그인한 사용자 이메일 (비로그인 시 null)
-     * @return 판매 요청 목록 조회 결과
-     */
-    org.cmarket.cmarket.domain.product.app.dto.ProductRequestListDto getProductRequestList(
-            org.springframework.data.domain.Pageable pageable,
-            String email
     );
     
     /**

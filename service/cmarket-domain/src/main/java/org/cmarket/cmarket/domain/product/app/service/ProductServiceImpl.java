@@ -10,14 +10,11 @@ import org.cmarket.cmarket.domain.product.app.dto.ProductDetailDto;
 import org.cmarket.cmarket.domain.product.app.dto.ProductDto;
 import org.cmarket.cmarket.domain.product.app.dto.ProductRequestCreateCommand;
 import org.cmarket.cmarket.domain.product.app.dto.ProductRequestDetailDto;
-import org.cmarket.cmarket.domain.product.app.dto.ProductRequestListDto;
-import org.cmarket.cmarket.domain.product.app.dto.ProductRequestListItemDto;
 import org.cmarket.cmarket.domain.product.app.dto.MyProductListDto;
 import org.cmarket.cmarket.domain.product.app.dto.MyProductListItemDto;
 import org.cmarket.cmarket.domain.product.app.dto.ProductRequestUpdateCommand;
 import org.cmarket.cmarket.domain.product.app.dto.ProductUpdateCommand;
 import org.cmarket.cmarket.domain.product.app.dto.TradeStatusUpdateCommand;
-import org.cmarket.cmarket.domain.product.app.dto.ProductListDto;
 import org.cmarket.cmarket.domain.product.app.dto.ProductListItemDto;
 import org.cmarket.cmarket.domain.product.app.dto.SellerInfoDto;
 import org.cmarket.cmarket.domain.product.model.Favorite;
@@ -81,43 +78,6 @@ public class ProductServiceImpl implements ProductService {
         
         // DTO로 변환하여 반환
         return ProductDto.fromEntity(savedProduct);
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public ProductListDto getProductList(Pageable pageable, String email) {
-        // 판매 상품 목록 조회 (ProductType.SELL, 최신순 정렬)
-        Page<Product> productPage = productRepository.findByProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
-                ProductType.SELL,
-                pageable
-        );
-        
-        // 현재 로그인한 사용자 ID 조회 (비로그인 시 null)
-        final Long userId = email != null
-                ? userRepository.findByEmailAndDeletedAtIsNull(email)
-                        .map(User::getId)
-                        .orElse(null)
-                : null;
-        
-        // N+1 문제 방지: 한 번의 쿼리로 찜한 상품 ID 목록 조회
-        final java.util.Set<Long> favoriteProductIds = userId != null && !productPage.getContent().isEmpty()
-                ? new java.util.HashSet<>(favoriteRepository.findProductIdsByUserIdAndProductIdIn(
-                        userId,
-                        productPage.getContent().stream()
-                                .map(Product::getId)
-                                .toList()
-                ))
-                : java.util.Collections.emptySet();
-        
-        // 각 상품의 찜 여부 확인 및 DTO 변환 후 PageResult로 변환
-        PageResult<ProductListItemDto> pageResult = PageResult.fromPage(
-                productPage.map(product -> {
-                    Boolean isFavorite = userId != null && favoriteProductIds.contains(product.getId());
-                    return ProductListItemDto.fromEntity(product, isFavorite);
-                })
-        );
-        
-        return new ProductListDto(pageResult);
     }
     
     @Override
@@ -458,23 +418,6 @@ public class ProductServiceImpl implements ProductService {
         
         // DTO로 변환하여 반환
         return ProductDto.fromEntity(savedProduct);
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public ProductRequestListDto getProductRequestList(Pageable pageable, String email) {
-        // 판매 요청 목록 조회 (ProductType.REQUEST, 최신순 정렬)
-        Page<Product> productPage = productRepository.findByProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
-                ProductType.REQUEST,
-                pageable
-        );
-        
-        // 각 상품을 DTO로 변환 후 PageResult로 변환 (찜 여부 제외)
-        PageResult<ProductRequestListItemDto> pageResult = PageResult.fromPage(
-                productPage.map(product -> ProductRequestListItemDto.fromEntity(product, false))
-        );
-        
-        return new ProductRequestListDto(pageResult);
     }
     
     @Override

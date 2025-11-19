@@ -9,6 +9,9 @@ import org.cmarket.cmarket.domain.auth.app.exception.NicknameAlreadyExistsExcept
 import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
 import org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException;
 import org.cmarket.cmarket.domain.profile.app.exception.BlockedUserNotFoundException;
+import org.cmarket.cmarket.domain.search.app.exception.InvalidSearchKeywordException;
+import org.cmarket.cmarket.domain.search.app.exception.InvalidSortCriteriaException;
+import org.cmarket.cmarket.domain.search.app.exception.InvalidFilterCriteriaException;
 import org.cmarket.cmarket.web.common.response.ErrorResponse;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.slf4j.Logger;
@@ -270,6 +273,51 @@ public class GlobalExceptionHandler {
         String traceId = getTraceId();
         
         log.error("[{}] Invalid product type: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.BAD_REQUEST,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    @ExceptionHandler(InvalidSearchKeywordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSearchKeywordException(InvalidSearchKeywordException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Invalid search keyword: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.BAD_REQUEST,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    @ExceptionHandler(InvalidSortCriteriaException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSortCriteriaException(InvalidSortCriteriaException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Invalid sort criteria: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.BAD_REQUEST,
+                e.getMessage(),
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    @ExceptionHandler(InvalidFilterCriteriaException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidFilterCriteriaException(InvalidFilterCriteriaException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Invalid filter criteria: {}", traceId, e.getMessage(), e);
         
         ErrorResponse errorResponse = new ErrorResponse(
                 ResponseCode.BAD_REQUEST,

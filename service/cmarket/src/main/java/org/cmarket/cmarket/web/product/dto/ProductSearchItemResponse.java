@@ -2,7 +2,7 @@ package org.cmarket.cmarket.web.product.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.cmarket.cmarket.domain.product.app.dto.ProductRequestListItemDto;
+import org.cmarket.cmarket.domain.search.app.dto.ProductSearchItemDto;
 import org.cmarket.cmarket.domain.product.model.PetDetailType;
 import org.cmarket.cmarket.domain.product.model.ProductStatus;
 import org.cmarket.cmarket.domain.product.model.TradeStatus;
@@ -10,13 +10,13 @@ import org.cmarket.cmarket.domain.product.model.TradeStatus;
 import java.time.LocalDateTime;
 
 /**
- * 판매 요청 목록 항목 응답 DTO
+ * 상품 검색 결과 항목 응답 DTO
  * 
- * 판매 요청 목록에서 사용하는 개별 상품 정보 웹 DTO입니다.
+ * 검색 결과에서 사용하는 개별 상품 정보 웹 DTO입니다.
  */
 @Getter
 @NoArgsConstructor
-public class ProductRequestListItemResponse {
+public class ProductSearchItemResponse {
     private Long id;
     private String mainImageUrl;
     private PetDetailType petDetailType;
@@ -31,11 +31,11 @@ public class ProductRequestListItemResponse {
     /**
      * 앱 DTO를 웹 DTO로 변환
      * 
-     * @param dto ProductRequestListItemDto
-     * @return ProductRequestListItemResponse
+     * @param dto ProductSearchItemDto
+     * @return ProductSearchItemResponse
      */
-    public static ProductRequestListItemResponse fromDto(ProductRequestListItemDto dto) {
-        ProductRequestListItemResponse response = new ProductRequestListItemResponse();
+    public static ProductSearchItemResponse fromDto(ProductSearchItemDto dto) {
+        ProductSearchItemResponse response = new ProductSearchItemResponse();
         response.id = dto.getId();
         response.mainImageUrl = dto.getMainImageUrl();
         response.petDetailType = dto.getPetDetailType();

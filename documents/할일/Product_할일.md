@@ -164,39 +164,14 @@
 
 ---
 
-### Step 4: 판매 상품 목록 조회 구현 (FR-009)
+### Step 4: 판매 상품 목록 조회 연계 (FR-009)
 
-#### 4-1. 판매 상품 목록 조회 웹 DTO 및 앱 DTO 생성
 - **작업 내용**:
-  - 웹 DTO: `ProductListResponse` (상품 목록, 페이지네이션 정보)
-  - 상품 정보: mainImageUrl, petDetailType, productStatus, tradeStatus, title, price, createdAt, favoriteCount, isFavorite
-  - 앱 DTO: `ProductListDto` (동일한 필드)
-  - 페이지네이션: PageResult 사용 (아키텍처 가이드 준수)
+  - 판매 상품 목록 조회는 Search 도메인에서 제공하는 통합 검색 API(`Search_할일.md`, `/api/products/search`)를 사용합니다.
+  - Product 도메인에서는 별도의 목록 전용 DTO/서비스/컨트롤러를 제공하지 않습니다.
+  - 판매 상품, 판매 요청 목록이 필요한 화면은 검색 API를 통해 조회합니다.
 - **출력물**:
-  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/product/dto/ProductListResponse.java`
-  - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/product/app/dto/ProductListDto.java`
-
-#### 4-2. 판매 상품 목록 조회 앱 서비스 구현
-- **작업 내용**:
-  - `ProductService.getProductList()` 메서드 구현
-  - ProductType.SELL로 필터링하여 조회 (페이지네이션, 최신순 정렬)
-  - 소프트 삭제된 상품 제외
-  - 찜 여부 확인 (로그인한 사용자만, 비로그인 시 false)
-  - ProductListDto 반환
-- **출력물**:
-  - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/product/app/service/ProductService.java` (메서드 추가)
-
-#### 4-3. 판매 상품 목록 조회 컨트롤러 구현
-- **작업 내용**:
-  - `GET /api/products` 엔드포인트
-  - 인증 선택 (로그인 여부에 따라 찜 여부 표시)
-  - 페이지네이션 파라미터: page, size (기본값: page=0, size=20)
-  - 현재 로그인한 사용자 정보 추출 (선택적)
-  - 앱 서비스 호출
-  - 앱 DTO → 웹 DTO 변환
-  - `SuccessResponse<ProductListResponse>` 반환
-- **출력물**:
-  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/product/controller/ProductController.java` (메서드 추가)
+  - 없음 (Search 도메인 연계)
 
 ---
 
@@ -450,39 +425,14 @@
 
 ---
 
-### Step 13: 판매 요청 목록 조회 구현 (FR-033)
+### Step 13: 판매 요청 목록 조회 연계 (FR-033)
 
-#### 13-1. 판매 요청 목록 조회 웹 DTO 및 앱 DTO 생성
 - **작업 내용**:
-  - 웹 DTO: `ProductRequestListResponse` (판매 요청 목록, 페이지네이션 정보)
-  - 상품 정보: mainImageUrl, petDetailType, productStatus, tradeStatus, title, price, createdAt, favoriteCount, isFavorite
-  - 앱 DTO: `ProductRequestListDto` (동일한 필드)
-  - 페이지네이션: PageResult 사용
+  - 판매 요청 목록 조회는 Search 도메인 통합 검색 API(`/api/products/search`, `productType=REQUEST`)를 사용합니다.
+  - Product 도메인에서는 별도의 판매 요청 목록 전용 DTO/서비스/컨트롤러를 제공하지 않습니다.
+  - 판매 요청 목록이 필요한 화면은 검색 API 결과를 활용합니다.
 - **출력물**:
-  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/product/dto/ProductRequestListResponse.java`
-  - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/product/app/dto/ProductRequestListDto.java`
-
-#### 13-2. 판매 요청 목록 조회 앱 서비스 구현
-- **작업 내용**:
-  - `ProductService.getProductRequestList()` 메서드 구현
-  - ProductType.REQUEST로 필터링하여 조회 (페이지네이션, 최신순 정렬)
-  - 소프트 삭제된 상품 제외
-  - 찜 여부 확인 (로그인한 사용자만)
-  - ProductRequestListDto 반환
-- **출력물**:
-  - `service/cmarket-domain/src/main/java/org/cmarket/cmarket/domain/product/app/service/ProductService.java` (메서드 추가)
-
-#### 13-3. 판매 요청 목록 조회 컨트롤러 구현
-- **작업 내용**:
-  - `GET /api/products/requests` 엔드포인트
-  - 인증 선택 (로그인 여부에 따라 찜 여부 표시)
-  - 페이지네이션 파라미터: page, size (기본값: page=0, size=20)
-  - 현재 로그인한 사용자 정보 추출 (선택적)
-  - 앱 서비스 호출
-  - 앱 DTO → 웹 DTO 변환
-  - `SuccessResponse<ProductRequestListResponse>` 반환
-- **출력물**:
-  - `service/cmarket/src/main/java/org/cmarket/cmarket/web/product/controller/ProductController.java` (메서드 추가)
+  - 없음 (Search 도메인 연계)
 
 ---
 
