@@ -144,7 +144,9 @@ public class SecurityConfig {
         // 허용할 Origin (프론트엔드 주소)
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",  // 로컬 개발 환경
-                "http://localhost:8080"   // 필요시 추가
+                "http://localhost:8080",  // 필요시 추가
+                "http://localhost:5173",  // 외부 개발자 환경
+                "https://localhost:5173"
         ));
         
         // 허용할 HTTP 메서드

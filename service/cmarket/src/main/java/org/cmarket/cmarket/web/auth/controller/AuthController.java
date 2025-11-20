@@ -104,13 +104,13 @@ public class AuthController {
             @Valid @RequestBody EmailVerificationSendRequest request
     ) {
         // 앱 서비스 호출 (인증코드 생성 및 이메일 발송)
-        authService.sendEmailVerificationCode(request.getEmail());
+        String code = authService.sendEmailVerificationCode(request.getEmail());
         
         // 응답 반환
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
-                        "인증 번호를 발송했습니다."
+                        code
                 ));
     }
     
