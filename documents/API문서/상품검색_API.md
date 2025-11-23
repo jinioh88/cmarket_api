@@ -86,22 +86,22 @@ http://localhost:8080
 
 #### Request (Query Parameters)
 
-| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
-|---------|------|------|--------|------|
-| `keyword` | String | 아니오 | - | 검색어 (제목, 설명, 카테고리명 검색)<br/>공백으로 구분된 여러 키워드는 AND 조건으로 처리됩니다. |
+| 파라미터 | 타입 | 필수 | 기본값 | 설명                                                                                                                            |
+|---------|------|------|--------|-------------------------------------------------------------------------------------------------------------------------------|
+| `keyword` | String | 아니오 | - | 검색어 (제목, 설명, 카테고리명 검색)<br/>공백으로 구분된 여러 키워드는 AND 조건으로 처리됩니다.                                                                   |
 | `productType` | `ProductType` | 아니오 | - | 상품 타입 필터<br/>- `null` 또는 미지정: 전체 상품 (판매 + 판매요청)<br/>- `SELL`: 판매 상품만<br/>- `REQUEST`: 판매 요청만<br/>※ 화면의 탭 기능 (전체 상품, 판매, 판매요청) |
-| `petType` | `PetType` | 아니오 | - | 반려동물 대분류 필터 |
-| `petDetailType` | `PetDetailType` | 아니오 | - | 반려동물 상세 종류 필터 |
-| `categories` | `Category[]` | 아니오 | - | 상품 카테고리 필터 (여러 개 선택 가능)<br/>예: `categories=FOOD&categories=TOY` |
-| `productStatuses` | `ProductStatus[]` | 아니오 | - | 상품 상태 필터 (여러 개 선택 가능)<br/>예: `productStatuses=NEW&productStatuses=LIKE_NEW` |
-| `minPrice` | Long | 아니오 | - | 최소 가격 (0 이상) |
-| `maxPrice` | Long | 아니오 | - | 최대 가격 (0 이상) |
-| `addressSido` | String | 아니오 | - | 시/도 필터 (예: "서울", "경기", "인천") |
-| `addressGugun` | String | 아니오 | - | 시/군/구 필터 (예: "강남구", "수원시") |
-| `sortBy` | String | 아니오 | `"createdAt"` | 정렬 기준<br/>- `"createdAt"`: 최신순<br/>- `"price"`: 가격순<br/>- `"favoriteCount"`: 찜 많은 순 |
-| `sortOrder` | String | 아니오 | `"desc"` | 정렬 방향<br/>- `"asc"`: 오름차순<br/>- `"desc"`: 내림차순 |
-| `page` | Integer | 아니오 | `0` | 페이지 번호 (0부터 시작) |
-| `size` | Integer | 아니오 | `20` | 페이지 크기 (1 이상) |
+| `petType` | `PetType` | 아니오 | - | 반려동물 대분류 필터                                                                                                                   |
+| `petDetailType` | `PetDetailType` | 아니오 | - | 반려동물 상세 종류 필터                                                                                                                 |
+| `categories` | `Category[]` | 아니오 | - | 상품 카테고리 필터 (여러 개 선택 가능)<br/>예: `categories=FOOD&categories=TOY`                                                               |
+| `productStatuses` | `ProductStatus[]` | 아니오 | - | 상품 상태 필터 (여러 개 선택 가능)<br/>예: `productStatuses=NEW&productStatuses=LIKE_NEW`                                                   |
+| `minPrice` | Long | 아니오 | - | 최소 가격 (0 이상)                                                                                                                  |
+| `maxPrice` | Long | 아니오 | - | 최대 가격 (0 이상)                                                                                                                  |
+| `addressSido` | String | 아니오 | - | 시/도 필터 (예: "서울특별시", "경기광역시", "인천광역시")                                                                                         |
+| `addressGugun` | String | 아니오 | - | 시/군/구 필터 (예: "강남구", "수원시")                                                                                                    |
+| `sortBy` | String | 아니오 | `"createdAt"` | 정렬 기준<br/>- `"createdAt"`: 최신순<br/>- `"price"`: 가격순<br/>- `"favoriteCount"`: 찜 많은 순                                           |
+| `sortOrder` | String | 아니오 | `"desc"` | 정렬 방향<br/>- `"asc"`: 오름차순<br/>- `"desc"`: 내림차순                                                                                |
+| `page` | Integer | 아니오 | `0` | 페이지 번호 (0부터 시작)                                                                                                               |
+| `size` | Integer | 아니오 | `20` | 페이지 크기 (1 이상)                                                                                                                 |
 
 #### Response (`ProductSearchResponse`)
 
@@ -164,9 +164,9 @@ GET /api/products/search?productStatuses=NEW&productStatuses=LIKE_NEW&page=0&siz
 GET /api/products/search?minPrice=10000&maxPrice=50000&page=0&size=20
 ```
 
-**7. 지역 필터 (서울시 강남구)**
+**7. 지역 필터 (서울특별시 강남구)**
 ```
-GET /api/products/search?addressSido=서울&addressGugun=강남구&page=0&size=20
+GET /api/products/search?addressSido=서울특별시&addressGugun=강남구&page=0&size=20
 ```
 
 **8. 정렬 (가격 낮은 순)**
@@ -302,7 +302,7 @@ GET /api/products/search?keyword=강아지&productType=SELL&petDetailType=DOG&ca
   - 1만원 이상 5만원 이하: `minPrice=10000&maxPrice=50000`
 
 #### 지역 필터
-- **시/도** (`addressSido`): 서울, 경기, 인천, 부산, 대구, 광주, 대전, 울산 등
+- **시/도** (`addressSido`): 서울특별시, 경기광역시, 인천광역시, 부산광역시, 대구, 광주, 대전, 울산 등
 - **시/군/구** (`addressGugun`): 강남구, 수원시 등
 - 두 필터는 독립적으로 또는 함께 사용할 수 있습니다
 - `addressSido`만 지정하면 해당 시/도의 모든 구/군 상품이 조회됩니다
@@ -432,7 +432,7 @@ GET /api/products/search?page=1&size=20
 ### 7. **지역 필터는 어떻게 사용하나요?**
 - `addressSido`만 지정하면 해당 시/도의 모든 구/군 상품이 조회됩니다.
 - `addressSido`와 `addressGugun`을 함께 지정하면 더 구체적인 지역 필터링이 가능합니다.
-- 예: `addressSido=서울&addressGugun=강남구` → 서울시 강남구 상품만 조회
+- 예: `addressSido=서울&addressGugun=강남구` → 서울특별시 강남구 상품만 조회
 
 ### 8. **페이지네이션은 어떻게 동작하나요?**
 - `page`는 0부터 시작합니다 (첫 페이지 = 0).

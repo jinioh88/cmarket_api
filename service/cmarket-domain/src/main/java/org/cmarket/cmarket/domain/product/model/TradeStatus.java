@@ -15,7 +15,7 @@ package org.cmarket.cmarket.domain.product.model;
  */
 public enum TradeStatus {
     SELLING,    // 판매중 (판매 상품용)
-    BUYING,     // 삽니다 (판매 요청용)
+//    BUYING,     // 삽니다 (판매 요청용)
     RESERVED,   // 예약중 (공통)
     COMPLETED   // 거래완료 (공통)
 }

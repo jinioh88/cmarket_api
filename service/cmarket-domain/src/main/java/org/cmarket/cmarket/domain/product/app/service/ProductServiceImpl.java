@@ -404,7 +404,7 @@ public class ProductServiceImpl implements ProductService {
                 .description(command.getDescription())
                 .price(command.getDesiredPrice())  // 희망 가격
                 .productStatus(org.cmarket.cmarket.domain.product.model.ProductStatus.NEW)  // 판매 요청은 기본값으로 NEW 설정
-                .tradeStatus(TradeStatus.BUYING)  // 초기 상태: 삽니다
+                .tradeStatus(TradeStatus.SELLING)  // 초기 상태
                 .mainImageUrl(command.getMainImageUrl())
                 .subImageUrls(command.getSubImageUrls())
                 .addressSido(command.getAddressSido())
@@ -486,9 +486,9 @@ public class ProductServiceImpl implements ProductService {
             throw new org.cmarket.cmarket.domain.auth.app.exception.AuthenticationFailedException("판매 요청을 수정할 권한이 없습니다.");
         }
         
-        // 거래 상태 확인: BUYING 상태일 때만 수정 가능
-        if (product.getTradeStatus() != TradeStatus.BUYING) {
-            throw new org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException("거래 상태가 '삽니다'인 경우에만 수정할 수 있습니다.");
+        // 거래 상태 확인: SELLING 상태일 때만 수정 가능
+        if (product.getTradeStatus() != TradeStatus.SELLING) {
+            throw new org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException("거래 상태가 '판매중'인 경우에만 수정할 수 있습니다.");
         }
         
         // 판매 요청 정보 수정

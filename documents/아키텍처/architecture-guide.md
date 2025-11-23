@@ -119,14 +119,152 @@ public ResponseEntity<SuccessResponse<UserWebDto>> updateProfile(
 
 ## 4) 로깅 · 예외 · 응답 (**예외 전용 로깅**)
 
+### 로깅 규칙
 - **도메인**: 로깅 금지 (순수 비즈니스 규칙만 유지).
 - **애플리케이션 서비스**: **예외 상황에서만** `warn/error` 로깅. 시작/완료/정상 파라미터 로깅 없음.
 - **웹 계층(Controller)**: 정상 요청/응답 로깅 제거. **예외 시에만** `warn/error` 로깅.
 - **전역 예외 핸들러**: 모든 예외를 `error`로 기록하고, 표준 에러 응답 반환.
 - **추적 ID**: 예외 로깅에 `traceId`(MDC) 반드시 포함.
-- **응답 규격**: 
-  - 성공 → `SuccessResponse<T>`  
-  - 실패 → `ErrorResponse(code, message, traceId, timestamp)`
+
+### 응답 규격
+- 성공 → `SuccessResponse<T>`  
+- 실패 → `ErrorResponse(code, message, traceId, timestamp)`
+
+### 예외 처리 구조 (ErrorCode + BusinessException 패턴)
+
+#### 1. ErrorCode Enum (도메인 모듈)
+- **위치**: `domain/exception/ErrorCode.java`
+- **역할**: 모든 비즈니스 예외의 에러 코드, 메시지, HTTP 상태 코드를 중앙 관리
+- **원칙**: 도메인 모듈에 위치하여 웹 계층 의존성 없이 순수하게 관리
+
+```java
+@Getter
+@RequiredArgsConstructor
+public enum ErrorCode {
+    // 인증 관련 (400)
+    INVALID_VERIFICATION_CODE(400, "인증코드가 일치하지 않습니다."),
+    EXPIRED_VERIFICATION_CODE(400, "인증코드가 만료되었습니다."),
+    
+    // 인증 관련 (401)
+    AUTHENTICATION_FAILED(401, "이메일 또는 비밀번호가 일치하지 않습니다."),
+    
+    // 인증 관련 (409)
+    EMAIL_ALREADY_EXISTS(409, "이미 등록된 이메일입니다."),
+    
+    // 사용자 관련 (404)
+    USER_NOT_FOUND(404, "사용자를 찾을 수 없습니다."),
+    
+    // 상품 관련 (400)
+    PRODUCT_ALREADY_DELETED(400, "이미 삭제된 상품입니다."),
+    
+    // 상품 관련 (403)
+    PRODUCT_ACCESS_DENIED(403, "상품에 대한 접근 권한이 없습니다."),
+    
+    // 상품 관련 (404)
+    PRODUCT_NOT_FOUND(404, "상품을 찾을 수 없습니다.");
+    
+    private final int statusCode;
+    private final String message;
+}
+```
+
+#### 2. BusinessException 부모 클래스 (도메인 모듈)
+- **위치**: `domain/exception/BusinessException.java`
+- **역할**: 모든 커스텀 예외의 최상위 부모 클래스
+- **원칙**: ErrorCode를 포함하여 일관된 예외 처리 지원
+
+```java
+public class BusinessException extends RuntimeException {
+    private final ErrorCode errorCode;
+    
+    public BusinessException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
+    
+    public BusinessException(ErrorCode errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+    
+    public ErrorCode getErrorCode() {
+        return errorCode;
+    }
+}
+```
+
+#### 3. 커스텀 예외 클래스 작성 규칙
+- **모든 커스텀 예외는 `BusinessException`을 상속받아야 함**
+- **각 예외는 해당하는 `ErrorCode`를 사용**
+- **생성자**: 기본 메시지용 `()`, 커스텀 메시지용 `(String message)` 제공
+
+```java
+/**
+ * 이메일 중복 예외
+ * 
+ * 이미 등록된 이메일로 회원가입을 시도할 때 발생합니다.
+ */
+public class EmailAlreadyExistsException extends BusinessException {
+    
+    public EmailAlreadyExistsException() {
+        super(ErrorCode.EMAIL_ALREADY_EXISTS);
+    }
+    
+    public EmailAlreadyExistsException(String message) {
+        super(ErrorCode.EMAIL_ALREADY_EXISTS, message);
+    }
+}
+```
+
+#### 4. GlobalExceptionHandler 공통 처리
+- **위치**: `web/common/exception/GlobalExceptionHandler.java`
+- **역할**: 모든 `BusinessException`을 하나의 핸들러에서 공통 처리
+- **장점**: 
+  - 중복 코드 제거 (16개 → 1개 핸들러)
+  - 확장성 향상 (새 예외 추가 시 핸들러 수정 불필요)
+  - 일관성 보장 (에러 메시지와 상태 코드 중앙 관리)
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    
+    /**
+     * 비즈니스 예외 공통 처리
+     * 
+     * 모든 BusinessException을 상속받은 예외는 이 핸들러에서 처리됩니다.
+     */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Business exception: {} - {}", traceId, 
+                  e.getClass().getSimpleName(), e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(e.getErrorCode(), traceId);
+        
+        return ResponseEntity.status(e.getErrorCode().getStatusCode())
+                .body(errorResponse);
+    }
+    
+    // Spring Validation, BindException, IllegalArgumentException 등은 별도 처리
+}
+```
+
+#### 예외 처리 흐름
+1. **도메인/애플리케이션 서비스**: 비즈니스 규칙 위반 시 `BusinessException` 상속 예외 발생
+2. **GlobalExceptionHandler**: `BusinessException`을 잡아 `ErrorCode` 기반으로 `ErrorResponse` 생성
+3. **클라이언트**: 표준화된 에러 응답 수신 (`code`, `message`, `traceId`, `timestamp`)
+
+#### 금지 사항
+- ❌ 각 예외마다 개별 `@ExceptionHandler` 메서드 작성 (중복 코드)
+- ❌ 예외 클래스에 HTTP 상태 코드나 메시지 하드코딩
+- ❌ 도메인 모듈에서 웹 계층 의존성 사용 (HttpStatus 등)
+- ❌ `RuntimeException` 직접 상속 (반드시 `BusinessException` 상속)
+
+#### 권장 사항
+- ✅ 새로운 예외 추가 시: `ErrorCode`에 항목 추가 → `BusinessException` 상속 예외 클래스 생성
+- ✅ 에러 메시지 변경 시: `ErrorCode` Enum만 수정
+- ✅ 예외 발생 시: 기본 메시지 사용 또는 상황에 맞는 커스텀 메시지 전달
 
 ---
 
@@ -173,13 +311,18 @@ market-api/
 │  └─ domain/
 │     ├─ model/        # 엔티티/값객체/enums
 │     ├─ app/          # 유스케이스 서비스, DTO, 응답
+│     │   └─ exception/ # 도메인별 커스텀 예외 (BusinessException 상속)
+│     ├─ exception/    # ErrorCode, BusinessException (공통 예외)
 │     └─ repository/   # 도메인 레포지토리 인터페이스
 ├─ service/market/         # 웹
 │  └─ web/
 │     ├─ controller/   # REST
 │     ├─ dto/          # 웹 DTO
-│     ├─ response/     # 웹 응답
-│     └─ filter/       # MDC 등
+│     ├─ response/     # 웹 응답 (SuccessResponse, ErrorResponse)
+│     ├─ common/
+│     │   ├─ exception/ # GlobalExceptionHandler
+│     │   └─ filter/    # MDC 등
+│     └─ ...
 ```
 
 ---

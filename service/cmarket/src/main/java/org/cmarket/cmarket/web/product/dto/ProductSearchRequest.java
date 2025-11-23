@@ -3,6 +3,7 @@ package org.cmarket.cmarket.web.product.dto;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.cmarket.cmarket.domain.product.model.Category;
 import org.cmarket.cmarket.domain.product.model.PetDetailType;
 import org.cmarket.cmarket.domain.product.model.PetType;
@@ -17,6 +18,7 @@ import java.util.List;
  * 검색, 필터링, 정렬 모든 조건을 포함하는 통합 요청 DTO입니다.
  */
 @Getter
+@Setter
 @NoArgsConstructor
 public class ProductSearchRequest {
     

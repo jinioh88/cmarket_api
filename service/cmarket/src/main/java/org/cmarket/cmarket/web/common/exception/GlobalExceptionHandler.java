@@ -1,17 +1,6 @@
 package org.cmarket.cmarket.web.common.exception;
 
-import org.cmarket.cmarket.domain.auth.app.exception.AuthenticationFailedException;
-import org.cmarket.cmarket.domain.auth.app.exception.EmailAlreadyExistsException;
-import org.cmarket.cmarket.domain.auth.app.exception.ExpiredVerificationCodeException;
-import org.cmarket.cmarket.domain.auth.app.exception.InvalidPasswordException;
-import org.cmarket.cmarket.domain.auth.app.exception.InvalidVerificationCodeException;
-import org.cmarket.cmarket.domain.auth.app.exception.NicknameAlreadyExistsException;
-import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
-import org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException;
-import org.cmarket.cmarket.domain.profile.app.exception.BlockedUserNotFoundException;
-import org.cmarket.cmarket.domain.search.app.exception.InvalidSearchKeywordException;
-import org.cmarket.cmarket.domain.search.app.exception.InvalidSortCriteriaException;
-import org.cmarket.cmarket.domain.search.app.exception.InvalidFilterCriteriaException;
+import org.cmarket.cmarket.domain.exception.BusinessException;
 import org.cmarket.cmarket.web.common.response.ErrorResponse;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.slf4j.Logger;
@@ -33,6 +22,25 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String TRACE_ID_KEY = "traceId";
     
+    /**
+     * 비즈니스 예외 공통 처리
+     * 
+     * 모든 BusinessException을 상속받은 예외는 이 핸들러에서 처리됩니다.
+     */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] Business exception: {} - {}", traceId, e.getClass().getSimpleName(), e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(e.getErrorCode(), traceId);
+        
+        return ResponseEntity.status(e.getErrorCode().getStatusCode()).body(errorResponse);
+    }
+    
+    /**
+     * Spring Validation 예외 처리 (@Valid 실패)
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
         String traceId = getTraceId();
@@ -51,6 +59,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     
+    /**
+     * Spring Bind 예외 처리 (@ModelAttribute 검증 실패)
+     */
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ErrorResponse> handleBindException(BindException e) {
         String traceId = getTraceId();
@@ -69,6 +80,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     
+    /**
+     * 잘못된 인자 예외 처리
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         String traceId = getTraceId();
@@ -84,250 +98,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(EmailAlreadyExistsException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Email already exists: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.CONFLICT,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-    }
-    
-    @ExceptionHandler(NicknameAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleNicknameAlreadyExistsException(NicknameAlreadyExistsException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Nickname already exists: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.CONFLICT,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-    }
-    
-    @ExceptionHandler(InvalidVerificationCodeException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidVerificationCodeException(InvalidVerificationCodeException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Invalid verification code: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.BAD_REQUEST,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-    
-    @ExceptionHandler(ExpiredVerificationCodeException.class)
-    public ResponseEntity<ErrorResponse> handleExpiredVerificationCodeException(ExpiredVerificationCodeException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Expired verification code: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.BAD_REQUEST,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-    
-    @ExceptionHandler(InvalidPasswordException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidPasswordException(InvalidPasswordException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Invalid password: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.BAD_REQUEST,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-    
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] User not found: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.NOT_FOUND,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-    
-    @ExceptionHandler(AuthenticationFailedException.class)
-    public ResponseEntity<ErrorResponse> handleAuthenticationFailedException(AuthenticationFailedException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Authentication failed: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.UNAUTHORIZED,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-    }
-    
-    @ExceptionHandler(BlockedUserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleBlockedUserNotFoundException(BlockedUserNotFoundException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Blocked user not found: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.NOT_FOUND,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-    
-    @ExceptionHandler(ProductNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleProductNotFoundException(ProductNotFoundException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Product not found: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.NOT_FOUND,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-    
-    @ExceptionHandler(org.cmarket.cmarket.domain.product.app.exception.ProductAccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleProductAccessDeniedException(
-            org.cmarket.cmarket.domain.product.app.exception.ProductAccessDeniedException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Product access denied: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.FORBIDDEN,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
-    }
-    
-    @ExceptionHandler(org.cmarket.cmarket.domain.product.app.exception.ProductAlreadyDeletedException.class)
-    public ResponseEntity<ErrorResponse> handleProductAlreadyDeletedException(
-            org.cmarket.cmarket.domain.product.app.exception.ProductAlreadyDeletedException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Product already deleted: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.BAD_REQUEST,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-    
-    @ExceptionHandler(org.cmarket.cmarket.domain.product.app.exception.FavoriteNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleFavoriteNotFoundException(
-            org.cmarket.cmarket.domain.product.app.exception.FavoriteNotFoundException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Favorite not found: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.NOT_FOUND,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-    
-    @ExceptionHandler(org.cmarket.cmarket.domain.product.app.exception.InvalidProductTypeException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidProductTypeException(
-            org.cmarket.cmarket.domain.product.app.exception.InvalidProductTypeException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Invalid product type: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.BAD_REQUEST,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-    
-    @ExceptionHandler(InvalidSearchKeywordException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidSearchKeywordException(InvalidSearchKeywordException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Invalid search keyword: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.BAD_REQUEST,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-    
-    @ExceptionHandler(InvalidSortCriteriaException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidSortCriteriaException(InvalidSortCriteriaException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Invalid sort criteria: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.BAD_REQUEST,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-    
-    @ExceptionHandler(InvalidFilterCriteriaException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidFilterCriteriaException(InvalidFilterCriteriaException e) {
-        String traceId = getTraceId();
-        
-        log.error("[{}] Invalid filter criteria: {}", traceId, e.getMessage(), e);
-        
-        ErrorResponse errorResponse = new ErrorResponse(
-                ResponseCode.BAD_REQUEST,
-                e.getMessage(),
-                traceId
-        );
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-    
+    /**
+     * 예상치 못한 예외 처리 (최후의 안전망)
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
         String traceId = getTraceId();
