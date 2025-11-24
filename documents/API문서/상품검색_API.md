@@ -125,6 +125,7 @@ http://localhost:8080
 | `mainImageUrl` | String | 대표 이미지 URL |
 | `petDetailType` | `PetDetailType` | 반려동물 상세 종류 |
 | `productStatus` | `ProductStatus` | 상품 상태 |
+| `productType` | `ProductType` | 상품 타입 (`SELL`: 판매, `REQUEST`: 판매요청) |
 | `tradeStatus` | `TradeStatus` | 거래 상태 |
 | `title` | String | 상품명 |
 | `price` | Long | 가격 (판매 상품: 판매 가격, 판매 요청: 희망 가격) |
@@ -198,6 +199,7 @@ GET /api/products/search?keyword=강아지&productType=SELL&petDetailType=DOG&ca
         "mainImageUrl": "https://example.com/images/product1.jpg",
         "petDetailType": "DOG",
         "productStatus": "NEW",
+        "productType": "SELL",
         "tradeStatus": "SELLING",
         "title": "강아지 장난감 공",
         "price": 15000,
@@ -210,6 +212,7 @@ GET /api/products/search?keyword=강아지&productType=SELL&petDetailType=DOG&ca
         "mainImageUrl": "https://example.com/images/product2.jpg",
         "petDetailType": "CAT",
         "productStatus": "LIKE_NEW",
+        "productType": "SELL",
         "tradeStatus": "SELLING",
         "title": "고양이 사료",
         "price": 25000,

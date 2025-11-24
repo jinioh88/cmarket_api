@@ -3,7 +3,10 @@ package org.cmarket.cmarket.domain.product.repository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.core.types.dsl.StringExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -135,12 +138,23 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         
         // 키워드 검색 시 우선순위 정렬 추가 (제목 일치 > 설명 일치 > 카테고리 일치)
         if (searchKeyword != null) {
-            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, 
-                    product.title.lower().contains(searchKeyword)));
-            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, 
-                    product.description.lower().contains(searchKeyword)));
-            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, 
-                    Expressions.stringTemplate("UPPER({0})", product.category).contains(searchKeyword.toUpperCase())));
+            String likePattern = buildLikePattern(searchKeyword.toLowerCase());
+            String likePatternUpper = buildLikePattern(searchKeyword.toUpperCase());
+            
+            NumberExpression<Integer> titleMatchScore = new CaseBuilder()
+                    .when(product.title.lower().like(likePattern, '!')).then(1)
+                    .otherwise(0);
+            NumberExpression<Integer> descriptionMatchScore = new CaseBuilder()
+                    .when(product.description.lower().like(likePattern, '!')).then(1)
+                    .otherwise(0);
+            StringExpression categoryUpper = product.category.stringValue().upper();
+            NumberExpression<Integer> categoryMatchScore = new CaseBuilder()
+                    .when(categoryUpper.like(likePatternUpper, '!')).then(1)
+                    .otherwise(0);
+            
+            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, titleMatchScore));
+            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, descriptionMatchScore));
+            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, categoryMatchScore));
         }
         
         // 사용자 지정 정렬 조건 추가
@@ -197,6 +211,20 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         }
         
         return orderSpecifiers.toArray(new OrderSpecifier[0]);
+    }
+
+    /**
+     * LIKE 검색용 패턴 생성 (escape 문자 '!' 사용)
+     */
+    private String buildLikePattern(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+        String escaped = keyword
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
+        return "%" + escaped + "%";
     }
 }
 
