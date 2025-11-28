@@ -47,6 +47,9 @@ public class ImageUploadService {
     @Value("${app.image.base-url:/api/images}")
     private String baseUrl;
     
+    @Value("${app.image.server-url:}")
+    private String serverUrl;
+    
     /**
      * 이미지 파일들을 업로드하고 URL 리스트를 반환합니다.
      * 
@@ -122,8 +125,16 @@ public class ImageUploadService {
             Path filePath = uploadPath.resolve(uniqueFilename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             
-            // URL 생성: /api/images/user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.{ext}
-            String imageUrl = baseUrl + "/" + userDir + "/" + uniqueFilename;
+            // URL 생성: http://서버주소/api/images/user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.{ext}
+            String relativePath = baseUrl + "/" + userDir + "/" + uniqueFilename;
+            String imageUrl;
+            if (serverUrl != null && !serverUrl.isEmpty()) {
+                // 완전한 URL 생성 (프론트엔드가 다른 컴퓨터에서 접근 가능)
+                imageUrl = serverUrl + relativePath;
+            } else {
+                // 기존 방식 (상대 경로, 로컬 개발용)
+                imageUrl = relativePath;
+            }
             imageUrls.add(imageUrl);
             
             log.debug("Image uploaded: {}", imageUrl);

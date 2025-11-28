@@ -1,5 +1,7 @@
 package org.cmarket.cmarket.web.product.controller;
 
+import lombok.RequiredArgsConstructor;
+import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.cmarket.cmarket.domain.search.app.dto.ProductSearchCommand;
 import org.cmarket.cmarket.domain.search.app.service.SearchService;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
@@ -20,14 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
  * 상품 통합 검색 기능을 제공합니다.
  */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/products")
 public class SearchController {
     
     private final SearchService searchService;
-    
-    public SearchController(SearchService searchService) {
-        this.searchService = searchService;
-    }
+    private final UserRepository userRepository;
     
     /**
      * 상품 통합 검색 (검색 + 필터링 + 정렬)
@@ -65,6 +65,17 @@ public class SearchController {
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
+    @GetMapping("/search2")
+    public ResponseEntity<SuccessResponse<?>> searchProducts(
+
+    ) {
+        // 현재 로그인한 사용자 이메일 추출 (선택적, 비로그인 시 null)
+
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, userRepository.findAll()));
     }
     
     /**

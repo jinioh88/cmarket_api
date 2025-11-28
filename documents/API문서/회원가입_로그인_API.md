@@ -12,7 +12,8 @@
 - [회원가입](#3-회원가입)
 - [로그인](#4-로그인)
 - [로그아웃](#5-로그아웃)
-- [소셜 로그인](#6-소셜-로그인)
+- [Access Token 갱신](#6-access-token-갱신)
+- [소셜 로그인](#7-소셜-로그인)
 
 ---
 
@@ -637,7 +638,96 @@ POST /api/auth/logout
 
 ---
 
-## 6. 소셜 로그인
+## 6. Access Token 갱신
+
+Refresh Token으로 만료된 Access Token을 갱신합니다.
+
+### 엔드포인트
+
+```
+POST /api/auth/refresh
+```
+
+### 설명
+
+- Access Token 만료 시, 유효한 Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급합니다.
+- Refresh Token은 7일 기본 만료 시간을 가지며, 갱신 시 기존 Refresh Token은 즉시 블랙리스트에 등록되어 재사용할 수 없습니다.
+- Refresh Token이 블랙리스트에 있거나 위조/만료된 경우 갱신 요청은 거절됩니다.
+
+### Request Body
+
+| 필드명 | 타입 | 필수 | 설명 | 제약조건 |
+|--------|------|------|------|----------|
+| refreshToken | String | 예 | 발급받은 Refresh Token | `Bearer` 프리픽스 없이 순수 토큰 문자열 |
+
+### Request Body 예시
+
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 새로 발급된 토큰 정보 |
+
+**data 필드 구조:**
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| accessToken | String | 새롭게 발급된 Access Token (1시간 기본 만료) |
+| refreshToken | String | 새롭게 발급된 Refresh Token (7일 기본 만료) |
+
+#### 성공 응답 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+### 에러 응답
+
+#### 400 Bad Request - 잘못된 Refresh Token
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| message | String | 에러 메시지 ("유효하지 않은 Refresh Token입니다.") |
+| traceId | String | 추적 ID |
+| timestamp | String | 에러 발생 시간 |
+
+#### 400 Bad Request - 이미 로그아웃된 Refresh Token
+
+- 메시지: `"이미 로그아웃된 Refresh Token입니다."`
+- Refresh Token이 블랙리스트에 존재할 때 반환됩니다.
+
+### 주의사항
+
+1. **만료된 Refresh Token 처리**: 만료되었더라도 서명이 유효하면 사용자 정보를 추출하여 블랙리스트에 추가 후 거절 처리합니다.
+2. **동시 요청 방지**: 동일 Refresh Token으로 동시 요청 시 첫 번째 요청 이후에는 블랙리스트로 인해 모두 실패합니다.
+3. **재로그인 필요**: Refresh Token도 만료된 경우에는 로그인 API를 통해 다시 인증해야 합니다.
+
+---
+
+## 7. 소셜 로그인
 
 구글, 카카오 소셜 로그인을 지원합니다. OAuth2 표준을 따르며, 별도의 컨트롤러 없이 Spring Security가 자동으로 처리합니다.
 
@@ -814,5 +904,6 @@ function OAuthRedirect() {
 | 2025-11-14 | 1.1.0 | 회원가입 API 추가 |
 | 2025-11-14 | 1.2.0 | 로그인 API 추가 |
 | 2025-11-14 | 1.3.0 | 로그아웃 API 추가 |
-| 2025-11-14 | 1.4.0 | 소셜 로그인 API 추가 |
+| 2025-11-28 | 1.4.0 | Access Token 갱신 API 추가 |
+| 2025-11-28 | 1.5.0 | 소셜 로그인 API 추가 |
 

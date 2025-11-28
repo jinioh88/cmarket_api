@@ -13,6 +13,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.util.stream.Collectors;
 
@@ -114,6 +116,27 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+    
+    /**
+     * 파일 업로드 용량 초과 예외 처리
+     */
+    @ExceptionHandler({
+            MaxUploadSizeExceededException.class,
+            MultipartException.class
+    })
+    public ResponseEntity<ErrorResponse> handleMultipartSizeExceeded(Exception e) {
+        String traceId = getTraceId();
+        
+        log.error("[{}] File upload size exceeded: {}", traceId, e.getMessage(), e);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.PAYLOAD_TOO_LARGE,
+                "최대 5MB 이하의 이미지 파일만 업로드할 수 있습니다.",
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(errorResponse);
     }
     
     private String getTraceId() {

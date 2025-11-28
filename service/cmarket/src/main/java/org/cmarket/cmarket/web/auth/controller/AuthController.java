@@ -6,13 +6,16 @@ import org.cmarket.cmarket.domain.auth.app.dto.SignUpCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.WithdrawalCommand;
 import org.cmarket.cmarket.domain.auth.app.service.AuthService;
 import org.cmarket.cmarket.domain.auth.app.service.EmailVerificationService;
+import org.cmarket.cmarket.domain.auth.repository.TokenBlacklistRepository;
 import org.cmarket.cmarket.web.auth.dto.EmailVerificationSendRequest;
 import org.cmarket.cmarket.web.auth.dto.EmailVerificationVerifyRequest;
 import org.cmarket.cmarket.web.auth.dto.LoginRequest;
 import org.cmarket.cmarket.web.auth.dto.LoginResponse;
 import org.cmarket.cmarket.web.auth.dto.PasswordResetRequest;
 import org.cmarket.cmarket.web.auth.dto.PasswordResetSendRequest;
+import org.cmarket.cmarket.web.auth.dto.RefreshTokenRequest;
 import org.cmarket.cmarket.web.auth.dto.SignUpRequest;
+import org.cmarket.cmarket.web.auth.dto.TokenRefreshResponse;
 import org.cmarket.cmarket.web.auth.dto.UserWebDto;
 import org.cmarket.cmarket.web.auth.dto.WithdrawalRequest;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
@@ -52,17 +55,20 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailVerificationService emailVerificationService;  // 검증용으로만 사용
+    private final TokenBlacklistRepository tokenBlacklistRepository;
     
     public AuthController(
             AuthService authService,
             AuthenticationManager authenticationManager,
             JwtTokenProvider jwtTokenProvider,
-            EmailVerificationService emailVerificationService
+            EmailVerificationService emailVerificationService,
+            TokenBlacklistRepository tokenBlacklistRepository
     ) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.emailVerificationService = emailVerificationService;
+        this.tokenBlacklistRepository = tokenBlacklistRepository;
     }
     
     /**
@@ -293,6 +299,67 @@ public class AuthController {
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
                         "로그아웃되었습니다."
+                ));
+    }
+    
+    /**
+     * Access Token 갱신
+     * 
+     * POST /api/auth/refresh
+     * 
+     * Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급받습니다.
+     * - Refresh Token 유효성 검증
+     * - Refresh Token이 블랙리스트에 있는지 확인
+     * - 새로운 Access Token과 Refresh Token 생성
+     * 
+     * @param request Refresh Token 요청
+     * @return 새로운 Access Token과 Refresh Token
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<SuccessResponse<TokenRefreshResponse>> refreshToken(
+            @Valid @RequestBody RefreshTokenRequest request
+    ) {
+        String refreshToken = request.getRefreshToken();
+        
+        // 1. Refresh Token 유효성 검증
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+        }
+        
+        // 2. Refresh Token이 블랙리스트에 있는지 확인
+        if (tokenBlacklistRepository.existsByToken(refreshToken)) {
+            throw new IllegalArgumentException("이미 로그아웃된 Refresh Token입니다.");
+        }
+        
+        // 3. Refresh Token에서 사용자 정보 추출
+        String email = jwtTokenProvider.getEmailFromRefreshToken(refreshToken);
+        String role = jwtTokenProvider.getRoleFromRefreshToken(refreshToken);
+        
+        // 4. 새로운 Access Token과 Refresh Token 생성
+        String newAccessToken = jwtTokenProvider.createAccessToken(email, role);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(email, role);
+        
+        // 5. 기존 Refresh Token을 블랙리스트에 추가 (토큰 재사용 방지)
+        // 만료된 토큰이어도 claims는 추출 가능하므로 getClaimsFromExpiredToken 사용
+        io.jsonwebtoken.Claims claims = jwtTokenProvider.getClaimsFromExpiredToken(refreshToken);
+        java.util.Date expirationDate = claims.getExpiration();
+        java.time.LocalDateTime expiresAt = java.time.LocalDateTime.ofInstant(
+                expirationDate.toInstant(),
+                java.time.ZoneId.systemDefault()
+        );
+        authService.logout(refreshToken, expiresAt);
+        
+        // 6. 응답 생성
+        TokenRefreshResponse response = TokenRefreshResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
+        
+        // 7. 응답 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        response
                 ));
     }
     

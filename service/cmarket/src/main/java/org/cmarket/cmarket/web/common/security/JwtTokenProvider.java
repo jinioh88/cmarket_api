@@ -182,5 +182,80 @@ public class JwtTokenProvider {
     public Date getExpirationDateFromToken(String token) {
         return getClaims(token).getExpiration();
     }
+    
+    /**
+     * Refresh Token 검증
+     * 
+     * Refresh Token의 유효성을 검증합니다.
+     * 만료된 토큰이어도 서명이 유효하면 claims를 추출할 수 있습니다.
+     * 
+     * @param token Refresh Token
+     * @return 유효하면 true, 그렇지 않으면 false
+     */
+    public boolean validateRefreshToken(String token) {
+        try {
+            Claims claims = getClaimsFromExpiredToken(token);
+            // Refresh Token 타입 확인
+            String type = claims.get("type", String.class);
+            if (!"REFRESH".equals(type)) {
+                return false;
+            }
+            return true;
+        } catch (SignatureException e) {
+            // 서명이 유효하지 않음
+            return false;
+        } catch (UnsupportedJwtException e) {
+            // 지원하지 않는 토큰 형식
+            return false;
+        } catch (MalformedJwtException e) {
+            // 잘못된 토큰 형식
+            return false;
+        } catch (IllegalArgumentException e) {
+            // 토큰이 비어있음
+            return false;
+        }
+    }
+    
+    /**
+     * 만료된 토큰에서도 Claims 추출
+     * 
+     * Refresh Token 검증 시 만료된 토큰이어도 서명이 유효하면
+     * claims를 추출할 수 있습니다.
+     * 
+     * @param token JWT 토큰
+     * @return Claims 객체
+     */
+    public Claims getClaimsFromExpiredToken(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (ExpiredJwtException e) {
+            // 만료된 토큰이어도 claims는 추출 가능
+            return e.getClaims();
+        }
+    }
+    
+    /**
+     * Refresh Token에서 이메일 추출 (만료된 토큰도 가능)
+     * 
+     * @param token Refresh Token
+     * @return 사용자 이메일
+     */
+    public String getEmailFromRefreshToken(String token) {
+        return getClaimsFromExpiredToken(token).getSubject();
+    }
+    
+    /**
+     * Refresh Token에서 권한 추출 (만료된 토큰도 가능)
+     * 
+     * @param token Refresh Token
+     * @return 사용자 권한
+     */
+    public String getRoleFromRefreshToken(String token) {
+        return getClaimsFromExpiredToken(token).get("role", String.class);
+    }
 }
 
