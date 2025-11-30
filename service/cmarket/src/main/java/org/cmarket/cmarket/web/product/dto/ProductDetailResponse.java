@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import org.cmarket.cmarket.domain.product.app.dto.ProductDetailDto;
 import org.cmarket.cmarket.domain.product.model.Category;
 import org.cmarket.cmarket.domain.product.model.PetDetailType;
+import org.cmarket.cmarket.domain.product.model.PetType;
 import org.cmarket.cmarket.domain.product.model.ProductStatus;
 import org.cmarket.cmarket.domain.product.model.ProductType;
 import org.cmarket.cmarket.domain.product.model.TradeStatus;
@@ -24,6 +25,7 @@ public class ProductDetailResponse {
     private Long id;
     private ProductType productType;
     private TradeStatus tradeStatus;
+    private PetType petType;
     private PetDetailType petDetailType;
     private Category category;
     private ProductStatus productStatus;
@@ -34,6 +36,8 @@ public class ProductDetailResponse {
     private List<String> subImageUrls;
     private String addressSido;
     private String addressGugun;
+    private Boolean isDeliveryAvailable;
+    private String preferredMeetingPlace;
     private LocalDateTime createdAt;
     private Long viewCount;
     private Long favoriteCount;
@@ -56,6 +60,7 @@ public class ProductDetailResponse {
         response.id = dto.getId();
         response.productType = dto.getProductType();
         response.tradeStatus = dto.getTradeStatus();
+        response.petType = dto.getPetType();
         response.petDetailType = dto.getPetDetailType();
         response.category = dto.getCategory();
         response.productStatus = dto.getProductStatus();
@@ -66,6 +71,8 @@ public class ProductDetailResponse {
         response.subImageUrls = dto.getSubImageUrls();
         response.addressSido = dto.getAddressSido();
         response.addressGugun = dto.getAddressGugun();
+        response.isDeliveryAvailable = dto.getIsDeliveryAvailable();
+        response.preferredMeetingPlace = dto.getPreferredMeetingPlace();
         response.createdAt = dto.getCreatedAt();
         response.viewCount = dto.getViewCount();
         response.favoriteCount = dto.getFavoriteCount();

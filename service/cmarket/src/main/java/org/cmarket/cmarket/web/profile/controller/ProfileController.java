@@ -1,14 +1,17 @@
 package org.cmarket.cmarket.web.profile.controller;
 
 import jakarta.validation.Valid;
+import org.cmarket.cmarket.domain.product.app.service.ProductService;
 import org.cmarket.cmarket.domain.profile.app.service.ProfileService;
 import org.cmarket.cmarket.web.auth.dto.UserWebDto;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.common.security.SecurityUtils;
+import org.cmarket.cmarket.web.product.dto.FavoriteListResponse;
+import org.cmarket.cmarket.web.product.dto.MyProductListResponse;
 import org.cmarket.cmarket.web.profile.dto.BlockedUserListResponse;
-import org.cmarket.cmarket.web.profile.dto.MyPageResponse;
 import org.cmarket.cmarket.web.profile.dto.ProfileUpdateRequest;
+import org.cmarket.cmarket.web.profile.dto.UserInfoResponse;
 import org.cmarket.cmarket.web.profile.dto.UserProfileResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -33,31 +36,126 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProfileController {
     
     private final ProfileService profileService;
+    private final ProductService productService;
     
-    public ProfileController(ProfileService profileService) {
+    public ProfileController(ProfileService profileService, ProductService productService) {
         this.profileService = profileService;
+        this.productService = productService;
     }
     
     /**
-     * 마이페이지 조회
+     * 사용자 정보 조회
      * 
      * GET /api/profile/me
      * 
-     * 현재 로그인한 사용자의 마이페이지 정보를 조회합니다.
+     * 현재 로그인한 사용자의 기본 정보를 조회합니다.
      * 
-     * @return 마이페이지 정보
+     * @return 사용자 정보
      */
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SuccessResponse<MyPageResponse>> getMyPage() {
+    public ResponseEntity<SuccessResponse<UserInfoResponse>> getUserInfo() {
         // 현재 로그인한 사용자의 이메일 추출
         String email = SecurityUtils.getCurrentUserEmail();
         
         // 앱 서비스 호출
-        org.cmarket.cmarket.domain.profile.app.dto.MyPageDto myPageDto = profileService.getMyPage(email);
+        org.cmarket.cmarket.domain.profile.app.dto.MyPageDto myPageDto = profileService.getUserInfo(email);
         
         // 앱 DTO → 웹 DTO 변환
-        MyPageResponse response = MyPageResponse.fromDto(myPageDto);
+        UserInfoResponse response = UserInfoResponse.fromDto(myPageDto);
+        
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+    
+    /**
+     * 내가 찜한 상품 목록 조회
+     * 
+     * GET /api/profile/me/favorites
+     * 
+     * 현재 로그인한 사용자가 찜한 상품 목록을 조회합니다.
+     * - 최신순 정렬
+     * - 페이지네이션 지원 (기본값: page=0, size=20)
+     * 
+     * @param pageable 페이지네이션 정보 (기본값: page=0, size=20)
+     * @return 찜한 상품 목록 (페이지네이션 포함)
+     */
+    @GetMapping("/me/favorites")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<FavoriteListResponse>> getFavoriteList(
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        // 현재 로그인한 사용자의 이메일 추출
+        String email = SecurityUtils.getCurrentUserEmail();
+        
+        // 앱 서비스 호출
+        org.cmarket.cmarket.domain.product.app.dto.FavoriteListDto favoriteListDto = 
+                productService.getFavoriteList(pageable, email);
+        
+        // 앱 DTO → 웹 DTO 변환
+        FavoriteListResponse response = FavoriteListResponse.fromDto(favoriteListDto);
+        
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+    
+    /**
+     * 내가 등록한 판매 상품 목록 조회
+     * 
+     * GET /api/profile/me/products
+     * 
+     * 현재 로그인한 사용자가 등록한 판매 상품 목록을 조회합니다.
+     * - 최신순 정렬
+     * - 페이지네이션 지원 (기본값: page=0, size=20)
+     * 
+     * @param pageable 페이지네이션 정보 (기본값: page=0, size=20)
+     * @return 판매 상품 목록 (페이지네이션 포함)
+     */
+    @GetMapping("/me/products")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<MyProductListResponse>> getMySellProductList(
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        // 현재 로그인한 사용자의 이메일 추출
+        String email = SecurityUtils.getCurrentUserEmail();
+        
+        // 앱 서비스 호출
+        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto = 
+                productService.getMySellProductList(pageable, email);
+        
+        // 앱 DTO → 웹 DTO 변환
+        MyProductListResponse response = MyProductListResponse.fromDto(myProductListDto);
+        
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+    
+    /**
+     * 내가 등록한 판매 요청 목록 조회
+     * 
+     * GET /api/profile/me/purchase-requests
+     * 
+     * 현재 로그인한 사용자가 등록한 판매 요청 목록을 조회합니다.
+     * - 최신순 정렬
+     * - 페이지네이션 지원 (기본값: page=0, size=20)
+     * 
+     * @param pageable 페이지네이션 정보 (기본값: page=0, size=20)
+     * @return 판매 요청 목록 (페이지네이션 포함)
+     */
+    @GetMapping("/me/purchase-requests")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<MyProductListResponse>> getMyPurchaseRequestList(
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        // 현재 로그인한 사용자의 이메일 추출
+        String email = SecurityUtils.getCurrentUserEmail();
+        
+        // 앱 서비스 호출
+        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto = 
+                productService.getMyPurchaseRequestList(pageable, email);
+        
+        // 앱 DTO → 웹 DTO 변환
+        MyProductListResponse response = MyProductListResponse.fromDto(myProductListDto);
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));

@@ -9,11 +9,14 @@
 ## 목차
 
 - [공통 사항](#공통-사항)
-- [마이페이지 조회](#1-마이페이지-조회)
-- [프로필 정보 수정](#2-프로필-정보-수정)
-- [유저 프로필 조회](#3-유저-프로필-조회)
-- [차단한 유저 목록 조회](#4-차단한-유저-목록-조회)
-- [유저 차단 해제](#5-유저-차단-해제)
+- [사용자 정보 조회](#1-사용자-정보-조회)
+- [내가 찜한 상품 목록 조회](#2-내가-찜한-상품-목록-조회)
+- [내가 등록한 판매 상품 목록 조회](#3-내가-등록한-판매-상품-목록-조회)
+- [내가 등록한 판매 요청 목록 조회](#4-내가-등록한-판매-요청-목록-조회)
+- [프로필 정보 수정](#5-프로필-정보-수정)
+- [유저 프로필 조회](#6-유저-프로필-조회)
+- [차단한 유저 목록 조회](#7-차단한-유저-목록-조회)
+- [유저 차단 해제](#8-유저-차단-해제)
 
 ---
 
@@ -88,9 +91,9 @@ http://localhost:8080
 
 ---
 
-## 1. 마이페이지 조회
+## 1. 사용자 정보 조회
 
-현재 로그인한 사용자의 마이페이지 정보를 조회합니다.
+현재 로그인한 사용자의 기본 정보를 조회합니다.
 
 ### 엔드포인트
 
@@ -100,9 +103,9 @@ GET /api/profile/me
 
 ### 설명
 
-- 현재 로그인한 사용자의 프로필 정보를 조회합니다.
+- 현재 로그인한 사용자의 기본 프로필 정보를 조회합니다.
 - 인증이 필요합니다 (`Authorization` 헤더 필수).
-- 찜한 상품, 등록한 상품, 판매 요청 목록은 현재 빈 리스트로 반환됩니다 (향후 Product 도메인에서 구현 예정).
+- 상품 목록은 별도 API를 통해 조회할 수 있습니다.
 
 ### Request
 
@@ -126,7 +129,7 @@ GET /api/profile/me
 | code.code | Integer | HTTP 상태 코드 (200) |
 | code.message | String | 응답 메시지 ("성공") |
 | message | String | 응답 메시지 ("성공") |
-| data | Object | 마이페이지 정보 |
+| data | Object | 사용자 정보 |
 | data.profileImageUrl | String | 프로필 이미지 URL (nullable) |
 | data.nickname | String | 닉네임 |
 | data.name | String | 이름 |
@@ -136,13 +139,6 @@ GET /api/profile/me
 | data.addressSido | String | 거주지 시/도 (nullable) |
 | data.addressGugun | String | 거주지 구/군 (nullable) |
 | data.createdAt | String | 가입일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
-| data.favoriteProducts | Array | 찜한 상품 목록 (현재 빈 배열, 향후 구현 예정) |
-| data.myProducts | Array | 등록한 상품 목록 (현재 빈 배열, 향후 구현 예정) |
-| data.purchaseRequests | Array | 판매 요청 목록 (현재 빈 배열, 향후 구현 예정) |
-| data.blockedUsers | Array | 차단한 유저 목록 |
-| data.blockedUsers[].blockedUserId | Long | 차단한 유저 ID |
-| data.blockedUsers[].nickname | String | 차단한 유저 닉네임 |
-| data.blockedUsers[].profileImageUrl | String | 차단한 유저 프로필 이미지 URL (nullable) |
 
 #### 에러 응답
 
@@ -179,24 +175,380 @@ Content-Type: application/json
     "email": "hong@example.com",
     "addressSido": "서울특별시",
     "addressGugun": "강남구",
-    "createdAt": "2024-01-15T10:30:00",
-    "favoriteProducts": [],
-    "myProducts": [],
-    "purchaseRequests": [],
-    "blockedUsers": [
-      {
-        "blockedUserId": 5,
-        "nickname": "차단된유저",
-        "profileImageUrl": "https://s3.amazonaws.com/profile/user5.jpg"
-      }
-    ]
+    "createdAt": "2024-01-15T10:30:00"
   }
 }
 ```
 
 ---
 
-## 2. 프로필 정보 수정
+## 2. 내가 찜한 상품 목록 조회
+
+현재 로그인한 사용자가 찜한 상품 목록을 조회합니다.
+
+### 엔드포인트
+
+```
+GET /api/profile/me/favorites
+```
+
+### 설명
+
+- 현재 로그인한 사용자가 찜한 상품 목록을 조회합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 페이지네이션을 지원합니다.
+- 최신순으로 정렬됩니다 (찜한 날짜 기준 내림차순).
+- 소프트 삭제된 상품은 목록에서 제외됩니다.
+
+### Request
+
+#### Query Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 | 기본값 |
+|-----------|------|------|------|--------|
+| page | Integer | 아니오 | 페이지 번호 (0부터 시작) | 0 |
+| size | Integer | 아니오 | 페이지 크기 | 20 |
+| sort | String | 아니오 | 정렬 기준 (예: createdAt,desc) | createdAt,desc |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 찜한 상품 목록 정보 |
+| data.page | Integer | 현재 페이지 번호 (0부터 시작) |
+| data.size | Integer | 페이지 크기 |
+| data.total | Long | 전체 항목 수 |
+| data.content | Array | 찜한 상품 목록 |
+| data.content[].id | Long | 상품 ID |
+| data.content[].mainImageUrl | String | 대표 이미지 URL (nullable) |
+| data.content[].title | String | 상품명 |
+| data.content[].price | Long | 가격 |
+| data.content[].viewCount | Long | 조회수 |
+| data.content[].tradeStatus | String | 거래 상태 (SELLING, RESERVED, SOLD_OUT, BUYING) |
+| data.totalPages | Integer | 전체 페이지 수 |
+| data.hasNext | Boolean | 다음 페이지 존재 여부 |
+| data.hasPrevious | Boolean | 이전 페이지 존재 여부 |
+| data.totalElements | Long | 전체 항목 수 |
+| data.numberOfElements | Integer | 현재 페이지의 항목 수 |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+GET /api/profile/me/favorites?page=0&size=20 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+### Response 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": {
+    "page": 0,
+    "size": 20,
+    "total": 5,
+    "content": [
+      {
+        "id": 10,
+        "mainImageUrl": "https://s3.amazonaws.com/products/product10.jpg",
+        "title": "강아지 장난감",
+        "price": 15000,
+        "viewCount": 42,
+        "tradeStatus": "SELLING"
+      },
+      {
+        "id": 8,
+        "mainImageUrl": "https://s3.amazonaws.com/products/product8.jpg",
+        "title": "고양이 캣타워",
+        "price": 50000,
+        "viewCount": 128,
+        "tradeStatus": "SELLING"
+      }
+    ],
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false,
+    "totalElements": 5,
+    "numberOfElements": 5
+  }
+}
+```
+
+---
+
+## 3. 내가 등록한 판매 상품 목록 조회
+
+현재 로그인한 사용자가 등록한 판매 상품 목록을 조회합니다.
+
+### 엔드포인트
+
+```
+GET /api/profile/me/products
+```
+
+### 설명
+
+- 현재 로그인한 사용자가 등록한 판매 상품 목록을 조회합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 페이지네이션을 지원합니다.
+- 최신순으로 정렬됩니다 (등록일 기준 내림차순).
+- 판매 상품(SELL)만 조회되며, 판매 요청(REQUEST)은 제외됩니다.
+
+### Request
+
+#### Query Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 | 기본값 |
+|-----------|------|------|------|--------|
+| page | Integer | 아니오 | 페이지 번호 (0부터 시작) | 0 |
+| size | Integer | 아니오 | 페이지 크기 | 20 |
+| sort | String | 아니오 | 정렬 기준 (예: createdAt,desc) | createdAt,desc |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 판매 상품 목록 정보 |
+| data.page | Integer | 현재 페이지 번호 (0부터 시작) |
+| data.size | Integer | 페이지 크기 |
+| data.total | Long | 전체 항목 수 |
+| data.content | Array | 판매 상품 목록 |
+| data.content[].id | Long | 상품 ID |
+| data.content[].mainImageUrl | String | 대표 이미지 URL (nullable) |
+| data.content[].title | String | 상품명 |
+| data.content[].price | Long | 가격 |
+| data.content[].viewCount | Long | 조회수 |
+| data.content[].tradeStatus | String | 거래 상태 (SELLING, RESERVED, SOLD_OUT) |
+| data.content[].createdAt | String | 등록일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.totalPages | Integer | 전체 페이지 수 |
+| data.hasNext | Boolean | 다음 페이지 존재 여부 |
+| data.hasPrevious | Boolean | 이전 페이지 존재 여부 |
+| data.totalElements | Long | 전체 항목 수 |
+| data.numberOfElements | Integer | 현재 페이지의 항목 수 |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+GET /api/profile/me/products?page=0&size=20 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+### Response 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": {
+    "page": 0,
+    "size": 20,
+    "total": 3,
+    "content": [
+      {
+        "id": 15,
+        "mainImageUrl": "https://s3.amazonaws.com/products/product15.jpg",
+        "title": "강아지 사료",
+        "price": 30000,
+        "viewCount": 89,
+        "tradeStatus": "SELLING",
+        "createdAt": "2024-01-20T14:30:00"
+      },
+      {
+        "id": 12,
+        "mainImageUrl": "https://s3.amazonaws.com/products/product12.jpg",
+        "title": "고양이 화장실",
+        "price": 25000,
+        "viewCount": 156,
+        "tradeStatus": "RESERVED",
+        "createdAt": "2024-01-18T10:15:00"
+      }
+    ],
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false,
+    "totalElements": 3,
+    "numberOfElements": 3
+  }
+}
+```
+
+---
+
+## 4. 내가 등록한 판매 요청 목록 조회
+
+현재 로그인한 사용자가 등록한 판매 요청 목록을 조회합니다.
+
+### 엔드포인트
+
+```
+GET /api/profile/me/purchase-requests
+```
+
+### 설명
+
+- 현재 로그인한 사용자가 등록한 판매 요청 목록을 조회합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 페이지네이션을 지원합니다.
+- 최신순으로 정렬됩니다 (등록일 기준 내림차순).
+- 판매 요청(REQUEST)만 조회되며, 판매 상품(SELL)은 제외됩니다.
+
+### Request
+
+#### Query Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 | 기본값 |
+|-----------|------|------|------|--------|
+| page | Integer | 아니오 | 페이지 번호 (0부터 시작) | 0 |
+| size | Integer | 아니오 | 페이지 크기 | 20 |
+| sort | String | 아니오 | 정렬 기준 (예: createdAt,desc) | createdAt,desc |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 판매 요청 목록 정보 |
+| data.page | Integer | 현재 페이지 번호 (0부터 시작) |
+| data.size | Integer | 페이지 크기 |
+| data.total | Long | 전체 항목 수 |
+| data.content | Array | 판매 요청 목록 |
+| data.content[].id | Long | 상품 ID |
+| data.content[].mainImageUrl | String | 대표 이미지 URL (nullable) |
+| data.content[].title | String | 상품명 |
+| data.content[].price | Long | 희망 가격 |
+| data.content[].viewCount | Long | 조회수 |
+| data.content[].tradeStatus | String | 거래 상태 (BUYING) |
+| data.content[].createdAt | String | 등록일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.totalPages | Integer | 전체 페이지 수 |
+| data.hasNext | Boolean | 다음 페이지 존재 여부 |
+| data.hasPrevious | Boolean | 이전 페이지 존재 여부 |
+| data.totalElements | Long | 전체 항목 수 |
+| data.numberOfElements | Integer | 현재 페이지의 항목 수 |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+GET /api/profile/me/purchase-requests?page=0&size=20 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+### Response 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": {
+    "page": 0,
+    "size": 20,
+    "total": 2,
+    "content": [
+      {
+        "id": 20,
+        "mainImageUrl": "https://s3.amazonaws.com/products/product20.jpg",
+        "title": "강아지 장난감 구매 원합니다",
+        "price": 20000,
+        "viewCount": 35,
+        "tradeStatus": "BUYING",
+        "createdAt": "2024-01-22T09:20:00"
+      },
+      {
+        "id": 18,
+        "mainImageUrl": "https://s3.amazonaws.com/products/product18.jpg",
+        "title": "고양이 캣타워 구매 원합니다",
+        "price": 40000,
+        "viewCount": 67,
+        "tradeStatus": "BUYING",
+        "createdAt": "2024-01-19T16:45:00"
+      }
+    ],
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false,
+    "totalElements": 2,
+    "numberOfElements": 2
+  }
+}
+```
+
+---
+
+## 5. 프로필 정보 수정
 
 현재 로그인한 사용자의 프로필 정보를 수정합니다.
 
@@ -302,7 +654,7 @@ Content-Type: application/json
 
 ---
 
-## 3. 유저 프로필 조회
+## 6. 유저 프로필 조회
 
 특정 사용자의 프로필 정보를 조회합니다.
 
@@ -392,7 +744,7 @@ Content-Type: application/json
 
 ---
 
-## 4. 차단한 유저 목록 조회
+## 7. 차단한 유저 목록 조회
 
 현재 로그인한 사용자가 차단한 유저 목록을 조회합니다.
 
@@ -506,7 +858,7 @@ Content-Type: application/json
 
 ---
 
-## 5. 유저 차단 해제
+## 8. 유저 차단 해제
 
 현재 로그인한 사용자가 차단한 유저를 차단 해제합니다.
 
@@ -597,18 +949,16 @@ Authorization: Bearer <Access Token>
 
 ### 페이지네이션
 
-차단한 유저 목록 조회 API는 페이지네이션을 지원합니다. `page`와 `size` 파라미터를 사용하여 원하는 페이지를 조회할 수 있습니다.
+다음 API들은 페이지네이션을 지원합니다. `page`와 `size` 파라미터를 사용하여 원하는 페이지를 조회할 수 있습니다.
 
 - `page`: 페이지 번호 (0부터 시작)
-- `size`: 페이지 크기 (기본값: 10)
+- `size`: 페이지 크기
 
-### 향후 구현 예정 기능
-
-다음 기능들은 현재 빈 리스트로 반환되며, 향후 Product 도메인에서 구현 예정입니다:
-
-- 찜한 상품 목록 (`favoriteProducts`)
-- 등록한 상품 목록 (`myProducts`, `products`)
-- 판매 요청 목록 (`purchaseRequests`)
+페이지네이션을 지원하는 API:
+- 내가 찜한 상품 목록 조회 (기본값: size=20)
+- 내가 등록한 판매 상품 목록 조회 (기본값: size=20)
+- 내가 등록한 판매 요청 목록 조회 (기본값: size=20)
+- 차단한 유저 목록 조회 (기본값: size=10)
 
 ---
 

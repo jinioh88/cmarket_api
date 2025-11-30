@@ -1,8 +1,14 @@
 package org.cmarket.cmarket.web.common.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.cmarket.cmarket.web.common.response.ErrorResponse;
+import org.cmarket.cmarket.web.common.response.ResponseCode;
+import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -15,8 +21,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Spring Security 설정
@@ -87,6 +95,30 @@ public class SecurityConfig {
             // HTTP Basic 인증 비활성화
             .httpBasic(httpBasic -> httpBasic.disable())
             
+            // 인증/인가 실패 시 401/403 JSON 에러 응답
+            .exceptionHandling(exceptionHandling -> exceptionHandling
+                .authenticationEntryPoint((request, response, authException) -> {
+                    String traceId = getOrCreateTraceId();
+                    ErrorResponse errorResponse = new ErrorResponse(
+                            ResponseCode.UNAUTHORIZED,
+                            "인증이 필요합니다.",
+                            traceId
+                    );
+                    
+                    writeErrorResponse(response, HttpStatus.UNAUTHORIZED, errorResponse);
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    String traceId = getOrCreateTraceId();
+                    ErrorResponse errorResponse = new ErrorResponse(
+                            ResponseCode.FORBIDDEN,
+                            "접근 권한이 없습니다.",
+                            traceId
+                    );
+                    
+                    writeErrorResponse(response, HttpStatus.FORBIDDEN, errorResponse);
+                })
+            )
+            
             // OAuth2 로그인 설정
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo
@@ -129,6 +161,28 @@ public class SecurityConfig {
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         
         return http.build();
+    }
+    
+    private void writeErrorResponse(
+            jakarta.servlet.http.HttpServletResponse response,
+            HttpStatus status,
+            ErrorResponse errorResponse
+    ) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType("application/json;charset=UTF-8");
+        
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // LocalDateTime 직렬화를 위한 모듈 등록
+        objectMapper.writeValue(response.getWriter(), errorResponse);
+    }
+    
+    private String getOrCreateTraceId() {
+        String traceId = MDC.get("traceId");
+        if (traceId == null || traceId.isBlank()) {
+            traceId = UUID.randomUUID().toString();
+            MDC.put("traceId", traceId);
+        }
+        return traceId;
     }
     
     /**

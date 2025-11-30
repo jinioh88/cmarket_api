@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.cmarket.cmarket.domain.product.model.Category;
 import org.cmarket.cmarket.domain.product.model.PetDetailType;
+import org.cmarket.cmarket.domain.product.model.PetType;
 import org.cmarket.cmarket.domain.product.model.ProductStatus;
 import org.cmarket.cmarket.domain.product.model.ProductType;
 import org.cmarket.cmarket.domain.product.model.TradeStatus;
@@ -23,6 +24,7 @@ public class ProductDetailDto {
     private Long id;
     private ProductType productType;
     private TradeStatus tradeStatus;
+    private PetType petType;
     private PetDetailType petDetailType;
     private Category category;
     private ProductStatus productStatus;
@@ -33,6 +35,8 @@ public class ProductDetailDto {
     private List<String> subImageUrls;
     private String addressSido;
     private String addressGugun;
+    private Boolean isDeliveryAvailable;
+    private String preferredMeetingPlace;
     private LocalDateTime createdAt;
     private Long viewCount;
     private Long favoriteCount;

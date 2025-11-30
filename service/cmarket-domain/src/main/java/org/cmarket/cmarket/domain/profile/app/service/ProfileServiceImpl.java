@@ -6,6 +6,13 @@ import org.cmarket.cmarket.domain.auth.app.exception.NicknameAlreadyExistsExcept
 import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
+import org.cmarket.cmarket.domain.product.app.dto.FavoriteItemDto;
+import org.cmarket.cmarket.domain.product.app.dto.MyProductListItemDto;
+import org.cmarket.cmarket.domain.product.model.Favorite;
+import org.cmarket.cmarket.domain.product.model.Product;
+import org.cmarket.cmarket.domain.product.model.ProductType;
+import org.cmarket.cmarket.domain.product.repository.FavoriteRepository;
+import org.cmarket.cmarket.domain.product.repository.ProductRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserDto;
 import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserListDto;
 import org.cmarket.cmarket.domain.profile.app.dto.MyPageDto;
@@ -21,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +42,8 @@ public class ProfileServiceImpl implements ProfileService {
     
     private final UserRepository userRepository;
     private final BlockedUserRepository blockedUserRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final ProductRepository productRepository;
     
     @Override
     public MyPageDto getMyPage(String email) {
@@ -66,8 +76,64 @@ public class ProfileServiceImpl implements ProfileService {
                 .filter(blockedUserDto -> blockedUserDto != null)
                 .collect(Collectors.toList());
         
-        // 4. MyPageDto 생성 및 반환
-        // 찜한 상품, 등록한 상품, 판매 요청 목록은 향후 Product 도메인에서 구현 예정
+        // 4. 찜한 상품 목록 조회 (최신 5개)
+        Pageable favoritePageable = PageRequest.of(0, 5);
+        org.springframework.data.domain.Page<Favorite> favoritePage = favoriteRepository
+                .findByUserIdOrderByCreatedAtDesc(user.getId(), favoritePageable);
+        
+        List<Long> favoriteProductIds = favoritePage.getContent().stream()
+                .map(Favorite::getProductId)
+                .collect(Collectors.toList());
+        
+        List<FavoriteItemDto> favoriteProducts = Collections.emptyList();
+        if (!favoriteProductIds.isEmpty()) {
+            List<Product> favoriteProductsList = productRepository.findAllById(favoriteProductIds).stream()
+                    .filter(product -> product.getDeletedAt() == null)
+                    .collect(Collectors.toList());
+            
+            Map<Long, Product> productMap = favoriteProductsList.stream()
+                    .collect(Collectors.toMap(Product::getId, product -> product));
+            
+            favoriteProducts = favoritePage.getContent().stream()
+                    .map(favorite -> {
+                        Product product = productMap.get(favorite.getProductId());
+                        if (product == null) {
+                            return null;
+                        }
+                        return FavoriteItemDto.builder()
+                                .id(product.getId())
+                                .mainImageUrl(product.getMainImageUrl())
+                                .title(product.getTitle())
+                                .price(product.getPrice())
+                                .viewCount(product.getViewCount())
+                                .tradeStatus(product.getTradeStatus())
+                                .build();
+                    })
+                    .filter(item -> item != null)
+                    .collect(Collectors.toList());
+        }
+        
+        // 5. 등록한 상품 목록 조회 (판매 상품만, 최신 5개)
+        Pageable myProductPageable = PageRequest.of(0, 5);
+        org.springframework.data.domain.Page<Product> myProductPage = productRepository
+                .findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        user.getId(), ProductType.SELL, myProductPageable);
+        
+        List<MyProductListItemDto> myProducts = myProductPage.getContent().stream()
+                .map(MyProductListItemDto::fromEntity)
+                .collect(Collectors.toList());
+        
+        // 6. 판매 요청 목록 조회 (최신 5개)
+        Pageable purchaseRequestPageable = PageRequest.of(0, 5);
+        org.springframework.data.domain.Page<Product> purchaseRequestPage = productRepository
+                .findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        user.getId(), ProductType.REQUEST, purchaseRequestPageable);
+        
+        List<MyProductListItemDto> purchaseRequests = purchaseRequestPage.getContent().stream()
+                .map(MyProductListItemDto::fromEntity)
+                .collect(Collectors.toList());
+        
+        // 7. MyPageDto 생성 및 반환
         return MyPageDto.builder()
                 .profileImageUrl(user.getProfileImageUrl())
                 .nickname(user.getNickname())
@@ -78,10 +144,34 @@ public class ProfileServiceImpl implements ProfileService {
                 .addressSido(user.getAddressSido())
                 .addressGugun(user.getAddressGugun())
                 .createdAt(user.getCreatedAt())
-                .favoriteProducts(Collections.emptyList())  // 향후 Product 도메인에서 구현
-                .myProducts(Collections.emptyList())  // 향후 Product 도메인에서 구현
-                .purchaseRequests(Collections.emptyList())  // 향후 Product 도메인에서 구현
+                .favoriteProducts(favoriteProducts.stream().map(item -> (Object) item).collect(Collectors.toList()))
+                .myProducts(myProducts.stream().map(item -> (Object) item).collect(Collectors.toList()))
+                .purchaseRequests(purchaseRequests.stream().map(item -> (Object) item).collect(Collectors.toList()))
                 .blockedUsers(blockedUserDtos)
+                .build();
+    }
+    
+    @Override
+    public MyPageDto getUserInfo(String email) {
+        // 1. 사용자 조회
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+        
+        // 2. 사용자 정보만 반환 (상품 목록은 빈 리스트)
+        return MyPageDto.builder()
+                .profileImageUrl(user.getProfileImageUrl())
+                .nickname(user.getNickname())
+                .name(user.getName())
+                .introduction(user.getIntroduction())
+                .birthDate(user.getBirthDate())
+                .email(user.getEmail())
+                .addressSido(user.getAddressSido())
+                .addressGugun(user.getAddressGugun())
+                .createdAt(user.getCreatedAt())
+                .favoriteProducts(Collections.emptyList())
+                .myProducts(Collections.emptyList())
+                .purchaseRequests(Collections.emptyList())
+                .blockedUsers(Collections.emptyList())
                 .build();
     }
     

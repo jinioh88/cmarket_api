@@ -52,6 +52,16 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
     List<Product> findBySellerIdAndIdNotAndDeletedAtIsNullOrderByCreatedAtDesc(Long sellerId, Long excludeProductId, Pageable pageable);
     
     /**
+     * 판매자별 상품 타입별 목록 조회 (판매 상품 또는 판매 요청, 페이지네이션, 최신순 정렬)
+     * 
+     * @param sellerId 판매자 ID
+     * @param productType 상품 타입 (SELL: 판매 상품, REQUEST: 판매 요청)
+     * @param pageable 페이지네이션 정보
+     * @return 상품 목록 (최신순 정렬)
+     */
+    Page<Product> findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(Long sellerId, ProductType productType, Pageable pageable);
+    
+    /**
      * 상품 조회 (소프트 삭제된 상품 제외)
      * 
      * @param id 상품 ID

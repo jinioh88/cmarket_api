@@ -134,6 +134,7 @@ public class ProductServiceImpl implements ProductService {
                 .id(product.getId())
                 .productType(product.getProductType())
                 .tradeStatus(product.getTradeStatus())
+                .petType(product.getPetType())
                 .petDetailType(product.getPetDetailType())
                 .category(product.getCategory())
                 .productStatus(product.getProductStatus())
@@ -144,6 +145,8 @@ public class ProductServiceImpl implements ProductService {
                 .subImageUrls(product.getSubImageUrls())
                 .addressSido(product.getAddressSido())
                 .addressGugun(product.getAddressGugun())
+                .isDeliveryAvailable(product.getIsDeliveryAvailable())
+                .preferredMeetingPlace(product.getPreferredMeetingPlace())
                 .createdAt(product.getCreatedAt())
                 .viewCount(product.getViewCount())
                 .favoriteCount(product.getFavoriteCount())
@@ -527,6 +530,54 @@ public class ProductServiceImpl implements ProductService {
         // 내가 등록한 상품 목록 조회 (판매 상품 + 판매 요청 모두 포함, 최신순 정렬)
         Page<Product> productPage = productRepository.findBySellerIdAndDeletedAtIsNullOrderByCreatedAtDesc(
                 userId,
+                pageable
+        );
+        
+        // 각 상품을 DTO로 변환 후 PageResult로 변환
+        PageResult<MyProductListItemDto> pageResult = PageResult.fromPage(
+                productPage.map(MyProductListItemDto::fromEntity)
+        );
+        
+        return new MyProductListDto(pageResult);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public MyProductListDto getMySellProductList(Pageable pageable, String email) {
+        // 사용자 조회
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException("사용자를 찾을 수 없습니다."));
+        
+        Long userId = user.getId();
+        
+        // 내가 등록한 판매 상품 목록 조회 (판매 상품만, 최신순 정렬)
+        Page<Product> productPage = productRepository.findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
+                userId,
+                ProductType.SELL,
+                pageable
+        );
+        
+        // 각 상품을 DTO로 변환 후 PageResult로 변환
+        PageResult<MyProductListItemDto> pageResult = PageResult.fromPage(
+                productPage.map(MyProductListItemDto::fromEntity)
+        );
+        
+        return new MyProductListDto(pageResult);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public MyProductListDto getMyPurchaseRequestList(Pageable pageable, String email) {
+        // 사용자 조회
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException("사용자를 찾을 수 없습니다."));
+        
+        Long userId = user.getId();
+        
+        // 내가 등록한 판매 요청 목록 조회 (판매 요청만, 최신순 정렬)
+        Page<Product> productPage = productRepository.findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
+                userId,
+                ProductType.REQUEST,
                 pageable
         );
         
