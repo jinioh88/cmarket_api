@@ -27,6 +27,7 @@ public class ProductSearchItemResponse {
     private String title;
     private Long price;
     private LocalDateTime createdAt;
+    private Long viewCount;
     private Long favoriteCount;
     private Boolean isFavorite;
     
@@ -47,6 +48,7 @@ public class ProductSearchItemResponse {
         response.title = dto.getTitle();
         response.price = dto.getPrice();
         response.createdAt = dto.getCreatedAt();
+        response.viewCount = dto.getViewCount();
         response.favoriteCount = dto.getFavoriteCount();
         response.isFavorite = dto.getIsFavorite();
         return response;

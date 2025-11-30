@@ -27,6 +27,7 @@ public class ProductSearchItemDto {
     private String title;
     private Long price;
     private LocalDateTime createdAt;
+    private Long viewCount;
     private Long favoriteCount;
     private Boolean isFavorite;
     
@@ -48,6 +49,7 @@ public class ProductSearchItemDto {
                 .title(product.getTitle())
                 .price(product.getPrice())
                 .createdAt(product.getCreatedAt())
+                .viewCount(product.getViewCount())
                 .favoriteCount(product.getFavoriteCount())
                 .isFavorite(isFavorite != null ? isFavorite : false)
                 .build();
