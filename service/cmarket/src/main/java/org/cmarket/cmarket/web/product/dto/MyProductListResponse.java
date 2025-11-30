@@ -18,7 +18,7 @@ public class MyProductListResponse {
     private int page;
     private int size;
     private long total;
-    private List<MyProductListItemResponse> content;
+    private List<ProductSearchItemResponse> content;
     private int totalPages;
     private boolean hasNext;
     private boolean hasPrevious;
@@ -33,13 +33,13 @@ public class MyProductListResponse {
      */
     public static MyProductListResponse fromDto(MyProductListDto dto) {
         MyProductListResponse response = new MyProductListResponse();
-        PageResult<org.cmarket.cmarket.domain.product.app.dto.MyProductListItemDto> pageResult = dto.products();
+        PageResult<org.cmarket.cmarket.domain.search.app.dto.ProductSearchItemDto> pageResult = dto.products();
         
         response.page = pageResult.page();
         response.size = pageResult.size();
         response.total = pageResult.total();
         response.content = pageResult.content().stream()
-                .map(MyProductListItemResponse::fromDto)
+                .map(ProductSearchItemResponse::fromDto)
                 .toList();
         response.totalPages = pageResult.totalPages();
         response.hasNext = pageResult.hasNext();

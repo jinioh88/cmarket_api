@@ -353,11 +353,15 @@ GET /api/profile/me/products
 | data.content | Array | 판매 상품 목록 |
 | data.content[].id | Long | 상품 ID |
 | data.content[].mainImageUrl | String | 대표 이미지 URL (nullable) |
+| data.content[].petDetailType | String | 반려동물 상세 종류 (DOG_POMERANIAN, DOG_POODLE, CAT_PERSIAN 등) |
+| data.content[].productStatus | String | 상품 상태 (NEW, LIKE_NEW, USED, DAMAGED) |
+| data.content[].productType | String | 상품 타입 (SELL: 판매 상품) |
+| data.content[].tradeStatus | String | 거래 상태 (SELLING, RESERVED, SOLD_OUT) |
 | data.content[].title | String | 상품명 |
 | data.content[].price | Long | 가격 |
-| data.content[].viewCount | Long | 조회수 |
-| data.content[].tradeStatus | String | 거래 상태 (SELLING, RESERVED, SOLD_OUT) |
 | data.content[].createdAt | String | 등록일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.content[].favoriteCount | Long | 찜 개수 |
+| data.content[].isFavorite | Boolean | 찜 여부 (본인 상품이므로 항상 false) |
 | data.totalPages | Integer | 전체 페이지 수 |
 | data.hasNext | Boolean | 다음 페이지 존재 여부 |
 | data.hasPrevious | Boolean | 이전 페이지 존재 여부 |
@@ -398,20 +402,28 @@ Content-Type: application/json
       {
         "id": 15,
         "mainImageUrl": "https://s3.amazonaws.com/products/product15.jpg",
+        "petDetailType": "DOG_POMERANIAN",
+        "productStatus": "NEW",
+        "productType": "SELL",
+        "tradeStatus": "SELLING",
         "title": "강아지 사료",
         "price": 30000,
-        "viewCount": 89,
-        "tradeStatus": "SELLING",
-        "createdAt": "2024-01-20T14:30:00"
+        "createdAt": "2024-01-20T14:30:00",
+        "favoriteCount": 5,
+        "isFavorite": false
       },
       {
         "id": 12,
         "mainImageUrl": "https://s3.amazonaws.com/products/product12.jpg",
+        "petDetailType": "CAT_PERSIAN",
+        "productStatus": "LIKE_NEW",
+        "productType": "SELL",
+        "tradeStatus": "RESERVED",
         "title": "고양이 화장실",
         "price": 25000,
-        "viewCount": 156,
-        "tradeStatus": "RESERVED",
-        "createdAt": "2024-01-18T10:15:00"
+        "createdAt": "2024-01-18T10:15:00",
+        "favoriteCount": 3,
+        "isFavorite": false
       }
     ],
     "totalPages": 1,
@@ -476,11 +488,15 @@ GET /api/profile/me/purchase-requests
 | data.content | Array | 판매 요청 목록 |
 | data.content[].id | Long | 상품 ID |
 | data.content[].mainImageUrl | String | 대표 이미지 URL (nullable) |
+| data.content[].petDetailType | String | 반려동물 상세 종류 (DOG_POMERANIAN, DOG_POODLE, CAT_PERSIAN 등) |
+| data.content[].productStatus | String | 상품 상태 (NEW, LIKE_NEW, USED, DAMAGED) |
+| data.content[].productType | String | 상품 타입 (REQUEST: 판매 요청) |
+| data.content[].tradeStatus | String | 거래 상태 (BUYING) |
 | data.content[].title | String | 상품명 |
 | data.content[].price | Long | 희망 가격 |
-| data.content[].viewCount | Long | 조회수 |
-| data.content[].tradeStatus | String | 거래 상태 (BUYING) |
 | data.content[].createdAt | String | 등록일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.content[].favoriteCount | Long | 찜 개수 |
+| data.content[].isFavorite | Boolean | 찜 여부 (본인 상품이므로 항상 false) |
 | data.totalPages | Integer | 전체 페이지 수 |
 | data.hasNext | Boolean | 다음 페이지 존재 여부 |
 | data.hasPrevious | Boolean | 이전 페이지 존재 여부 |
@@ -521,20 +537,28 @@ Content-Type: application/json
       {
         "id": 20,
         "mainImageUrl": "https://s3.amazonaws.com/products/product20.jpg",
+        "petDetailType": "DOG_POMERANIAN",
+        "productStatus": "NEW",
+        "productType": "REQUEST",
+        "tradeStatus": "BUYING",
         "title": "강아지 장난감 구매 원합니다",
         "price": 20000,
-        "viewCount": 35,
-        "tradeStatus": "BUYING",
-        "createdAt": "2024-01-22T09:20:00"
+        "createdAt": "2024-01-22T09:20:00",
+        "favoriteCount": 2,
+        "isFavorite": false
       },
       {
         "id": 18,
         "mainImageUrl": "https://s3.amazonaws.com/products/product18.jpg",
+        "petDetailType": "CAT_PERSIAN",
+        "productStatus": "LIKE_NEW",
+        "productType": "REQUEST",
+        "tradeStatus": "BUYING",
         "title": "고양이 캣타워 구매 원합니다",
         "price": 40000,
-        "viewCount": 67,
-        "tradeStatus": "BUYING",
-        "createdAt": "2024-01-19T16:45:00"
+        "createdAt": "2024-01-19T16:45:00",
+        "favoriteCount": 1,
+        "isFavorite": false
       }
     ],
     "totalPages": 1,

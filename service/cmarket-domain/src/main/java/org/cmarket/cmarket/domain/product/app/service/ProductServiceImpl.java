@@ -11,7 +11,7 @@ import org.cmarket.cmarket.domain.product.app.dto.ProductDto;
 import org.cmarket.cmarket.domain.product.app.dto.ProductRequestCreateCommand;
 import org.cmarket.cmarket.domain.product.app.dto.ProductRequestDetailDto;
 import org.cmarket.cmarket.domain.product.app.dto.MyProductListDto;
-import org.cmarket.cmarket.domain.product.app.dto.MyProductListItemDto;
+import org.cmarket.cmarket.domain.search.app.dto.ProductSearchItemDto;
 import org.cmarket.cmarket.domain.product.app.dto.ProductRequestUpdateCommand;
 import org.cmarket.cmarket.domain.product.app.dto.ProductUpdateCommand;
 import org.cmarket.cmarket.domain.product.app.dto.TradeStatusUpdateCommand;
@@ -533,9 +533,9 @@ public class ProductServiceImpl implements ProductService {
                 pageable
         );
         
-        // 각 상품을 DTO로 변환 후 PageResult로 변환
-        PageResult<MyProductListItemDto> pageResult = PageResult.fromPage(
-                productPage.map(MyProductListItemDto::fromEntity)
+        // 각 상품을 DTO로 변환 후 PageResult로 변환 (본인 상품이므로 찜 여부는 false)
+        PageResult<ProductSearchItemDto> pageResult = PageResult.fromPage(
+                productPage.map(product -> ProductSearchItemDto.fromEntity(product, false))
         );
         
         return new MyProductListDto(pageResult);
@@ -557,9 +557,9 @@ public class ProductServiceImpl implements ProductService {
                 pageable
         );
         
-        // 각 상품을 DTO로 변환 후 PageResult로 변환
-        PageResult<MyProductListItemDto> pageResult = PageResult.fromPage(
-                productPage.map(MyProductListItemDto::fromEntity)
+        // 각 상품을 DTO로 변환 후 PageResult로 변환 (본인 상품이므로 찜 여부는 false)
+        PageResult<ProductSearchItemDto> pageResult = PageResult.fromPage(
+                productPage.map(product -> ProductSearchItemDto.fromEntity(product, false))
         );
         
         return new MyProductListDto(pageResult);
@@ -581,9 +581,9 @@ public class ProductServiceImpl implements ProductService {
                 pageable
         );
         
-        // 각 상품을 DTO로 변환 후 PageResult로 변환
-        PageResult<MyProductListItemDto> pageResult = PageResult.fromPage(
-                productPage.map(MyProductListItemDto::fromEntity)
+        // 각 상품을 DTO로 변환 후 PageResult로 변환 (본인 상품이므로 찜 여부는 false)
+        PageResult<ProductSearchItemDto> pageResult = PageResult.fromPage(
+                productPage.map(product -> ProductSearchItemDto.fromEntity(product, false))
         );
         
         return new MyProductListDto(pageResult);
