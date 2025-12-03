@@ -42,7 +42,20 @@ public enum ErrorCode {
     // 검색 관련 (400)
     INVALID_SEARCH_KEYWORD(400, "검색어가 유효하지 않습니다."),
     INVALID_SORT_CRITERIA(400, "정렬 기준이 유효하지 않습니다."),
-    INVALID_FILTER_CRITERIA(400, "필터 기준이 유효하지 않습니다.");
+    INVALID_FILTER_CRITERIA(400, "필터 기준이 유효하지 않습니다."),
+    
+    // 커뮤니티 관련 (400)
+    POST_ALREADY_DELETED(400, "이미 삭제된 게시글입니다."),
+    COMMENT_DEPTH_EXCEEDED(400, "댓글은 최대 3단계까지만 작성할 수 있습니다."),
+    INVALID_IMAGE_COUNT(400, "이미지는 최대 5장까지 등록 가능합니다."),
+    
+    // 커뮤니티 관련 (403)
+    POST_ACCESS_DENIED(403, "게시글에 대한 접근 권한이 없습니다."),
+    COMMENT_ACCESS_DENIED(403, "댓글에 대한 접근 권한이 없습니다."),
+    
+    // 커뮤니티 관련 (404)
+    POST_NOT_FOUND(404, "게시글을 찾을 수 없습니다."),
+    COMMENT_NOT_FOUND(404, "댓글을 찾을 수 없습니다.");
     
     private final int statusCode;
     private final String message;
