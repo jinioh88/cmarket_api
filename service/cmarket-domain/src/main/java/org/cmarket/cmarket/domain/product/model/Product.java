@@ -80,7 +80,7 @@ public class Product {
     private ProductStatus productStatus;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name = "trade_status", length = 20)
+    @Column(name = "trade_status", length = 20)
     private TradeStatus tradeStatus;
     
     @Column(name = "main_image_url", length = 500)

@@ -407,7 +407,7 @@ public class ProductServiceImpl implements ProductService {
                 .description(command.getDescription())
                 .price(command.getDesiredPrice())  // 희망 가격
                 .productStatus(org.cmarket.cmarket.domain.product.model.ProductStatus.NEW)  // 판매 요청은 기본값으로 NEW 설정
-                .tradeStatus(TradeStatus.SELLING)  // 초기 상태
+                // .tradeStatus(TradeStatus.SELLING)  // 초기 상태는 없다
                 .mainImageUrl(command.getMainImageUrl())
                 .subImageUrls(command.getSubImageUrls())
                 .addressSido(command.getAddressSido())

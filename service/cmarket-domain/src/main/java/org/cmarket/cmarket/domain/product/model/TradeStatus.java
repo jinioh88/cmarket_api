@@ -9,8 +9,6 @@ package org.cmarket.cmarket.domain.product.model;
  * - COMPLETED: 거래완료
  * 
  * 판매 요청의 경우:
- * - BUYING: 삽니다
- * - RESERVED: 예약중
  * - COMPLETED: 거래완료
  */
 public enum TradeStatus {

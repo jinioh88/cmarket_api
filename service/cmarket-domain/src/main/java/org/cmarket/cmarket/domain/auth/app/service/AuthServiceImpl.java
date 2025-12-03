@@ -73,6 +73,7 @@ public class AuthServiceImpl implements AuthService {
         
         // 4. 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(command.getPassword());
+        System.out.println(encodedPassword);
         
         // 5. User 엔티티 생성 및 저장
         User user = User.builder()

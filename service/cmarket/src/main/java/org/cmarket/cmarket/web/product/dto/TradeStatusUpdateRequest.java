@@ -3,6 +3,7 @@ package org.cmarket.cmarket.web.product.dto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.cmarket.cmarket.domain.product.app.dto.TradeStatusUpdateCommand;
 import org.cmarket.cmarket.domain.product.model.TradeStatus;
 
@@ -12,6 +13,7 @@ import org.cmarket.cmarket.domain.product.model.TradeStatus;
  * 거래 상태 변경 시 필요한 정보를 받습니다.
  */
 @Getter
+@Setter
 @NoArgsConstructor
 public class TradeStatusUpdateRequest {
     
