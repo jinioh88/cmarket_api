@@ -3,6 +3,7 @@ package org.cmarket.cmarket.domain.auth.app.service;
 import org.cmarket.cmarket.domain.auth.app.dto.EmailVerificationSendCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.LoginCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.LoginResponse;
+import org.cmarket.cmarket.domain.auth.app.dto.PasswordChangeCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.SignUpCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.UserDto;
 import org.cmarket.cmarket.domain.auth.app.dto.WithdrawalCommand;
@@ -174,16 +175,21 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("소셜 로그인 사용자는 비밀번호 재설정이 불가능합니다.");
         }
         
-        // 3. 이메일 인증코드 발송
+        // 3. 이메일 인증코드 생성 및 저장
         EmailVerificationSendCommand command = EmailVerificationSendCommand.builder()
                 .email(email)
                 .build();
-
-        return emailVerificationService.sendVerificationCode(command);
+        String verificationCode = emailVerificationService.sendVerificationCode(command);
+        
+        // 4. 이메일 발송
+        emailService.sendVerificationCode(email, verificationCode);
+        
+        // 5. 인증코드 반환
+        return verificationCode;
     }
     
     @Override
-    public void resetPassword(String email, String newPassword, String verificationCode) {
+    public void resetPassword(String email, String newPassword) {
         // 1. 이메일로 사용자 조회 (소프트 삭제된 사용자 제외)
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다."));
@@ -194,18 +200,38 @@ public class AuthServiceImpl implements AuthService {
         }
         
         // 3. 이메일 인증 완료 여부 확인 (클라이언트에서 이미 인증코드 검증 완료)
-        EmailVerification verification = emailVerificationRepository.findByEmail(email);
-
-        if (!verification.getVerificationCode().equals( verificationCode)) {
-            throw new IllegalArgumentException("확인 코드가 일치하지 않습니다.");
-        }
+        java.util.List<EmailVerification> verifications = emailVerificationRepository.findByEmail(email);
+        boolean isVerified = verifications.stream()
+                .anyMatch(EmailVerification::isVerified);
         
-        if (!verification.isVerified()) {
+        if (!isVerified) {
             throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다. 인증코드를 먼저 확인해주세요.");
         }
         
         // 4. 비밀번호 암호화 및 변경
         String encodedPassword = passwordEncoder.encode(newPassword);
+        user.changePassword(encodedPassword);
+        userRepository.save(user);
+    }
+    
+    @Override
+    public void changePassword(PasswordChangeCommand command) {
+        // 1. 이메일로 사용자 조회 (소프트 삭제된 사용자 제외)
+        User user = userRepository.findByEmailAndDeletedAtIsNull(command.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        // 2. 소셜 로그인 사용자는 비밀번호 변경 불가
+        if (user.getProvider() != AuthProvider.LOCAL) {
+            throw new IllegalArgumentException("소셜 로그인 사용자는 비밀번호 변경이 불가능합니다.");
+        }
+        
+        // 3. 현재 비밀번호 확인
+        if (user.getPassword() == null || !passwordEncoder.matches(command.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+        
+        // 4. 비밀번호 암호화 및 변경
+        String encodedPassword = passwordEncoder.encode(command.getNewPassword());
         user.changePassword(encodedPassword);
         userRepository.save(user);
     }

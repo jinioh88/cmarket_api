@@ -45,7 +45,6 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
                 .email(email)
                 .verificationCode(verificationCode)
                 .expiresAt(expiresAt)
-                .verifiedAt(LocalDateTime.now())
                 .build();
         
         emailVerificationRepository.save(emailVerification);
@@ -79,8 +78,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         
         // 인증 완료 처리
         emailVerification.verify();
-        emailVerificationRepository.save(emailVerification);
-        
+
         return true;
     }
     

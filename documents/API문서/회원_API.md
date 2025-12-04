@@ -12,8 +12,10 @@
 - [이메일 중복 확인](#1-이메일-중복-확인)
 - [닉네임 중복 확인](#2-닉네임-중복-확인)
 - [비밀번호 재설정 인증코드 발송](#3-비밀번호-재설정-인증코드-발송)
-- [비밀번호 재설정](#4-비밀번호-재설정)
-- [회원 탈퇴](#5-회원-탈퇴)
+- [비밀번호 재설정 인증코드 검증](#4-비밀번호-재설정-인증코드-검증)
+- [비밀번호 재설정](#5-비밀번호-재설정)
+- [비밀번호 변경](#6-비밀번호-변경)
+- [회원 탈퇴](#7-회원-탈퇴)
 
 ---
 
@@ -353,12 +355,109 @@ POST /api/auth/password/reset/send
 
 1. **소셜 로그인 사용자**: 구글/카카오로 가입한 사용자는 비밀번호 재설정이 불가능합니다. 소셜 로그인 제공자에서 비밀번호를 재설정해야 합니다.
 2. **인증코드 유효 시간**: 인증코드는 발송 후 5분간만 유효합니다.
-3. **인증코드 검증**: 발송된 인증코드는 `/api/auth/email/verification/verify` API를 통해 먼저 검증해야 합니다.
+3. **인증코드 검증**: 발송된 인증코드는 `/api/auth/password/reset/verify` API를 통해 먼저 검증해야 합니다.
 4. **재발송**: 같은 이메일로 재요청 시 기존 인증코드는 무효화되고 새로운 인증코드가 발송됩니다.
 
 ---
 
-## 4. 비밀번호 재설정
+## 4. 비밀번호 재설정 인증코드 검증
+
+비밀번호 재설정을 위해 발송된 인증코드를 검증합니다.
+
+### 엔드포인트
+
+```
+POST /api/auth/password/reset/verify
+```
+
+### 설명
+
+- 비밀번호 재설정을 위해 발송된 인증코드를 검증합니다.
+- 이메일과 인증코드가 일치하는지 확인합니다.
+- 만료 여부를 확인합니다.
+- 인증 완료 처리를 합니다 (`verifiedAt` 설정).
+- 인증이 완료된 후에만 비밀번호 재설정이 가능합니다.
+
+### Request Body
+
+| 필드명 | 타입 | 필수 | 설명 | 제약조건 |
+|--------|------|------|------|----------|
+| email | String | 예 | 이메일 주소 | 이메일 형식, 최대 100자 |
+| verificationCode | String | 예 | 인증코드 | 6자리 숫자 |
+
+### Request Body 예시
+
+```json
+{
+  "email": "user@example.com",
+  "verificationCode": "123456"
+}
+```
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | String | 응답 데이터 ("인증이 완료되었습니다.") |
+
+#### 성공 응답 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": "인증이 완료되었습니다."
+}
+```
+
+### 에러 응답
+
+#### 400 Bad Request - 입력값 검증 실패
+
+**에러 메시지 예시:**
+- `"이메일은 필수입니다."` - email 필드가 비어있을 때
+- `"올바른 이메일 형식이 아닙니다."` - 이메일 형식이 올바르지 않을 때
+- `"인증코드는 필수입니다."` - verificationCode 필드가 비어있을 때
+- `"인증코드는 6자리 숫자여야 합니다."` - 인증코드 형식이 올바르지 않을 때
+
+#### 400 Bad Request - 비즈니스 로직 검증 실패
+
+**에러 메시지 예시:**
+- `"만료된 인증코드이거나 올바르지 않은 인증코드입니다. 인증코드 전송 재시도 부탁드립니다."` - 인증코드가 일치하지 않거나 만료되었을 때
+
+#### 에러 응답 예시
+
+```json
+{
+  "code": {
+    "code": 400,
+    "message": "잘못된 요청"
+  },
+  "message": "만료된 인증코드이거나 올바르지 않은 인증코드입니다. 인증코드 전송 재시도 부탁드립니다.",
+  "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
+  "timestamp": "2025-11-14T15:45:00"
+}
+```
+
+### 주의사항
+
+1. **인증코드 발송 필수**: 이 API를 호출하기 전에 반드시 `/api/auth/password/reset/send` API를 통해 인증코드를 발송해야 합니다.
+2. **인증코드 유효 시간**: 인증코드는 발송 후 5분간만 유효합니다.
+3. **인증 완료 후 비밀번호 변경**: 인증이 완료된 후에만 `/api/auth/password/reset` API를 통해 비밀번호를 변경할 수 있습니다.
+4. **재사용 불가**: 한 번 인증된 인증코드는 재사용할 수 없습니다.
+
+---
+
+## 5. 비밀번호 재설정
 
 이메일 인증이 완료된 상태에서 비밀번호를 변경합니다.
 
@@ -379,7 +478,7 @@ PATCH /api/auth/password/reset
 ### 동작 흐름
 
 1. **인증코드 발송**: `/api/auth/password/reset/send`로 인증코드 발송
-2. **인증코드 검증**: `/api/auth/email/verification/verify`로 인증코드 검증 (서버에서 `verifiedAt` 설정)
+2. **인증코드 검증**: `/api/auth/password/reset/verify`로 인증코드 검증 (서버에서 `verifiedAt` 설정)
 3. **비밀번호 변경**: `/api/auth/password/reset`로 비밀번호 변경 (서버에서 인증 완료 여부 확인)
 
 ### Request Body
@@ -389,7 +488,6 @@ PATCH /api/auth/password/reset
 | email            | String | 예 | 이메일 주소  | 이메일 형식, 최대 100자 |
 | newPassword      | String | 예 | 새 비밀번호  | 필수, 프론트엔드에서 유효성 검증 |
 | confirmPassword  | String | 예 | 비밀번호 확인 | 필수, newPassword와 일치해야 함 |
-| verificationCode | String | 예 | 인증확인번호   | 필수 |
 
 ### Request Body 예시
 
@@ -397,8 +495,7 @@ PATCH /api/auth/password/reset
 {
   "email": "user@example.com",
   "newPassword": "NewPassword123!",
-  "confirmPassword": "NewPassword123!",
-  "verificationCode": "12344"
+  "confirmPassword": "NewPassword123!"
 }
 ```
 
@@ -461,7 +558,7 @@ PATCH /api/auth/password/reset
 
 ### 주의사항
 
-1. **인증코드 검증 필수**: 비밀번호 변경 전에 반드시 `/api/auth/email/verification/verify` API를 통해 인증코드를 검증해야 합니다.
+1. **인증코드 검증 필수**: 비밀번호 변경 전에 반드시 `/api/auth/password/reset/verify` API를 통해 인증코드를 검증해야 합니다.
 2. **소셜 로그인 사용자**: 구글/카카오로 가입한 사용자는 비밀번호 재설정이 불가능합니다.
 3. **비밀번호 일치**: `newPassword`와 `confirmPassword`가 일치해야 합니다.
 4. **비밀번호 유효성**: 비밀번호 유효성 검증은 프론트엔드에서 처리합니다.
@@ -469,7 +566,134 @@ PATCH /api/auth/password/reset
 
 ---
 
-## 5. 회원 탈퇴
+## 6. 비밀번호 변경
+
+로그인한 사용자가 현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.
+
+### 엔드포인트
+
+```
+PATCH /api/auth/password/change
+```
+
+### 설명
+
+- 로그인한 사용자가 현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.
+- 현재 비밀번호가 일치해야만 비밀번호를 변경할 수 있습니다.
+- 새 비밀번호와 비밀번호 확인이 일치해야 합니다.
+- **소셜 로그인 사용자는 비밀번호 변경이 불가능합니다** (일반 회원가입 사용자만 가능).
+- **인증이 필수**입니다 (로그인한 사용자만 사용 가능).
+- 비밀번호 변경 후에는 새로운 비밀번호로 로그인해야 합니다.
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` 형식 |
+| Content-Type | String | 예 | application/json |
+
+### Request Body
+
+| 필드명              | 타입 | 필수 | 설명      | 제약조건 |
+|------------------|------|------|---------|----------|
+| currentPassword  | String | 예 | 현재 비밀번호  | 필수 |
+| newPassword      | String | 예 | 새 비밀번호  | 필수, 프론트엔드에서 유효성 검증 |
+| confirmPassword  | String | 예 | 비밀번호 확인 | 필수, newPassword와 일치해야 함 |
+
+### Request Body 예시
+
+```json
+{
+  "currentPassword": "OldPassword123!",
+  "newPassword": "NewPassword123!",
+  "confirmPassword": "NewPassword123!"
+}
+```
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | Object | 응답 코드 정보 |
+| code.code | Integer | HTTP 상태 코드 (200) |
+| code.message | String | 응답 메시지 ("성공") |
+| message | String | 응답 메시지 ("성공") |
+| data | String | 응답 데이터 ("비밀번호가 변경되었습니다.") |
+
+#### 성공 응답 예시
+
+```json
+{
+  "code": {
+    "code": 200,
+    "message": "성공"
+  },
+  "message": "성공",
+  "data": "비밀번호가 변경되었습니다."
+}
+```
+
+### 에러 응답
+
+#### 400 Bad Request - 입력값 검증 실패
+
+**에러 메시지 예시:**
+- `"현재 비밀번호는 필수입니다."` - currentPassword 필드가 비어있을 때
+- `"새 비밀번호는 필수입니다."` - newPassword 필드가 비어있을 때
+- `"비밀번호 확인은 필수입니다."` - confirmPassword 필드가 비어있을 때
+- `"비밀번호가 일치하지 않습니다."` - newPassword와 confirmPassword가 일치하지 않을 때
+
+#### 400 Bad Request - 비즈니스 로직 검증 실패
+
+**에러 메시지 예시:**
+- `"사용자를 찾을 수 없습니다."` - 해당 이메일로 가입된 사용자가 없을 때
+- `"소셜 로그인 사용자는 비밀번호 변경이 불가능합니다."` - 구글/카카오로 가입한 사용자일 때
+- `"현재 비밀번호가 일치하지 않습니다."` - 현재 비밀번호가 일치하지 않을 때
+
+#### 401 Unauthorized - 인증 실패
+
+**에러 메시지 예시:**
+- 인증 토큰이 없거나 유효하지 않을 때
+- 토큰이 블랙리스트에 등록되어 있을 때
+
+#### 에러 응답 예시
+
+```json
+{
+  "code": {
+    "code": 400,
+    "message": "잘못된 요청"
+  },
+  "message": "현재 비밀번호가 일치하지 않습니다.",
+  "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
+  "timestamp": "2025-11-14T15:45:00"
+}
+```
+
+### 주의사항
+
+1. **인증 필수**: 비밀번호 변경은 로그인한 사용자만 가능합니다. Authorization 헤더에 유효한 Access Token이 필요합니다.
+2. **소셜 로그인 사용자**: 구글/카카오로 가입한 사용자는 비밀번호 변경이 불가능합니다.
+3. **현재 비밀번호 확인**: 현재 비밀번호가 일치해야만 비밀번호를 변경할 수 있습니다.
+4. **비밀번호 일치**: `newPassword`와 `confirmPassword`가 일치해야 합니다.
+5. **비밀번호 유효성**: 비밀번호 유효성 검증은 프론트엔드에서 처리합니다.
+6. **로그인 필요**: 비밀번호 변경 후에는 새로운 비밀번호로 다시 로그인해야 합니다.
+
+### 비밀번호 재설정 vs 비밀번호 변경
+
+| 구분 | 비밀번호 재설정 (Reset) | 비밀번호 변경 (Change) |
+|------|------------------------|----------------------|
+| 엔드포인트 | `PATCH /api/auth/password/reset` | `PATCH /api/auth/password/change` |
+| 인증 필요 | ❌ | ✅ |
+| 검증 방식 | 이메일 인증코드 검증 완료 여부 | 현재 비밀번호 확인 |
+| 사용 시나리오 | 비밀번호를 잊었을 때 | 로그인 후 비밀번호 변경 |
+| Request Body | email, newPassword, confirmPassword | currentPassword, newPassword, confirmPassword |
+
+---
+
+## 7. 회원 탈퇴
 
 현재 로그인한 사용자의 계정을 소프트 삭제 처리합니다.
 
@@ -607,4 +831,6 @@ DELETE /api/auth/withdraw
 | 2025-11-14 | 1.1.0 | 회원 탈퇴 API 추가 |
 | 2025-11-14 | 1.2.0 | 닉네임 중복 확인 API 추가 |
 | 2025-11-19 | 1.3.0 | 이메일 중복 확인 API 추가 |
+| 2025-12-04 | 1.4.0 | 비밀번호 재설정 인증코드 검증 API 추가, 비밀번호 재설정 API에서 verificationCode 필드 제거 |
+| 2025-12-04 | 1.5.0 | 비밀번호 변경 API 추가 (로그인 후 비밀번호 변경) |
 

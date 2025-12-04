@@ -2,6 +2,7 @@ package org.cmarket.cmarket.domain.auth.app.service;
 
 import org.cmarket.cmarket.domain.auth.app.dto.LoginCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.LoginResponse;
+import org.cmarket.cmarket.domain.auth.app.dto.PasswordChangeCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.SignUpCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.UserDto;
 import org.cmarket.cmarket.domain.auth.app.dto.WithdrawalCommand;
@@ -73,7 +74,17 @@ public interface AuthService {
      * @param newPassword 새 비밀번호
      * @throws IllegalArgumentException 이메일 인증이 완료되지 않았거나 사용자가 존재하지 않을 때
      */
-    void resetPassword(String email, String newPassword, String verificationCode);
+    void resetPassword(String email, String newPassword);
+    
+    /**
+     * 비밀번호 변경
+     * 
+     * 로그인한 사용자가 현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.
+     * 
+     * @param command 비밀번호 변경 명령 (email, currentPassword, newPassword 포함)
+     * @throws IllegalArgumentException 현재 비밀번호가 일치하지 않거나 사용자가 존재하지 않을 때
+     */
+    void changePassword(PasswordChangeCommand command);
     
     /**
      * 회원 탈퇴

@@ -1,24 +1,22 @@
 package org.cmarket.cmarket.web.auth.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 비밀번호 재설정 요청 DTO
+ * 비밀번호 변경 요청 DTO
  * 
- * 클라이언트에서 이미 인증코드 검증을 완료한 후 호출됩니다.
+ * 로그인한 사용자가 비밀번호를 변경할 때 사용합니다.
  */
 @Getter
 @Setter
 @NoArgsConstructor
-public class PasswordResetRequest {
+public class PasswordChangeRequest {
     
-    @NotBlank(message = "이메일은 필수입니다.")
-    @Email(message = "올바른 이메일 형식이 아닙니다.")
-    private String email;
+    @NotBlank(message = "현재 비밀번호는 필수입니다.")
+    private String currentPassword;
     
     @NotBlank(message = "새 비밀번호는 필수입니다.")
     private String newPassword;

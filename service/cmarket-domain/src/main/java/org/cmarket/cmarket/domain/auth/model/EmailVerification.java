@@ -50,12 +50,10 @@ public class EmailVerification {
     public EmailVerification(
             String email,
             String verificationCode,
-            LocalDateTime verifiedAt,
             LocalDateTime expiresAt
     ) {
         this.email = email;
         this.verificationCode = verificationCode;
-        this.verifiedAt = verifiedAt;
         this.expiresAt = expiresAt;
         this.createdAt = LocalDateTime.now();
     }

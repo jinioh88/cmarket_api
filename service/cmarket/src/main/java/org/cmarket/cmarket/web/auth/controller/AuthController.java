@@ -2,6 +2,7 @@ package org.cmarket.cmarket.web.auth.controller;
 
 import org.cmarket.cmarket.domain.auth.app.dto.EmailVerificationVerifyCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.LoginCommand;
+import org.cmarket.cmarket.domain.auth.app.dto.PasswordChangeCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.SignUpCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.WithdrawalCommand;
 import org.cmarket.cmarket.domain.auth.app.service.AuthService;
@@ -11,6 +12,7 @@ import org.cmarket.cmarket.web.auth.dto.EmailVerificationSendRequest;
 import org.cmarket.cmarket.web.auth.dto.EmailVerificationVerifyRequest;
 import org.cmarket.cmarket.web.auth.dto.LoginRequest;
 import org.cmarket.cmarket.web.auth.dto.LoginResponse;
+import org.cmarket.cmarket.web.auth.dto.PasswordChangeRequest;
 import org.cmarket.cmarket.web.auth.dto.PasswordResetRequest;
 import org.cmarket.cmarket.web.auth.dto.PasswordResetSendRequest;
 import org.cmarket.cmarket.web.auth.dto.RefreshTokenRequest;
@@ -21,6 +23,7 @@ import org.cmarket.cmarket.web.auth.dto.WithdrawalRequest;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.common.security.JwtTokenProvider;
+import org.cmarket.cmarket.web.common.security.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -387,9 +390,48 @@ public class AuthController {
     }
     
     /**
+     * 비밀번호 재설정 인증코드 검증
+     * 
+     * POST /api/auth/password/reset/verify
+     * 
+     * 비밀번호 재설정을 위해 발송된 인증코드를 검증합니다.
+     * - 이메일과 인증코드가 일치하는지 확인
+     * - 만료 여부 확인
+     * - 인증 완료 처리
+     * 
+     * @param request 인증코드 검증 요청
+     * @return 성공 응답
+     */
+    @PostMapping("/password/reset/verify")
+    public ResponseEntity<SuccessResponse<String>> verifyPasswordResetCode(
+            @Valid @RequestBody EmailVerificationVerifyRequest request
+    ) {
+        // 웹 DTO → 앱 DTO 변환
+        EmailVerificationVerifyCommand command = EmailVerificationVerifyCommand.builder()
+                .email(request.getEmail())
+                .verificationCode(request.getVerificationCode())
+                .build();
+        
+        // 인증코드 검증
+        boolean isValid = emailVerificationService.verifyCode(command);
+        
+        if (!isValid) {
+            // 검증 실패 시 에러 응답
+            throw new IllegalArgumentException("만료된 인증코드이거나 올바르지 않은 인증코드입니다. 인증코드 전송 재시도 부탁드립니다.");
+        }
+        
+        // 응답 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        "인증이 완료되었습니다."
+                ));
+    }
+    
+    /**
      * 비밀번호 재설정
      * 
-     * 인증코드를 검증하고 비밀번호를 변경합니다.
+     * 인증코드 검증이 완료된 상태에서 비밀번호를 변경합니다.
      * 
      * @param request 비밀번호 재설정 요청
      * @return 성공 응답
@@ -406,11 +448,49 @@ public class AuthController {
         // 2. 앱 서비스 호출 (이메일 인증 상태 확인 및 비밀번호 변경)
         authService.resetPassword(
                 request.getEmail(),
-                request.getNewPassword(),
-                request.getVerificationCode()
+                request.getNewPassword()
         );
         
         // 3. 응답 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        "비밀번호가 변경되었습니다."
+                ));
+    }
+    
+    /**
+     * 비밀번호 변경
+     * 
+     * 로그인한 사용자가 현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.
+     * 
+     * @param request 비밀번호 변경 요청
+     * @return 성공 응답
+     */
+    @PatchMapping("/password/change")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<String>> changePassword(
+            @Valid @RequestBody PasswordChangeRequest request
+    ) {
+        // 1. 비밀번호 일치 확인
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+        
+        // 2. 현재 로그인한 사용자의 이메일 추출
+        String email = SecurityUtils.getCurrentUserEmail();
+        
+        // 3. 웹 DTO → 앱 DTO 변환
+        PasswordChangeCommand command = PasswordChangeCommand.builder()
+                .email(email)
+                .currentPassword(request.getCurrentPassword())
+                .newPassword(request.getNewPassword())
+                .build();
+        
+        // 4. 앱 서비스 호출 (현재 비밀번호 확인 및 비밀번호 변경)
+        authService.changePassword(command);
+        
+        // 5. 응답 반환
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
