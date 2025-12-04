@@ -164,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
     }
     
     @Override
-    public void sendPasswordResetCode(String email) {
+    public String sendPasswordResetCode(String email) {
         // 1. 이메일로 사용자 조회 (소프트 삭제된 사용자 제외)
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다."));
@@ -178,11 +178,12 @@ public class AuthServiceImpl implements AuthService {
         EmailVerificationSendCommand command = EmailVerificationSendCommand.builder()
                 .email(email)
                 .build();
-        emailVerificationService.sendVerificationCode(command);
+
+        return emailVerificationService.sendVerificationCode(command);
     }
     
     @Override
-    public void resetPassword(String email, String newPassword) {
+    public void resetPassword(String email, String newPassword, String verificationCode) {
         // 1. 이메일로 사용자 조회 (소프트 삭제된 사용자 제외)
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다."));
@@ -193,11 +194,13 @@ public class AuthServiceImpl implements AuthService {
         }
         
         // 3. 이메일 인증 완료 여부 확인 (클라이언트에서 이미 인증코드 검증 완료)
-        java.util.List<EmailVerification> verifications = emailVerificationRepository.findByEmail(email);
-        boolean isVerified = verifications.stream()
-                .anyMatch(EmailVerification::isVerified);
+        EmailVerification verification = emailVerificationRepository.findByEmail(email);
+
+        if (!verification.getVerificationCode().equals( verificationCode)) {
+            throw new IllegalArgumentException("확인 코드가 일치하지 않습니다.");
+        }
         
-        if (!isVerified) {
+        if (!verification.isVerified()) {
             throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다. 인증코드를 먼저 확인해주세요.");
         }
         

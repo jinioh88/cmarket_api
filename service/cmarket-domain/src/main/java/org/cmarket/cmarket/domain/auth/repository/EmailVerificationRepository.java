@@ -39,7 +39,7 @@ public interface EmailVerificationRepository extends JpaRepository<EmailVerifica
      * @param email 이메일 주소
      * @return 인증코드 목록
      */
-    java.util.List<EmailVerification> findByEmail(String email);
+    EmailVerification findByEmail(String email);
     
     /**
      * 이메일로 모든 인증코드 삭제

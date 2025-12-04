@@ -61,7 +61,7 @@ public interface AuthService {
      * @param email 사용자 이메일
      * @throws IllegalArgumentException 사용자가 존재하지 않을 때
      */
-    void sendPasswordResetCode(String email);
+    String sendPasswordResetCode(String email);
     
     /**
      * 비밀번호 재설정
@@ -73,7 +73,7 @@ public interface AuthService {
      * @param newPassword 새 비밀번호
      * @throws IllegalArgumentException 이메일 인증이 완료되지 않았거나 사용자가 존재하지 않을 때
      */
-    void resetPassword(String email, String newPassword);
+    void resetPassword(String email, String newPassword, String verificationCode);
     
     /**
      * 회원 탈퇴

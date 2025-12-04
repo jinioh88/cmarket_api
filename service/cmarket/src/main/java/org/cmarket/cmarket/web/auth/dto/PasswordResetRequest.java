@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * 비밀번호 재설정 요청 DTO
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
  * 클라이언트에서 이미 인증코드 검증을 완료한 후 호출됩니다.
  */
 @Getter
+@Setter
 @NoArgsConstructor
 public class PasswordResetRequest {
     
@@ -23,5 +25,8 @@ public class PasswordResetRequest {
     
     @NotBlank(message = "비밀번호 확인은 필수입니다.")
     private String confirmPassword;
+
+    @NotBlank(message = "확인코드는 필수입니다.")
+    private String verificationCode;
 }
 

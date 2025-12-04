@@ -300,13 +300,13 @@ POST /api/auth/password/reset/send
 
 #### 성공 응답 (200 OK)
 
-| 필드명 | 타입 | 설명 |
-|--------|------|------|
-| code | Object | 응답 코드 정보 |
+| 필드명 | 타입 | 설명               |
+|--------|------|------------------|
+| code | Object | 응답 코드 정보         |
 | code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
-| message | String | 응답 메시지 ("성공") |
-| data | String | 응답 데이터 ("인증 번호를 발송했습니다.") |
+| code.message | String | 응답 메시지 ("성공")    |
+| message | String | 응답 메시지 ("성공")    |
+| data | String | 인증코드             |
 
 #### 성공 응답 예시
 
@@ -317,7 +317,7 @@ POST /api/auth/password/reset/send
     "message": "성공"
   },
   "message": "성공",
-  "data": "인증 번호를 발송했습니다."
+  "data": "1233"
 }
 ```
 
@@ -384,11 +384,12 @@ PATCH /api/auth/password/reset
 
 ### Request Body
 
-| 필드명 | 타입 | 필수 | 설명 | 제약조건 |
-|--------|------|------|------|----------|
-| email | String | 예 | 이메일 주소 | 이메일 형식, 최대 100자 |
-| newPassword | String | 예 | 새 비밀번호 | 필수, 프론트엔드에서 유효성 검증 |
-| confirmPassword | String | 예 | 비밀번호 확인 | 필수, newPassword와 일치해야 함 |
+| 필드명              | 타입 | 필수 | 설명      | 제약조건 |
+|------------------|------|------|---------|----------|
+| email            | String | 예 | 이메일 주소  | 이메일 형식, 최대 100자 |
+| newPassword      | String | 예 | 새 비밀번호  | 필수, 프론트엔드에서 유효성 검증 |
+| confirmPassword  | String | 예 | 비밀번호 확인 | 필수, newPassword와 일치해야 함 |
+| verificationCode | String | 예 | 인증확인번호   | 필수 |
 
 ### Request Body 예시
 
@@ -396,7 +397,8 @@ PATCH /api/auth/password/reset
 {
   "email": "user@example.com",
   "newPassword": "NewPassword123!",
-  "confirmPassword": "NewPassword123!"
+  "confirmPassword": "NewPassword123!",
+  "verificationCode": "12344"
 }
 ```
 

@@ -31,13 +31,7 @@ import java.util.List;
  */
 @Entity
 @Table(
-    name = "products",
-    indexes = {
-        @Index(name = "idx_seller_id", columnList = "seller_id"),
-        @Index(name = "idx_product_type", columnList = "product_type"),
-        @Index(name = "idx_trade_status", columnList = "trade_status"),
-        @Index(name = "idx_created_at", columnList = "created_at")
-    }
+    name = "products"
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
