@@ -123,6 +123,7 @@ GET /api/profile/me
 | code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 사용자 정보 |
+| data.id | Long | 사용자 ID |
 | data.profileImageUrl | String | 프로필 이미지 URL (nullable) |
 | data.nickname | String | 닉네임 |
 | data.name | String | 이름 |
@@ -157,6 +158,7 @@ Content-Type: application/json
   "code": "SUCCESS",
   "message": "성공",
   "data": {
+    "id": 1,
     "profileImageUrl": "https://s3.amazonaws.com/profile/user123.jpg",
     "nickname": "길동이",
     "name": "홍길동",
@@ -669,6 +671,7 @@ GET /api/profile/{userId}
 - 특정 사용자의 공개 프로필 정보를 조회합니다.
 - 인증이 필요합니다 (`Authorization` 헤더 필수).
 - 소프트 삭제된 사용자는 조회할 수 없습니다.
+- 본인 정보 조회 API(`GET /api/profile/me`)와 동일한 응답 구조를 사용합니다.
 
 ### Request
 
@@ -693,12 +696,16 @@ GET /api/profile/{userId}
 | code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 유저 프로필 정보 |
+| data.id | Long | 사용자 ID |
 | data.profileImageUrl | String | 프로필 이미지 URL (nullable) |
+| data.nickname | String | 닉네임 |
+| data.name | String | 이름 |
+| data.introduction | String | 소개글 (nullable, 최대 1000자) |
+| data.birthDate | String | 생년월일 (ISO 8601 형식: YYYY-MM-DD, nullable) |
+| data.email | String | 이메일 |
 | data.addressSido | String | 거주지 시/도 (nullable) |
 | data.addressGugun | String | 거주지 구/군 (nullable) |
-| data.nickname | String | 닉네임 |
 | data.createdAt | String | 가입일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
-| data.introduction | String | 소개글 (nullable, 최대 1000자) |
 
 #### 에러 응답
 
@@ -724,12 +731,16 @@ Content-Type: application/json
   "code": "SUCCESS",
   "message": "성공",
   "data": {
+    "id": 5,
     "profileImageUrl": "https://s3.amazonaws.com/profile/user5.jpg",
+    "nickname": "다른유저",
+    "name": "김철수",
+    "introduction": "반려동물 용품을 판매하고 있습니다.",
+    "birthDate": "1995-05-15",
+    "email": "kim@example.com",
     "addressSido": "서울특별시",
     "addressGugun": "강남구",
-    "nickname": "다른유저",
-    "createdAt": "2024-02-01T09:15:00",
-    "introduction": "반려동물 용품을 판매하고 있습니다."
+    "createdAt": "2024-02-01T09:15:00"
   }
 }
 ```

@@ -11,7 +11,6 @@ import org.cmarket.cmarket.web.product.dto.FavoriteListResponse;
 import org.cmarket.cmarket.web.product.dto.MyProductListResponse;
 import org.cmarket.cmarket.web.profile.dto.BlockedUserListResponse;
 import org.cmarket.cmarket.web.profile.dto.ProfileUpdateRequest;
-import org.cmarket.cmarket.web.profile.dto.UserInfoResponse;
 import org.cmarket.cmarket.web.profile.dto.UserProfileResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -54,7 +53,7 @@ public class ProfileController {
      */
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SuccessResponse<UserInfoResponse>> getUserInfo() {
+    public ResponseEntity<SuccessResponse<UserProfileResponse>> getUserInfo() {
         // 현재 로그인한 사용자의 이메일 추출
         String email = SecurityUtils.getCurrentUserEmail();
         
@@ -62,7 +61,7 @@ public class ProfileController {
         org.cmarket.cmarket.domain.profile.app.dto.MyPageDto myPageDto = profileService.getUserInfo(email);
         
         // 앱 DTO → 웹 DTO 변환
-        UserInfoResponse response = UserInfoResponse.fromDto(myPageDto);
+        UserProfileResponse response = UserProfileResponse.fromMyPageDto(myPageDto);
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));

@@ -15,6 +15,7 @@ import java.util.List;
 @Getter
 @Builder
 public class MyPageDto {
+    private Long id;
     private String profileImageUrl;
     private String nickname;
     private String name;

@@ -135,6 +135,7 @@ public class ProfileServiceImpl implements ProfileService {
         
         // 7. MyPageDto 생성 및 반환
         return MyPageDto.builder()
+                .id(user.getId())
                 .profileImageUrl(user.getProfileImageUrl())
                 .nickname(user.getNickname())
                 .name(user.getName())
@@ -159,6 +160,7 @@ public class ProfileServiceImpl implements ProfileService {
         
         // 2. 사용자 정보만 반환 (상품 목록은 빈 리스트)
         return MyPageDto.builder()
+                .id(user.getId())
                 .profileImageUrl(user.getProfileImageUrl())
                 .nickname(user.getNickname())
                 .name(user.getName())
@@ -219,12 +221,16 @@ public class ProfileServiceImpl implements ProfileService {
         // 2. UserProfileDto 생성 및 반환
         // 등록한 상품 목록은 향후 Product 도메인에서 구현 예정
         return UserProfileDto.builder()
+                .id(user.getId())
                 .profileImageUrl(user.getProfileImageUrl())
                 .addressSido(user.getAddressSido())
                 .addressGugun(user.getAddressGugun())
                 .nickname(user.getNickname())
                 .createdAt(user.getCreatedAt())
                 .introduction(user.getIntroduction())
+                .name(user.getName())
+                .birthDate(user.getBirthDate())
+                .email(user.getEmail())
                 .products(Collections.emptyList())  // todo: 향후 Product 도메인에서 구현
                 .build();
     }
