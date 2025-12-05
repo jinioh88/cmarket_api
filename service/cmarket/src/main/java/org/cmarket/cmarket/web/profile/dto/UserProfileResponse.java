@@ -20,9 +20,7 @@ public class UserProfileResponse {
     private String nickname;
     private LocalDateTime createdAt;
     private String introduction;
-    
-    // todo: 등록한 상품 목록 (향후 Product 도메인에서 구현 예정)
-    private List<Object> products;  // 빈 리스트로 반환
+
     
     /**
      * 앱 DTO에서 웹 DTO로 변환
@@ -38,7 +36,6 @@ public class UserProfileResponse {
                 .nickname(userProfileDto.getNickname())
                 .createdAt(userProfileDto.getCreatedAt())
                 .introduction(userProfileDto.getIntroduction())
-                .products(userProfileDto.getProducts())
                 .build();
     }
 }

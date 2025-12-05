@@ -27,10 +27,7 @@ http://localhost:8080
 #### 성공 응답
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": { ... }
 }
@@ -39,10 +36,7 @@ http://localhost:8080
 #### 에러 응답
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "에러 메시지",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -212,9 +206,7 @@ const handleImageUpload = async (files) => {
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (201) |
-| code.message | String | 응답 메시지 ("생성됨") |
+| code | String | 응답 코드 (예: "CREATED", "SUCCESS") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 이미지 업로드 결과 |
 | data.imageUrls | String[] | 업로드된 이미지 URL 리스트 (전체) |
@@ -225,10 +217,7 @@ const handleImageUpload = async (files) => {
 
 ```json
 {
-  "code": {
-    "code": 201,
-    "message": "생성됨"
-  },
+  "code": "CREATED",
   "message": "성공",
   "data": {
     "imageUrls": [
@@ -250,10 +239,7 @@ const handleImageUpload = async (files) => {
 #### 400 Bad Request - 파일이 없음
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "업로드할 이미지 파일이 없습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"
@@ -263,10 +249,7 @@ const handleImageUpload = async (files) => {
 #### 400 Bad Request - 파일 개수 초과
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "이미지는 최대 5장까지 업로드 가능합니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"
@@ -276,10 +259,7 @@ const handleImageUpload = async (files) => {
 #### 400 Bad Request - 파일 형식 오류
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "이미지 파일만 업로드 가능합니다. (jpg, jpeg, png, gif, webp)",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"
@@ -289,10 +269,7 @@ const handleImageUpload = async (files) => {
 #### 400 Bad Request - 파일 크기 초과 (개별)
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "파일 크기는 한 장당 최대 5MB까지 가능합니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"
@@ -302,10 +279,7 @@ const handleImageUpload = async (files) => {
 #### 400 Bad Request - 파일 크기 초과 (전체)
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "전체 파일 크기는 최대 25MB까지 가능합니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"
@@ -315,10 +289,7 @@ const handleImageUpload = async (files) => {
 #### 400 Bad Request - 빈 파일
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "빈 파일은 업로드할 수 없습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"
@@ -328,10 +299,7 @@ const handleImageUpload = async (files) => {
 #### 400 Bad Request - 사용자 없음
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "사용자를 찾을 수 없습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"
@@ -341,10 +309,7 @@ const handleImageUpload = async (files) => {
 #### 401 Unauthorized - 인증 필요
 ```json
 {
-  "code": {
-    "code": 401,
-    "message": "인증 필요"
-  },
+  "code": "UNAUTHORIZED",
   "message": "인증이 필요합니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"
@@ -423,10 +388,7 @@ Content-Length: 123456
 #### 404 Not Found - 이미지 파일 없음
 ```json
 {
-  "code": {
-    "code": 404,
-    "message": "찾을 수 없음"
-  },
+  "code": "NOT_FOUND",
   "message": "이미지 파일을 찾을 수 없습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-01-15T10:30:00"

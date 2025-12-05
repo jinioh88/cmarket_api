@@ -31,10 +31,7 @@ http://localhost:8080
 #### 성공 응답
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": { ... }
 }
@@ -43,10 +40,7 @@ http://localhost:8080
 #### 에러 응답
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "에러 메시지",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -107,9 +101,7 @@ GET /api/auth/email/check?email=user@example.com
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 (사용 가능 여부에 따라 다름) |
 | data | Boolean | 사용 가능 여부 (true: 사용 가능, false: 중복) |
 
@@ -117,10 +109,7 @@ GET /api/auth/email/check?email=user@example.com
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "사용 가능한 이메일입니다.",
   "data": true
 }
@@ -130,10 +119,7 @@ GET /api/auth/email/check?email=user@example.com
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "이미 사용 중인 이메일입니다.",
   "data": false
 }
@@ -151,10 +137,7 @@ GET /api/auth/email/check?email=user@example.com
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "must be a well-formed email address",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -203,9 +186,7 @@ GET /api/auth/nickname/check?nickname=길동이
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 (사용 가능 여부에 따라 다름) |
 | data | Boolean | 사용 가능 여부 (true: 사용 가능, false: 중복) |
 
@@ -213,10 +194,7 @@ GET /api/auth/nickname/check?nickname=길동이
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "사용 가능한 닉네임입니다.",
   "data": true
 }
@@ -226,10 +204,7 @@ GET /api/auth/nickname/check?nickname=길동이
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "이미 사용 중인 닉네임입니다.",
   "data": false
 }
@@ -246,10 +221,7 @@ GET /api/auth/nickname/check?nickname=길동이
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "Required parameter 'nickname' is not present.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -304,9 +276,7 @@ POST /api/auth/password/reset/send
 
 | 필드명 | 타입 | 설명               |
 |--------|------|------------------|
-| code | Object | 응답 코드 정보         |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공")    |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공")    |
 | data | String | 인증코드             |
 
@@ -314,10 +284,7 @@ POST /api/auth/password/reset/send
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": "1233"
 }
@@ -341,10 +308,7 @@ POST /api/auth/password/reset/send
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "등록되지 않은 이메일입니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -400,9 +364,7 @@ POST /api/auth/password/reset/verify
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | String | 응답 데이터 ("인증이 완료되었습니다.") |
 
@@ -410,10 +372,7 @@ POST /api/auth/password/reset/verify
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": "인증이 완료되었습니다."
 }
@@ -438,10 +397,7 @@ POST /api/auth/password/reset/verify
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "만료된 인증코드이거나 올바르지 않은 인증코드입니다. 인증코드 전송 재시도 부탁드립니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -505,9 +461,7 @@ PATCH /api/auth/password/reset
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | String | 응답 데이터 ("비밀번호가 변경되었습니다.") |
 
@@ -515,10 +469,7 @@ PATCH /api/auth/password/reset
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": "비밀번호가 변경되었습니다."
 }
@@ -546,10 +497,7 @@ PATCH /api/auth/password/reset
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "이메일 인증이 완료되지 않았습니다. 인증코드를 먼저 확인해주세요.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -616,9 +564,7 @@ PATCH /api/auth/password/change
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | String | 응답 데이터 ("비밀번호가 변경되었습니다.") |
 
@@ -626,10 +572,7 @@ PATCH /api/auth/password/change
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": "비밀번호가 변경되었습니다."
 }
@@ -662,10 +605,7 @@ PATCH /api/auth/password/change
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "현재 비밀번호가 일치하지 않습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -758,9 +698,7 @@ DELETE /api/auth/withdraw
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | String | 응답 데이터 ("회원 탈퇴가 완료되었습니다.") |
 
@@ -768,10 +706,7 @@ DELETE /api/auth/withdraw
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": "회원 탈퇴가 완료되었습니다."
 }
@@ -801,10 +736,7 @@ DELETE /api/auth/withdraw
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "사용자를 찾을 수 없습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"

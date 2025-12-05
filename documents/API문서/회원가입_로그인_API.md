@@ -29,10 +29,7 @@ http://localhost:8080
 #### 성공 응답
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": { ... }
 }
@@ -41,10 +38,7 @@ http://localhost:8080
 #### 에러 응답
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "에러 메시지",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -110,9 +104,7 @@ POST /api/auth/email/verification/send
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("인증 번호를 발송했습니다.") |
 | data | String | 응답 데이터 (null) |
 
@@ -120,10 +112,7 @@ POST /api/auth/email/verification/send
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "인증 번호를 발송했습니다.",
   "data": null
 }
@@ -135,9 +124,7 @@ POST /api/auth/email/verification/send
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (400) |
-| code.message | String | 응답 메시지 ("잘못된 요청") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 에러 메시지 |
 | traceId | String | 추적 ID |
 | timestamp | String | 에러 발생 시간 |
@@ -150,10 +137,7 @@ POST /api/auth/email/verification/send
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "이메일은 필수입니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -201,9 +185,7 @@ POST /api/auth/email/verification/verify
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("인증이 완료되었습니다.") |
 | data | String | 응답 데이터 (null) |
 
@@ -211,10 +193,7 @@ POST /api/auth/email/verification/verify
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "인증이 완료되었습니다.",
   "data": null
 }
@@ -226,9 +205,7 @@ POST /api/auth/email/verification/verify
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (400) |
-| code.message | String | 응답 메시지 ("잘못된 요청") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 에러 메시지 |
 | traceId | String | 추적 ID |
 | timestamp | String | 에러 발생 시간 |
@@ -244,10 +221,7 @@ POST /api/auth/email/verification/verify
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "만료된 인증코드입니다. 인증코드 전송 재시도 부탁드립니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -308,9 +282,7 @@ POST /api/auth/signup
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (201) |
-| code.message | String | 응답 메시지 ("생성됨") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("생성됨") |
 | data | Object | 생성된 사용자 정보 |
 
@@ -330,10 +302,7 @@ POST /api/auth/signup
 
 ```json
 {
-  "code": {
-    "code": 201,
-    "message": "생성됨"
-  },
+  "code": "CREATED",
   "message": "생성됨",
   "data": {
     "id": 1,
@@ -376,10 +345,7 @@ POST /api/auth/signup
 
 ```json
 {
-  "code": {
-    "code": 409,
-    "message": "충돌"
-  },
+  "code": "CONFLICT",
   "message": "이미 사용 중인 이메일입니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -427,9 +393,7 @@ POST /api/auth/login
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 로그인 응답 데이터 |
 
@@ -457,10 +421,7 @@ POST /api/auth/login
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -496,10 +457,7 @@ POST /api/auth/login
 
 ```json
 {
-  "code": {
-    "code": 401,
-    "message": "인증 필요"
-  },
+  "code": "UNAUTHORIZED",
   "message": "이메일 또는 비밀번호가 일치하지 않습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -582,9 +540,7 @@ POST /api/auth/logout
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | String | 응답 데이터 ("로그아웃되었습니다.") |
 
@@ -592,10 +548,7 @@ POST /api/auth/logout
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": "로그아웃되었습니다."
 }
@@ -619,10 +572,7 @@ POST /api/auth/logout
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "인증 토큰이 필요합니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -674,9 +624,7 @@ POST /api/auth/refresh
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 새로 발급된 토큰 정보 |
 
@@ -691,10 +639,7 @@ POST /api/auth/refresh
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -709,7 +654,7 @@ POST /api/auth/refresh
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 에러 메시지 ("유효하지 않은 Refresh Token입니다.") |
 | traceId | String | 추적 ID |
 | timestamp | String | 에러 발생 시간 |

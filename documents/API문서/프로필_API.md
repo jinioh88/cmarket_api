@@ -15,8 +15,9 @@
 - [내가 등록한 판매 요청 목록 조회](#4-내가-등록한-판매-요청-목록-조회)
 - [프로필 정보 수정](#5-프로필-정보-수정)
 - [유저 프로필 조회](#6-유저-프로필-조회)
-- [차단한 유저 목록 조회](#7-차단한-유저-목록-조회)
-- [유저 차단 해제](#8-유저-차단-해제)
+- [다른 유저가 등록한 판매 상품 목록 조회](#7-다른-유저가-등록한-판매-상품-목록-조회)
+- [차단한 유저 목록 조회](#8-차단한-유저-목록-조회)
+- [유저 차단 해제](#9-유저-차단-해제)
 
 ---
 
@@ -32,10 +33,7 @@ http://localhost:8080
 #### 성공 응답
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": { ... }
 }
@@ -44,10 +42,7 @@ http://localhost:8080
 #### 에러 응답
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "에러 메시지",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af",
   "timestamp": "2025-11-14T15:45:00"
@@ -75,19 +70,19 @@ http://localhost:8080
 
 ### ResponseCode Enum
 
-모든 API 응답에서 사용되는 `ResponseCode` enum의 값들입니다.
+모든 API 응답에서 사용되는 `ResponseCode` enum의 값들입니다. JSON 응답에서는 enum 이름이 문자열로 직렬화됩니다.
 
-| 코드 | 메시지 | 설명 |
-|------|--------|------|
-| 200 | 성공 | 요청이 성공적으로 처리됨 |
-| 201 | 생성됨 | 리소스가 성공적으로 생성됨 |
-| 204 | 내용 없음 | 요청은 성공했지만 반환할 내용이 없음 |
-| 400 | 잘못된 요청 | 요청 파라미터가 잘못되었거나 검증 실패 |
-| 401 | 인증 필요 | 인증이 필요하거나 인증 정보가 유효하지 않음 |
-| 403 | 권한 없음 | 인증은 되었지만 권한이 없음 |
-| 404 | 찾을 수 없음 | 요청한 리소스를 찾을 수 없음 |
-| 409 | 충돌 | 리소스 충돌 (예: 중복된 닉네임) |
-| 500 | 서버 오류 | 서버 내부 오류 발생 |
+| Enum 값 | HTTP 상태 코드 | 설명 |
+|---------|---------------|------|
+| SUCCESS | 200 | 요청이 성공적으로 처리됨 |
+| CREATED | 201 | 리소스가 성공적으로 생성됨 |
+| NO_CONTENT | 204 | 요청은 성공했지만 반환할 내용이 없음 |
+| BAD_REQUEST | 400 | 요청 파라미터가 잘못되었거나 검증 실패 |
+| UNAUTHORIZED | 401 | 인증이 필요하거나 인증 정보가 유효하지 않음 |
+| FORBIDDEN | 403 | 인증은 되었지만 권한이 없음 |
+| NOT_FOUND | 404 | 요청한 리소스를 찾을 수 없음 |
+| CONFLICT | 409 | 리소스 충돌 (예: 중복된 닉네임) |
+| INTERNAL_SERVER_ERROR | 500 | 서버 내부 오류 발생 |
 
 ---
 
@@ -125,9 +120,7 @@ GET /api/profile/me
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 사용자 정보 |
 | data.profileImageUrl | String | 프로필 이미지 URL (nullable) |
@@ -161,10 +154,7 @@ Content-Type: application/json
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "profileImageUrl": "https://s3.amazonaws.com/profile/user123.jpg",
@@ -222,9 +212,7 @@ GET /api/profile/me/favorites
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 찜한 상품 목록 정보 |
 | data.page | Integer | 현재 페이지 번호 (0부터 시작) |
@@ -264,10 +252,7 @@ Content-Type: application/json
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "page": 0,
@@ -342,9 +327,7 @@ GET /api/profile/me/products
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 판매 상품 목록 정보 |
 | data.page | Integer | 현재 페이지 번호 (0부터 시작) |
@@ -360,6 +343,7 @@ GET /api/profile/me/products
 | data.content[].title | String | 상품명 |
 | data.content[].price | Long | 가격 |
 | data.content[].createdAt | String | 등록일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.content[].viewCount | Long | 조회수 |
 | data.content[].favoriteCount | Long | 찜 개수 |
 | data.content[].isFavorite | Boolean | 찜 여부 (본인 상품이므로 항상 false) |
 | data.totalPages | Integer | 전체 페이지 수 |
@@ -389,10 +373,7 @@ Content-Type: application/json
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "page": 0,
@@ -409,6 +390,7 @@ Content-Type: application/json
         "title": "강아지 사료",
         "price": 30000,
         "createdAt": "2024-01-20T14:30:00",
+        "viewCount": 120,
         "favoriteCount": 5,
         "isFavorite": false
       },
@@ -422,6 +404,7 @@ Content-Type: application/json
         "title": "고양이 화장실",
         "price": 25000,
         "createdAt": "2024-01-18T10:15:00",
+        "viewCount": 85,
         "favoriteCount": 3,
         "isFavorite": false
       }
@@ -477,9 +460,7 @@ GET /api/profile/me/purchase-requests
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 판매 요청 목록 정보 |
 | data.page | Integer | 현재 페이지 번호 (0부터 시작) |
@@ -495,6 +476,7 @@ GET /api/profile/me/purchase-requests
 | data.content[].title | String | 상품명 |
 | data.content[].price | Long | 희망 가격 |
 | data.content[].createdAt | String | 등록일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.content[].viewCount | Long | 조회수 |
 | data.content[].favoriteCount | Long | 찜 개수 |
 | data.content[].isFavorite | Boolean | 찜 여부 (본인 상품이므로 항상 false) |
 | data.totalPages | Integer | 전체 페이지 수 |
@@ -524,10 +506,7 @@ Content-Type: application/json
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "page": 0,
@@ -544,6 +523,7 @@ Content-Type: application/json
         "title": "강아지 장난감 구매 원합니다",
         "price": 20000,
         "createdAt": "2024-01-22T09:20:00",
+        "viewCount": 45,
         "favoriteCount": 2,
         "isFavorite": false
       },
@@ -557,6 +537,7 @@ Content-Type: application/json
         "title": "고양이 캣타워 구매 원합니다",
         "price": 40000,
         "createdAt": "2024-01-19T16:45:00",
+        "viewCount": 38,
         "favoriteCount": 1,
         "isFavorite": false
       }
@@ -615,9 +596,7 @@ PATCH /api/profile/me
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 수정된 사용자 정보 |
 | data.id | Long | 사용자 ID |
@@ -659,10 +638,7 @@ Content-Type: application/json
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "id": 1,
@@ -692,7 +668,6 @@ GET /api/profile/{userId}
 
 - 특정 사용자의 공개 프로필 정보를 조회합니다.
 - 인증이 필요합니다 (`Authorization` 헤더 필수).
-- 등록한 상품 목록은 현재 빈 리스트로 반환됩니다 (향후 Product 도메인에서 구현 예정).
 - 소프트 삭제된 사용자는 조회할 수 없습니다.
 
 ### Request
@@ -715,9 +690,7 @@ GET /api/profile/{userId}
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 유저 프로필 정보 |
 | data.profileImageUrl | String | 프로필 이미지 URL (nullable) |
@@ -726,7 +699,6 @@ GET /api/profile/{userId}
 | data.nickname | String | 닉네임 |
 | data.createdAt | String | 가입일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
 | data.introduction | String | 소개글 (nullable, 최대 1000자) |
-| data.products | Array | 등록한 상품 목록 (현재 빈 배열, 향후 구현 예정) |
 
 #### 에러 응답
 
@@ -749,10 +721,7 @@ Content-Type: application/json
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "profileImageUrl": "https://s3.amazonaws.com/profile/user5.jpg",
@@ -760,15 +729,155 @@ Content-Type: application/json
     "addressGugun": "강남구",
     "nickname": "다른유저",
     "createdAt": "2024-02-01T09:15:00",
-    "introduction": "반려동물 용품을 판매하고 있습니다.",
-    "products": []
+    "introduction": "반려동물 용품을 판매하고 있습니다."
   }
 }
 ```
 
 ---
 
-## 7. 차단한 유저 목록 조회
+## 7. 다른 유저가 등록한 판매 상품 목록 조회
+
+특정 사용자가 등록한 판매 상품 목록을 조회합니다.
+
+### 엔드포인트
+
+```
+GET /api/profile/{userId}/products
+```
+
+### 설명
+
+- 특정 사용자가 등록한 판매 상품 목록을 조회합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 페이지네이션을 지원합니다.
+- 최신순으로 정렬됩니다 (등록일 기준 내림차순).
+- 판매 상품(SELL)만 조회되며, 판매 요청(REQUEST)은 제외됩니다.
+- 소프트 삭제된 사용자의 상품은 조회할 수 없습니다.
+- 현재 로그인한 사용자의 찜 여부가 포함됩니다.
+
+### Request
+
+#### Path Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 |
+|-----------|------|------|------|
+| userId | Long | 예 | 조회할 사용자 ID |
+
+#### Query Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 | 기본값 |
+|-----------|------|------|------|--------|
+| page | Integer | 아니오 | 페이지 번호 (0부터 시작) | 0 |
+| size | Integer | 아니오 | 페이지 크기 | 20 |
+| sort | String | 아니오 | 정렬 기준 (예: createdAt,desc) | createdAt,desc |
+
+### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+### Response
+
+#### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 판매 상품 목록 정보 |
+| data.page | Integer | 현재 페이지 번호 (0부터 시작) |
+| data.size | Integer | 페이지 크기 |
+| data.total | Long | 전체 항목 수 |
+| data.content | Array | 판매 상품 목록 |
+| data.content[].id | Long | 상품 ID |
+| data.content[].mainImageUrl | String | 대표 이미지 URL (nullable) |
+| data.content[].petDetailType | String | 반려동물 상세 종류 (DOG_POMERANIAN, DOG_POODLE, CAT_PERSIAN 등) |
+| data.content[].productStatus | String | 상품 상태 (NEW, LIKE_NEW, USED, NEED_REPAIR) |
+| data.content[].productType | String | 상품 타입 (SELL: 판매 상품) |
+| data.content[].tradeStatus | String | 거래 상태 (SELLING, RESERVED, COMPLETED) |
+| data.content[].title | String | 상품명 |
+| data.content[].price | Long | 가격 |
+| data.content[].createdAt | String | 등록일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
+| data.content[].viewCount | Long | 조회수 |
+| data.content[].favoriteCount | Long | 찜 개수 |
+| data.content[].isFavorite | Boolean | 찜 여부 (현재 로그인한 사용자가 찜했는지 여부) |
+| data.totalPages | Integer | 전체 페이지 수 |
+| data.hasNext | Boolean | 다음 페이지 존재 여부 |
+| data.hasPrevious | Boolean | 이전 페이지 존재 여부 |
+| data.totalElements | Long | 전체 항목 수 |
+| data.numberOfElements | Integer | 현재 페이지의 항목 수 |
+
+#### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 (삭제된 사용자 포함) |
+| 500 | 서버 내부 오류 |
+
+### Request 예시
+
+```http
+GET /api/profile/5/products?page=0&size=20 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+### Response 예시
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "성공",
+  "data": {
+    "page": 0,
+    "size": 20,
+    "total": 3,
+    "content": [
+      {
+        "id": 15,
+        "mainImageUrl": "https://s3.amazonaws.com/products/product15.jpg",
+        "petDetailType": "DOG_POMERANIAN",
+        "productStatus": "NEW",
+        "productType": "SELL",
+        "tradeStatus": "SELLING",
+        "title": "강아지 사료",
+        "price": 30000,
+        "createdAt": "2024-01-20T14:30:00",
+        "viewCount": 120,
+        "favoriteCount": 5,
+        "isFavorite": true
+      },
+      {
+        "id": 12,
+        "mainImageUrl": "https://s3.amazonaws.com/products/product12.jpg",
+        "petDetailType": "CAT_PERSIAN",
+        "productStatus": "LIKE_NEW",
+        "productType": "SELL",
+        "tradeStatus": "RESERVED",
+        "title": "고양이 화장실",
+        "price": 25000,
+        "createdAt": "2024-01-18T10:15:00",
+        "viewCount": 85,
+        "favoriteCount": 3,
+        "isFavorite": false
+      }
+    ],
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false,
+    "totalElements": 3,
+    "numberOfElements": 3
+  }
+}
+```
+
+---
+
+## 8. 차단한 유저 목록 조회
 
 현재 로그인한 사용자가 차단한 유저 목록을 조회합니다.
 
@@ -808,9 +917,7 @@ GET /api/profile/me/blocked-users
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 차단한 유저 목록 정보 |
 | data.blockedUsers | Object | 페이지네이션 결과 |
@@ -848,10 +955,7 @@ Content-Type: application/json
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "blockedUsers": {
@@ -882,7 +986,7 @@ Content-Type: application/json
 
 ---
 
-## 8. 유저 차단 해제
+## 9. 유저 차단 해제
 
 현재 로그인한 사용자가 차단한 유저를 차단 해제합니다.
 
@@ -919,9 +1023,7 @@ DELETE /api/profile/me/blocked-users/{blockedUserId}
 
 | 필드명 | 타입 | 설명 |
 |--------|------|------|
-| code | Object | 응답 코드 정보 |
-| code.code | Integer | HTTP 상태 코드 (200) |
-| code.message | String | 응답 메시지 ("성공") |
+| code | String | 응답 코드 (예: "SUCCESS", "BAD_REQUEST") |
 | message | String | 응답 메시지 ("성공") |
 | data | null | 응답 데이터 없음 |
 
@@ -946,10 +1048,7 @@ Content-Type: application/json
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": null
 }
@@ -982,6 +1081,7 @@ Authorization: Bearer <Access Token>
 - 내가 찜한 상품 목록 조회 (기본값: size=20)
 - 내가 등록한 판매 상품 목록 조회 (기본값: size=20)
 - 내가 등록한 판매 요청 목록 조회 (기본값: size=20)
+- 다른 유저가 등록한 판매 상품 목록 조회 (기본값: size=20)
 - 차단한 유저 목록 조회 (기본값: size=10)
 
 ---
@@ -994,10 +1094,7 @@ Authorization: Bearer <Access Token>
 
 ```json
 {
-  "code": {
-    "code": 400,
-    "message": "잘못된 요청"
-  },
+  "code": "BAD_REQUEST",
   "message": "닉네임은 1자 이상 10자 이하여야 합니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af"
 }
@@ -1009,10 +1106,7 @@ Authorization: Bearer <Access Token>
 
 ```json
 {
-  "code": {
-    "code": 401,
-    "message": "인증 필요"
-  },
+  "code": "UNAUTHORIZED",
   "message": "인증되지 않은 사용자입니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af"
 }
@@ -1024,10 +1118,7 @@ Authorization: Bearer <Access Token>
 
 ```json
 {
-  "code": {
-    "code": 404,
-    "message": "찾을 수 없음"
-  },
+  "code": "NOT_FOUND",
   "message": "사용자를 찾을 수 없습니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af"
 }
@@ -1039,10 +1130,7 @@ Authorization: Bearer <Access Token>
 
 ```json
 {
-  "code": {
-    "code": 409,
-    "message": "충돌"
-  },
+  "code": "CONFLICT",
   "message": "이미 사용 중인 닉네임입니다.",
   "traceId": "e1e4456f40d648c7a24fc7d5cd85e4af"
 }

@@ -169,5 +169,19 @@ public interface ProductService {
             org.springframework.data.domain.Pageable pageable,
             String email
     );
+    
+    /**
+     * 다른 유저가 등록한 판매 상품 목록 조회
+     * 
+     * @param userId 조회할 유저 ID
+     * @param pageable 페이지네이션 정보
+     * @param email 현재 로그인한 사용자 이메일 (찜 여부 확인용)
+     * @return 다른 유저가 등록한 판매 상품 목록 조회 결과
+     */
+    org.cmarket.cmarket.domain.product.app.dto.MyProductListDto getUserSellProductList(
+            Long userId,
+            org.springframework.data.domain.Pageable pageable,
+            String email
+    );
 }
 

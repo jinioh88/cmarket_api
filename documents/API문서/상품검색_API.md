@@ -46,7 +46,7 @@ http://localhost:8080
 #### 성공
 ```json
 {
-  "code": { "code": 200, "message": "성공" },
+  "code": "SUCCESS",
   "message": "성공",
   "data": { ... }   // API별 응답 본문
 }
@@ -55,7 +55,7 @@ http://localhost:8080
 #### 에러
 ```json
 {
-  "code": { "code": 400, "message": "잘못된 요청" },
+  "code": "BAD_REQUEST",
   "message": "에러 메시지",
   "traceId": "e1e4-...",
   "timestamp": "2025-01-15T10:30:00"
@@ -184,10 +184,7 @@ GET /api/products/search?keyword=강아지&productType=SELL&petDetailType=DOG&ca
 
 ```json
 {
-  "code": {
-    "code": 200,
-    "message": "성공"
-  },
+  "code": "SUCCESS",
   "message": "성공",
   "data": {
     "page": 0,
