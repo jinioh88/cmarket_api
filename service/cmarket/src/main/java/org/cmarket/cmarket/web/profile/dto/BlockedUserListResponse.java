@@ -16,10 +16,10 @@ public class BlockedUserListResponse {
     /**
      * 앱 DTO에서 웹 DTO로 변환
      * 
-     * @param blockedUserListDto 앱 DTO
+     * @param blockedUserListDto 앱 DTO (report 도메인 또는 profile 도메인)
      * @return 웹 DTO
      */
-    public static BlockedUserListResponse fromDto(org.cmarket.cmarket.domain.profile.app.dto.BlockedUserListDto blockedUserListDto) {
+    public static BlockedUserListResponse fromDto(org.cmarket.cmarket.domain.report.app.dto.BlockedUserListDto blockedUserListDto) {
         // BlockedUserDto 리스트를 BlockedUserResponse 리스트로 변환
         PageResultResponse<BlockedUserResponse> blockedUsersPageResult = 
                 PageResultResponse.fromPageResult(

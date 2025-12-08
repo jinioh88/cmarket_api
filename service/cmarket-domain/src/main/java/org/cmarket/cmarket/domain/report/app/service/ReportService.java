@@ -1,5 +1,6 @@
 package org.cmarket.cmarket.domain.report.app.service;
 
+import org.cmarket.cmarket.domain.report.app.dto.BlockedUserListDto;
 import org.cmarket.cmarket.domain.report.app.dto.ReportCreateCommand;
 import org.cmarket.cmarket.domain.report.app.dto.ReportDto;
 import org.cmarket.cmarket.domain.report.app.dto.UserBlockCreateCommand;
@@ -18,6 +19,23 @@ public interface ReportService {
      * @return 차단 결과 DTO
      */
     UserBlockDto blockUser(String email, UserBlockCreateCommand command);
+
+    /**
+     * 사용자 차단 해제.
+     *
+     * @param email 현재 로그인한 사용자 이메일
+     * @param blockedUserId 차단 해제할 사용자 ID
+     */
+    void unblockUser(String email, Long blockedUserId);
+
+    /**
+     * 차단한 유저 목록 조회.
+     *
+     * @param email 현재 로그인한 사용자 이메일
+     * @param pageable 페이지네이션 정보
+     * @return 차단한 유저 목록 DTO
+     */
+    BlockedUserListDto getBlockedUsers(String email, org.springframework.data.domain.Pageable pageable);
 
     /**
      * 신고 생성.

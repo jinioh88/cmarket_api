@@ -12,13 +12,15 @@
 - [Enum 목록](#enum-목록)
 - [사용자 차단 API](#사용자-차단-api)
   - [1. 사용자 차단](#1-사용자-차단-post-apireportsblocksusersblockeduserid)
+  - [2. 차단한 유저 목록 조회](#2-차단한-유저-목록-조회-get-apireportsblocksusers)
+  - [3. 유저 차단 해제](#3-유저-차단-해제-delete-apireportsblocksusersblockeduserid)
 - [신고 API](#신고-api)
-  - [2. 사용자 신고](#2-사용자-신고-post-apireportsuserstargetuserid)
-  - [3. 상품 신고](#3-상품-신고-post-apireportsproductsproductid)
-  - [4. 커뮤니티 게시글 신고](#4-커뮤니티-게시글-신고-post-apireportscommunity-postspostid)
+  - [4. 사용자 신고](#4-사용자-신고-post-apireportsuserstargetuserid)
+  - [5. 상품 신고](#5-상품-신고-post-apireportsproductsproductid)
+  - [6. 커뮤니티 게시글 신고](#6-커뮤니티-게시글-신고-post-apireportscommunity-postspostid)
 - [관리자 신고 관리 API](#관리자-신고-관리-api)
-  - [5. 신고 목록 조회](#5-신고-목록-조회-get-apiadminreports)
-  - [6. 신고 검토](#6-신고-검토-patch-apiadminreportsreportidreview)
+  - [7. 신고 목록 조회](#7-신고-목록-조회-get-apiadminreports)
+  - [8. 신고 검토](#8-신고-검토-patch-apiadminreportsreportidreview)
 
 ---
 
@@ -151,6 +153,10 @@ http://localhost:8080
 
 ### 1. 사용자 차단 (POST /api/reports/blocks/users/{blockedUserId})
 
+### 2. 차단한 유저 목록 조회 (GET /api/reports/blocks/users)
+
+### 3. 유저 차단 해제 (DELETE /api/reports/blocks/users/{blockedUserId})
+
 사용자를 차단합니다. 차단된 사용자와는 채팅할 수 없고, 서로의 게시글과 댓글을 볼 수 없으며, 상호작용이 차단됩니다.
 
 #### 엔드포인트
@@ -239,9 +245,184 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
+### 2. 차단한 유저 목록 조회 (GET /api/reports/blocks/users)
+
+현재 로그인한 사용자가 차단한 유저 목록을 조회합니다.
+
+#### 엔드포인트
+
+```
+GET /api/reports/blocks/users
+```
+
+#### 설명
+
+- 현재 로그인한 사용자가 차단한 유저 목록을 조회합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 페이지네이션을 지원합니다.
+- 최신순으로 정렬됩니다 (차단한 날짜 기준 내림차순).
+- 삭제된 사용자는 목록에서 제외됩니다.
+
+#### Query Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 | 기본값 |
+|-----------|------|------|------|--------|
+| page | Integer | 아니오 | 페이지 번호 (0부터 시작) | 0 |
+| size | Integer | 아니오 | 페이지 크기 | 10 |
+| sort | String | 아니오 | 정렬 기준 (예: createdAt,desc) | createdAt,desc |
+
+#### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+#### Response Body
+
+##### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | String | 응답 코드 ("SUCCESS") |
+| message | String | 응답 메시지 ("성공") |
+| data | Object | 차단한 유저 목록 정보 |
+| data.blockedUsers | Object | 페이지네이션 결과 |
+| data.blockedUsers.page | Integer | 현재 페이지 번호 (0부터 시작) |
+| data.blockedUsers.size | Integer | 페이지 크기 |
+| data.blockedUsers.total | Long | 전체 항목 수 |
+| data.blockedUsers.content | Array | 차단한 유저 목록 |
+| data.blockedUsers.content[].blockedUserId | Long | 차단한 유저 ID |
+| data.blockedUsers.content[].nickname | String | 차단한 유저 닉네임 |
+| data.blockedUsers.content[].profileImageUrl | String | 차단한 유저 프로필 이미지 URL (nullable) |
+| data.blockedUsers.totalPages | Integer | 전체 페이지 수 |
+| data.blockedUsers.hasNext | Boolean | 다음 페이지 존재 여부 |
+| data.blockedUsers.hasPrevious | Boolean | 이전 페이지 존재 여부 |
+| data.blockedUsers.totalElements | Long | 전체 항목 수 (total과 동일) |
+| data.blockedUsers.numberOfElements | Integer | 현재 페이지의 항목 수 |
+
+##### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 500 | 서버 내부 오류 |
+
+#### Request 예시
+
+```http
+GET /api/reports/blocks/users?page=0&size=10 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+#### Response 예시
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "성공",
+  "data": {
+    "blockedUsers": {
+      "page": 0,
+      "size": 10,
+      "total": 2,
+      "content": [
+        {
+          "blockedUserId": 5,
+          "nickname": "차단된유저1",
+          "profileImageUrl": "https://s3.amazonaws.com/profile/user5.jpg"
+        },
+        {
+          "blockedUserId": 7,
+          "nickname": "차단된유저2",
+          "profileImageUrl": null
+        }
+      ],
+      "totalPages": 1,
+      "hasNext": false,
+      "hasPrevious": false,
+      "totalElements": 2,
+      "numberOfElements": 2
+    }
+  }
+}
+```
+
+---
+
+### 3. 유저 차단 해제 (DELETE /api/reports/blocks/users/{blockedUserId})
+
+현재 로그인한 사용자가 차단한 유저를 차단 해제합니다.
+
+#### 엔드포인트
+
+```
+DELETE /api/reports/blocks/users/{blockedUserId}
+```
+
+#### 설명
+
+- 현재 로그인한 사용자가 차단한 유저를 차단 해제합니다.
+- 인증이 필요합니다 (`Authorization` 헤더 필수).
+- 차단 관계가 존재하지 않는 경우에도 성공으로 처리됩니다 (idempotent).
+- 동일한 요청을 여러 번 호출해도 안전합니다.
+
+#### Path Parameters
+
+| 파라미터명 | 타입 | 필수 | 설명 |
+|-----------|------|------|------|
+| blockedUserId | Long | 예 | 차단 해제할 사용자 ID |
+
+#### Request Headers
+
+| 헤더명 | 타입 | 필수 | 설명 |
+|--------|------|------|------|
+| Authorization | String | 예 | `Bearer <Access Token>` |
+
+#### Response Body
+
+##### 성공 응답 (200 OK)
+
+| 필드명 | 타입 | 설명 |
+|--------|------|------|
+| code | String | 응답 코드 ("SUCCESS") |
+| message | String | 응답 메시지 ("성공") |
+| data | null | 응답 데이터 없음 |
+
+##### 에러 응답
+
+| HTTP 상태 코드 | 설명 |
+|---------------|------|
+| 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
+| 404 | 사용자를 찾을 수 없음 |
+| 500 | 서버 내부 오류 |
+
+#### Request 예시
+
+```http
+DELETE /api/reports/blocks/users/5 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+#### Response 예시
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "성공",
+  "data": null
+}
+```
+
+---
+
 ## 신고 API
 
-### 2. 사용자 신고 (POST /api/reports/users/{targetUserId})
+### 4. 사용자 신고 (POST /api/reports/users/{targetUserId})
 
 사용자를 신고합니다.
 
@@ -356,7 +537,7 @@ Content-Type: image/png
 
 ---
 
-### 3. 상품 신고 (POST /api/reports/products/{productId})
+### 5. 상품 신고 (POST /api/reports/products/{productId})
 
 상품을 신고합니다.
 
@@ -470,7 +651,7 @@ Content-Disposition: form-data; name="detailReason"
 
 ---
 
-### 4. 커뮤니티 게시글 신고 (POST /api/reports/community-posts/{postId})
+### 6. 커뮤니티 게시글 신고 (POST /api/reports/community-posts/{postId})
 
 커뮤니티 게시글을 신고합니다.
 
@@ -582,7 +763,7 @@ Content-Disposition: form-data; name="detailReason"
 
 ## 관리자 신고 관리 API
 
-### 5. 신고 목록 조회 (GET /api/admin/reports)
+### 7. 신고 목록 조회 (GET /api/admin/reports)
 
 관리자가 신고 목록을 조회합니다.
 
@@ -692,7 +873,7 @@ Content-Type: application/json
 
 ---
 
-### 6. 신고 검토 (PATCH /api/admin/reports/{reportId}/review)
+### 8. 신고 검토 (PATCH /api/admin/reports/{reportId}/review)
 
 관리자가 신고를 검토하고 상태를 변경합니다.
 

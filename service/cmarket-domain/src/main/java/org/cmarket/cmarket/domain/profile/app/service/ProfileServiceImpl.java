@@ -14,14 +14,12 @@ import org.cmarket.cmarket.domain.product.model.ProductType;
 import org.cmarket.cmarket.domain.product.repository.FavoriteRepository;
 import org.cmarket.cmarket.domain.product.repository.ProductRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserDto;
-import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserListDto;
 import org.cmarket.cmarket.domain.profile.app.dto.MyPageDto;
-import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
 import org.cmarket.cmarket.domain.profile.app.dto.ProfileUpdateCommand;
 import org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto;
-import org.cmarket.cmarket.domain.profile.model.BlockedUser;
-import org.cmarket.cmarket.domain.profile.repository.BlockedUserRepository;
 import org.cmarket.cmarket.domain.report.app.service.UserBlockQueryService;
+import org.cmarket.cmarket.domain.report.model.UserBlock;
+import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,7 +40,7 @@ import java.util.stream.Collectors;
 public class ProfileServiceImpl implements ProfileService {
     
     private final UserRepository userRepository;
-    private final BlockedUserRepository blockedUserRepository;
+    private final UserBlockRepository userBlockRepository;
     private final FavoriteRepository favoriteRepository;
     private final ProductRepository productRepository;
     private final UserBlockQueryService userBlockQueryService;
@@ -55,14 +53,14 @@ public class ProfileServiceImpl implements ProfileService {
         
         // 2. 차단한 유저 목록 조회 (최대 100개로 제한)
         Pageable pageable = PageRequest.of(0, 100);
-        List<BlockedUser> blockedUsers = blockedUserRepository
+        List<UserBlock> userBlocks = userBlockRepository
                 .findByBlockerIdOrderByCreatedAtDesc(user.getId(), pageable)
                 .getContent();
         
         // 3. 차단한 유저 정보 조회
-        List<BlockedUserDto> blockedUserDtos = blockedUsers.stream()
-                .map(blockedUser -> {
-                    User blockedUserEntity = userRepository.findById(blockedUser.getBlockedId())
+        List<BlockedUserDto> blockedUserDtos = userBlocks.stream()
+                .map(userBlock -> {
+                    User blockedUserEntity = userRepository.findById(userBlock.getBlockedUserId())
                             .orElse(null);
                     
                     if (blockedUserEntity == null || blockedUserEntity.isDeleted()) {
@@ -248,61 +246,5 @@ public class ProfileServiceImpl implements ProfileService {
                 .build();
     }
     
-    @Override
-    public BlockedUserListDto getBlockedUsers(String email, org.springframework.data.domain.Pageable pageable) {
-        // 1. 사용자 조회
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
-        
-        // 2. 차단 목록 조회 (페이지네이션, 최신순 정렬)
-        org.springframework.data.domain.Page<BlockedUser> blockedUserPage = blockedUserRepository
-                .findByBlockerIdOrderByCreatedAtDesc(user.getId(), pageable);
-        
-        // 3. 차단당한 사용자 정보 조회 및 DTO 변환
-        List<BlockedUserDto> blockedUserDtos = blockedUserPage.getContent().stream()
-                .map(blockedUser -> {
-                    User blockedUserEntity = userRepository.findById(blockedUser.getBlockedId())
-                            .orElse(null);
-                    
-                    if (blockedUserEntity == null || blockedUserEntity.isDeleted()) {
-                        return null;  // 삭제된 사용자는 제외
-                    }
-                    
-                    return BlockedUserDto.builder()
-                            .blockedUserId(blockedUserEntity.getId())
-                            .nickname(blockedUserEntity.getNickname())
-                            .profileImageUrl(blockedUserEntity.getProfileImageUrl())
-                            .build();
-                })
-                .filter(blockedUserDto -> blockedUserDto != null)
-                .collect(Collectors.toList());
-        
-        // 4. PageResult 생성 (삭제된 사용자를 제외한 실제 개수로 조정)
-        // Spring Data Page를 PageResult로 변환
-        org.springframework.data.domain.Page<BlockedUserDto> blockedUserDtoPage = 
-                new org.springframework.data.domain.PageImpl<>(
-                        blockedUserDtos,
-                        pageable,
-                        blockedUserPage.getTotalElements()  // 전체 개수는 원본 페이지에서 가져옴
-                );
-        
-        PageResult<BlockedUserDto> pageResult = PageResult.fromPage(blockedUserDtoPage);
-        
-        // 5. BlockedUserListDto 생성 및 반환
-        return BlockedUserListDto.builder()
-                .blockedUsers(pageResult)
-                .build();
-    }
-    
-    @Override
-    @Transactional
-    public void unblockUser(String email, Long blockedUserId) {
-        // 1. 사용자 조회
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
-        
-        // 2. 차단 관계 삭제 (차단 관계가 없어도 예외 발생하지 않음 - idempotent)
-        blockedUserRepository.deleteByBlockerIdAndBlockedId(user.getId(), blockedUserId);
-    }
 }
 

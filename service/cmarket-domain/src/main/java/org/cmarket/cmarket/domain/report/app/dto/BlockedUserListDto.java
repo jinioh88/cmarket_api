@@ -1,7 +1,8 @@
-package org.cmarket.cmarket.domain.profile.app.dto;
+package org.cmarket.cmarket.domain.report.app.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
 
 /**
  * 차단한 유저 목록 DTO
