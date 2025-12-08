@@ -28,6 +28,18 @@ public enum ErrorCode {
     USER_NOT_FOUND(404, "사용자를 찾을 수 없습니다."),
     BLOCKED_USER_NOT_FOUND(404, "차단된 사용자를 찾을 수 없습니다."),
     
+    // 신고/차단 관련 (400)
+    BLOCK_SELF_NOT_ALLOWED(400, "자기 자신을 차단할 수 없습니다."),
+    USER_ALREADY_BLOCKED(400, "이미 차단된 사용자입니다."),
+    ALREADY_REPORTED(409, "이미 신고된 대상입니다."),
+    REPORT_STATUS_INVALID(400, "유효하지 않은 신고 상태 전환입니다."),
+    
+    // 신고/차단 관련 (403)
+    USER_BLOCKED(403, "차단된 사용자와는 상호작용할 수 없습니다."),
+    
+    // 신고/차단 관련 (404)
+    REPORT_NOT_FOUND(404, "신고를 찾을 수 없습니다."),
+    
     // 상품 관련 (400)
     PRODUCT_ALREADY_DELETED(400, "이미 삭제된 상품입니다."),
     INVALID_PRODUCT_TYPE(400, "잘못된 상품 타입입니다."),
