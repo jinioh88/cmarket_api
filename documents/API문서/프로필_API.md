@@ -670,7 +670,8 @@ GET /api/profile/{userId}
 - 인증이 필요합니다 (`Authorization` 헤더 필수).
 - 소프트 삭제된 사용자는 조회할 수 없습니다.
 - 현재 로그인한 사용자가 해당 사용자를 차단했는지 여부(`isBlocked`)가 포함됩니다.
-- 본인 정보 조회 API(`GET /api/profile/me`)와 유사한 응답 구조를 사용하지만, 차단 여부 필드가 추가됩니다.
+- 현재 로그인한 사용자가 해당 사용자를 신고했는지 여부(`isReported`)가 포함됩니다.
+- 본인 정보 조회 API(`GET /api/profile/me`)와 유사한 응답 구조를 사용하지만, 차단 여부 및 신고 여부 필드가 추가됩니다.
 
 ### Request
 
@@ -706,6 +707,7 @@ GET /api/profile/{userId}
 | data.addressGugun | String | 거주지 구/군 (nullable) |
 | data.createdAt | String | 가입일시 (ISO 8601 형식: YYYY-MM-DDTHH:mm:ss) |
 | data.isBlocked | Boolean | 현재 로그인한 사용자가 해당 사용자를 차단했는지 여부 (nullable, 본인 조회 시 null) |
+| data.isReported | Boolean | 현재 로그인한 사용자가 해당 사용자를 신고했는지 여부 (nullable, 본인 조회 시 null) |
 
 #### 에러 응답
 
@@ -741,7 +743,8 @@ Content-Type: application/json
     "addressSido": "서울특별시",
     "addressGugun": "강남구",
     "createdAt": "2024-02-01T09:15:00",
-    "isBlocked": false
+    "isBlocked": false,
+    "isReported": false
   }
 }
 ```

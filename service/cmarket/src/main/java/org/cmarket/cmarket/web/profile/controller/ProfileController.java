@@ -216,7 +216,7 @@ public class ProfileController {
         // 현재 로그인한 사용자의 이메일 추출
         String email = SecurityUtils.getCurrentUserEmail();
         
-        // 앱 서비스 호출 (차단 여부 확인 포함)
+        // 앱 서비스 호출 (차단 여부 및 신고 여부 확인 포함)
         org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto userProfileDto = 
                 profileService.getUserProfile(userId, email);
         

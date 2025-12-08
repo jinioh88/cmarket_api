@@ -26,6 +26,7 @@ public class UserProfileDto {
     private LocalDate birthDate;
     private String email;
     private Boolean isBlocked;
+    private Boolean isReported;
     
     // todo: 등록한 상품 목록 (향후 Product 도메인에서 구현 예정)
     private List<Object> products;  // 빈 리스트로 반환

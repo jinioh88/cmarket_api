@@ -18,7 +18,9 @@ import org.cmarket.cmarket.domain.profile.app.dto.MyPageDto;
 import org.cmarket.cmarket.domain.profile.app.dto.ProfileUpdateCommand;
 import org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto;
 import org.cmarket.cmarket.domain.report.app.service.UserBlockQueryService;
+import org.cmarket.cmarket.domain.report.model.ReportTargetType;
 import org.cmarket.cmarket.domain.report.model.UserBlock;
+import org.cmarket.cmarket.domain.report.repository.ReportRepository;
 import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +46,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final FavoriteRepository favoriteRepository;
     private final ProductRepository productRepository;
     private final UserBlockQueryService userBlockQueryService;
+    private final ReportRepository reportRepository;
     
     @Override
     public MyPageDto getMyPage(String email) {
@@ -218,13 +221,16 @@ public class ProfileServiceImpl implements ProfileService {
                 .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
         
-        // 2. 차단 여부 확인 (현재 사용자가 로그인한 경우에만)
+        // 2. 차단 여부 및 신고 여부 확인 (현재 사용자가 로그인한 경우에만)
         Boolean isBlocked = null;
+        Boolean isReported = null;
         if (currentUserEmail != null) {
             User currentUser = userRepository.findByEmailAndDeletedAtIsNull(currentUserEmail)
                     .orElse(null);
             if (currentUser != null) {
                 isBlocked = userBlockQueryService.isBlocked(currentUser.getId(), userId);
+                isReported = reportRepository.existsByReporterIdAndTargetTypeAndTargetId(
+                        currentUser.getId(), ReportTargetType.USER, userId);
             }
         }
         
@@ -242,6 +248,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .birthDate(user.getBirthDate())
                 .email(user.getEmail())
                 .isBlocked(isBlocked)
+                .isReported(isReported)
                 .products(Collections.emptyList())  // todo: 향후 Product 도메인에서 구현
                 .build();
     }

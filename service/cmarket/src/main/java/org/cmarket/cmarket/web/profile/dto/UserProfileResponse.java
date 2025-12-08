@@ -25,6 +25,7 @@ public class UserProfileResponse {
     private LocalDate birthDate;
     private String email;
     private Boolean isBlocked;
+    private Boolean isReported;
 
     
     /**
@@ -50,6 +51,7 @@ public class UserProfileResponse {
                 .birthDate(userProfileDto.getBirthDate())
                 .email(userProfileDto.getEmail())
                 .isBlocked(isBlocked)
+                .isReported(userProfileDto.getIsReported())
                 .build();
     }
     
