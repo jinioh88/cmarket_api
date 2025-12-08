@@ -17,8 +17,8 @@ import java.util.List;
 @Getter
 public class UserReportRequest {
     
-    @NotEmpty(message = "신고 사유를 최소 1개 이상 선택해야 합니다.")
-    private List<String> reasonCodes;  // UserReportReason enum name 리스트
+    @NotEmpty(message = "신고 사유를 선택해야 합니다.")
+    private String reasonCode;  // UserReportReason enum name
     
     @Size(max = 300, message = "상세 사유는 최대 300자까지 입력 가능합니다.")
     private String detailReason;
@@ -36,7 +36,7 @@ public class UserReportRequest {
         return ReportCreateCommand.builder()
                 .targetType(ReportTargetType.USER)
                 .targetId(targetUserId)
-                .reasonCodes(this.reasonCodes)
+                .reasonCodes(List.of(this.reasonCode))  // 단일 값을 List로 변환
                 .detailReason(this.detailReason)
                 .imageUrls(imageUrls)
                 .build();

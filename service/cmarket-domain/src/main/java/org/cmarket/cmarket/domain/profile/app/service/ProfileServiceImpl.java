@@ -21,6 +21,7 @@ import org.cmarket.cmarket.domain.profile.app.dto.ProfileUpdateCommand;
 import org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto;
 import org.cmarket.cmarket.domain.profile.model.BlockedUser;
 import org.cmarket.cmarket.domain.profile.repository.BlockedUserRepository;
+import org.cmarket.cmarket.domain.report.app.service.UserBlockQueryService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final BlockedUserRepository blockedUserRepository;
     private final FavoriteRepository favoriteRepository;
     private final ProductRepository productRepository;
+    private final UserBlockQueryService userBlockQueryService;
     
     @Override
     public MyPageDto getMyPage(String email) {
@@ -212,13 +214,23 @@ public class ProfileServiceImpl implements ProfileService {
     }
     
     @Override
-    public UserProfileDto getUserProfile(Long userId) {
+    public UserProfileDto getUserProfile(Long userId, String currentUserEmail) {
         // 1. 사용자 조회 (소프트 삭제된 사용자 제외)
         User user = userRepository.findById(userId)
                 .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
         
-        // 2. UserProfileDto 생성 및 반환
+        // 2. 차단 여부 확인 (현재 사용자가 로그인한 경우에만)
+        Boolean isBlocked = null;
+        if (currentUserEmail != null) {
+            User currentUser = userRepository.findByEmailAndDeletedAtIsNull(currentUserEmail)
+                    .orElse(null);
+            if (currentUser != null) {
+                isBlocked = userBlockQueryService.isBlocked(currentUser.getId(), userId);
+            }
+        }
+        
+        // 3. UserProfileDto 생성 및 반환
         // 등록한 상품 목록은 향후 Product 도메인에서 구현 예정
         return UserProfileDto.builder()
                 .id(user.getId())
@@ -231,6 +243,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .name(user.getName())
                 .birthDate(user.getBirthDate())
                 .email(user.getEmail())
+                .isBlocked(isBlocked)
                 .products(Collections.emptyList())  // todo: 향후 Product 도메인에서 구현
                 .build();
     }

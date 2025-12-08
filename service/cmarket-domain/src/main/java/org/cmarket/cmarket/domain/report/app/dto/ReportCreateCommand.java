@@ -16,7 +16,7 @@ import java.util.List;
 public class ReportCreateCommand {
     private ReportTargetType targetType;
     private Long targetId;
-    private List<String> reasonCodes;  // 신고 사유 코드 리스트 (최소 1개)
+    private List<String> reasonCodes;  // 신고 사유 코드 리스트 (단일 선택인 경우 1개, 다중 선택인 경우 여러 개)
     private String detailReason;  // 상세 사유 (최대 300자)
     private List<String> imageUrls;  // 이미지 URL 리스트 (최대 3개)
 }

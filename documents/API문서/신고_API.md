@@ -113,14 +113,13 @@ http://localhost:8080
 
 | Enum 값 | 설명 |
 |---------|------|
-| `ABUSE_OR_HARASSMENT` | 욕설, 비방, 괴롭힘 |
-| `FRAUD_OR_SCAM` | 사기, 허위 거래 시도 |
+| `HARASSMENT` | 욕설, 비방, 괴롭힘 |
+| `FRAUD` | 사기, 허위 거래 시도 |
 | `INAPPROPRIATE_CONTENT` | 음란물 또는 불건전 행위 |
-| `SPAM_OR_AD` | 스팸/광고성 메시지 |
-| `UNDER_14` | 만 14세 미만 유저입니다 |
-| `NICKNAME_ISSUE` | 사용자 닉네임 신고 |
-| `PROFILE_IMAGE_ISSUE` | 사용자 프로필 이미지 신고 |
-| `ETC` | 기타 (직접 입력) |
+| `SPAM` | 스팸/광고성 메시지 |
+| `OFFENSIVE_PROFILE` | 불괘한 사용자 정보 내용 |
+| `UNDERAGE` | 만 14세 미만 유저입니다 |
+| `OTHER` | 기타 (직접 입력) |
 
 ### ProductReportReason (상품 신고 사유)
 
@@ -182,14 +181,13 @@ POST /api/reports/blocks/users/{blockedUserId}
 
 | 필드명 | 타입 | 필수 | 설명 |
 |--------|------|------|------|
-| - | - | - | Request Body 없음 (또는 빈 객체 `{}`) |
+| - | - | - | Request Body 없음 |
 
 #### Request Headers
 
 | 헤더명 | 타입 | 필수 | 설명 |
 |--------|------|------|------|
 | Authorization | String | 예 | `Bearer <Access Token>` |
-| Content-Type | String | 예 | `application/json` |
 
 #### Response Body
 
@@ -221,13 +219,6 @@ POST /api/reports/blocks/users/{blockedUserId}
 POST /api/reports/blocks/users/123 HTTP/1.1
 Host: localhost:8080
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-Content-Type: application/json
-```
-
-또는 빈 Request Body:
-
-```json
-{}
 ```
 
 #### Response 예시
@@ -265,7 +256,7 @@ POST /api/reports/users/{targetUserId}
 - 로그인한 사용자가 다른 사용자를 신고합니다.
 - 인증이 필요합니다 (`Authorization` 헤더 필수).
 - 한 사용자당 동일 유저 1회만 신고 가능합니다.
-- 신고 사유는 다중 선택 가능합니다.
+- 신고 사유는 단일 선택입니다.
 - 이미지 첨부 가능 (최대 3장).
 - 이미 신고 접수된 유저에 대해 중복 신고 요청 시 "이미 신고된 유저입니다." 메시지를 반환합니다.
 
@@ -279,7 +270,7 @@ POST /api/reports/users/{targetUserId}
 
 | 필드명 | 타입 | 필수 | 설명 |
 |--------|------|------|------|
-| reasonCodes | String[] | 예 | 신고 사유 코드 리스트 (UserReportReason enum name, 최소 1개) |
+| reasonCode | String | 예 | 신고 사유 코드 (UserReportReason enum name, 단일 선택) |
 | detailReason | String | 아니오 | 상세 사유 (최대 300자) |
 | imageFiles | File[] | 아니오 | 이미지 파일 리스트 (최대 3장, 각 파일 최대 5MB) |
 
@@ -313,7 +304,7 @@ POST /api/reports/users/{targetUserId}
 
 | HTTP 상태 코드 | 설명 |
 |---------------|------|
-| 400 | 신고 사유를 최소 1개 이상 선택해야 함, 상세 사유 최대 300자 초과 |
+| 400 | 신고 사유를 선택해야 함, 상세 사유 최대 300자 초과 |
 | 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
 | 404 | 신고 대상 사용자를 찾을 수 없음 |
 | 409 | 이미 신고된 유저입니다 |
@@ -328,13 +319,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="reasonCodes"
+Content-Disposition: form-data; name="reasonCode"
 
-ABUSE_OR_HARASSMENT
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="reasonCodes"
-
-SPAM_OR_AD
+HARASSMENT
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="detailReason"
 
@@ -358,7 +345,7 @@ Content-Type: image/png
     "reporterId": 1,
     "targetType": "USER",
     "targetId": 123,
-    "reasonCodes": ["ABUSE_OR_HARASSMENT", "SPAM_OR_AD"],
+    "reasonCodes": ["HARASSMENT"],
     "detailReason": "부적절한 행위를 반복적으로 하고 있습니다.",
     "imageUrls": ["/api/images/user/1/2025/01/15/uuid-screenshot1.png"],
     "status": "PENDING",
@@ -432,7 +419,7 @@ POST /api/reports/products/{productId}
 
 | HTTP 상태 코드 | 설명 |
 |---------------|------|
-| 400 | 신고 사유를 최소 1개 이상 선택해야 함, 상세 사유 최대 300자 초과 |
+| 400 | 신고 사유를 선택해야 함, 상세 사유 최대 300자 초과 |
 | 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
 | 404 | 신고 대상 상품을 찾을 수 없음 |
 | 409 | 이미 신고된 상품입니다 |
@@ -451,6 +438,10 @@ Content-Disposition: form-data; name="reasonCodes"
 
 FALSE_OR_SCAM
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="reasonCodes"
+
+SPAM_OR_AD
+------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="detailReason"
 
 허위 상품 정보를 제공하고 있습니다.
@@ -468,7 +459,7 @@ Content-Disposition: form-data; name="detailReason"
     "reporterId": 1,
     "targetType": "PRODUCT",
     "targetId": 456,
-    "reasonCodes": ["FALSE_OR_SCAM"],
+    "reasonCodes": ["FALSE_OR_SCAM", "SPAM_OR_AD"],
     "detailReason": "허위 상품 정보를 제공하고 있습니다.",
     "imageUrls": [],
     "status": "PENDING",
@@ -494,7 +485,7 @@ POST /api/reports/community-posts/{postId}
 - 로그인한 사용자가 부적절한 커뮤니티 게시글을 신고합니다.
 - 인증이 필요합니다 (`Authorization` 헤더 필수).
 - 한 게시글당 한 사용자 1회만 신고 가능합니다.
-- 신고 사유는 다중 선택 가능합니다.
+- 신고 사유는 단일 선택입니다.
 - 이미지 첨부 가능 (최대 3장).
 - 이미 신고 접수된 게시글에 대해 중복 신고 요청 시 "이미 신고된 게시글입니다." 메시지를 반환합니다.
 
@@ -542,7 +533,7 @@ POST /api/reports/community-posts/{postId}
 
 | HTTP 상태 코드 | 설명 |
 |---------------|------|
-| 400 | 신고 사유를 최소 1개 이상 선택해야 함, 상세 사유 최대 300자 초과 |
+| 400 | 신고 사유를 선택해야 함, 상세 사유 최대 300자 초과 |
 | 401 | 인증되지 않음 (토큰이 없거나 유효하지 않음) |
 | 404 | 신고 대상 게시글을 찾을 수 없음 |
 | 409 | 이미 신고된 게시글입니다 |
@@ -557,7 +548,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="reasonCodes"
+Content-Disposition: form-data; name="reasonCode"
 
 ABUSE_OR_HATE
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
@@ -681,7 +672,7 @@ Content-Type: application/json
         "reporterId": 1,
         "targetType": "USER",
         "targetId": 123,
-        "reasonCodes": ["ABUSE_OR_HARASSMENT", "SPAM_OR_AD"],
+        "reasonCodes": ["HARASSMENT"],
         "detailReason": "부적절한 행위를 반복적으로 하고 있습니다.",
         "imageUrls": ["/api/images/user/1/2025/01/15/uuid-screenshot1.png"],
         "status": "PENDING",
@@ -793,7 +784,7 @@ Content-Type: application/json
     "reporterId": 1,
     "targetType": "USER",
     "targetId": 123,
-    "reasonCodes": ["ABUSE_OR_HARASSMENT", "SPAM_OR_AD"],
+    "reasonCodes": ["HARASSMENT"],
     "detailReason": "부적절한 행위를 반복적으로 하고 있습니다.",
     "imageUrls": ["/api/images/user/1/2025/01/15/uuid-screenshot1.png"],
     "status": "REVIEWED",
@@ -808,9 +799,9 @@ Content-Type: application/json
 
 ### 신고 사유 코드 사용 방법
 
-- 신고 사유는 다중 선택이 가능합니다.
-- `reasonCodes`는 배열로 전달하며, 각 값은 해당 Enum의 이름을 문자열로 전달합니다.
-- 예: `["ABUSE_OR_HARASSMENT", "SPAM_OR_AD"]`
+- 신고 사유는 단일 선택입니다.
+- `reasonCode`는 문자열로 전달하며, 해당 Enum의 이름을 문자열로 전달합니다.
+- 예: `"HARASSMENT"`
 
 ### 이미지 업로드
 

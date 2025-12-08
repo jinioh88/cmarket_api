@@ -53,10 +53,11 @@ public interface ProfileService {
      * 특정 사용자의 프로필 정보를 조회합니다.
      * 
      * @param userId 사용자 ID
+     * @param currentUserEmail 현재 로그인한 사용자 이메일 (차단 여부 확인용, null 가능)
      * @return 유저 프로필 정보
      * @throws org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException 사용자가 존재하지 않을 때
      */
-    UserProfileDto getUserProfile(Long userId);
+    UserProfileDto getUserProfile(Long userId, String currentUserEmail);
     
     /**
      * 차단한 유저 목록 조회

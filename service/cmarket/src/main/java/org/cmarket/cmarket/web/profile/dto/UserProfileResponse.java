@@ -24,15 +24,20 @@ public class UserProfileResponse {
     private String name;
     private LocalDate birthDate;
     private String email;
+    private Boolean isBlocked;
 
     
     /**
      * 앱 DTO에서 웹 DTO로 변환 (다른 사용자 프로필)
      * 
      * @param userProfileDto 앱 DTO
+     * @param isBlocked 차단 여부
      * @return 웹 DTO
      */
-    public static UserProfileResponse fromDto(org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto userProfileDto) {
+    public static UserProfileResponse fromDto(
+            org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto userProfileDto,
+            Boolean isBlocked
+    ) {
         return UserProfileResponse.builder()
                 .id(userProfileDto.getId())
                 .profileImageUrl(userProfileDto.getProfileImageUrl())
@@ -44,6 +49,7 @@ public class UserProfileResponse {
                 .name(userProfileDto.getName())
                 .birthDate(userProfileDto.getBirthDate())
                 .email(userProfileDto.getEmail())
+                .isBlocked(isBlocked)
                 .build();
     }
     

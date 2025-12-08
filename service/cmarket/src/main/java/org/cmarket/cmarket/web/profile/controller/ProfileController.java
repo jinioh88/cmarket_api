@@ -215,12 +215,15 @@ public class ProfileController {
     public ResponseEntity<SuccessResponse<UserProfileResponse>> getUserProfile(
             @PathVariable Long userId
     ) {
-        // 앱 서비스 호출
+        // 현재 로그인한 사용자의 이메일 추출
+        String email = SecurityUtils.getCurrentUserEmail();
+        
+        // 앱 서비스 호출 (차단 여부 확인 포함)
         org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto userProfileDto = 
-                profileService.getUserProfile(userId);
+                profileService.getUserProfile(userId, email);
         
         // 앱 DTO → 웹 DTO 변환
-        UserProfileResponse response = UserProfileResponse.fromDto(userProfileDto);
+        UserProfileResponse response = UserProfileResponse.fromDto(userProfileDto, userProfileDto.getIsBlocked());
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
