@@ -27,11 +27,13 @@ public interface CommunityService {
      *
      * @param sortBy 정렬 기준 ("latest", "oldest", "views", "comments")
      * @param boardType 게시판 유형 (null이면 전체 조회)
+     * @param searchType 검색 타입 ("title", "title_content", "writer", null이면 검색 안함)
+     * @param keyword 검색어 (null이면 검색 안함)
      * @param page 페이지 번호 (0부터 시작)
      * @param size 페이지 크기
      * @return 게시글 목록
      */
-    PostListDto getPostList(String sortBy, BoardType boardType, Integer page, Integer size);
+    PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword, Integer page, Integer size);
 
     /**
      * 게시글 상세 조회

@@ -77,7 +77,7 @@ public class CommunityServiceImpl implements CommunityService {
     
     @Override
     @Transactional(readOnly = true)
-    public PostListDto getPostList(String sortBy, BoardType boardType, Integer page, Integer size) {
+    public PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword, Integer page, Integer size) {
         // 정렬 기준 기본값 설정
         if (sortBy == null || sortBy.isEmpty()) {
             sortBy = "latest";
@@ -95,7 +95,7 @@ public class CommunityServiceImpl implements CommunityService {
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         
         // 게시글 목록 조회 (QueryDSL 사용)
-        Page<Post> postPage = postRepository.findPosts(sortBy, sortOrder, boardType, pageable);
+        Page<Post> postPage = postRepository.findPosts(sortBy, sortOrder, boardType, searchType, keyword, pageable);
         
         // Post 엔티티를 PostListItemDto로 변환 (엔티티에 저장된 작성자 정보 사용)
         PageResult<PostListItemDto> pageResult = PageResult.fromPage(

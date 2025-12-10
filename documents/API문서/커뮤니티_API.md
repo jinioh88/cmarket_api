@@ -155,6 +155,8 @@ http://localhost:8080
 |----------|------|------|--------|------|
 | sortBy | String | 아니오 | "latest" | 정렬 기준: `latest`(최신순), `oldest`(오래된순), `views`(조회수 많은순), `comments`(댓글 많은순) |
 | boardType | String | 아니오 | null | 게시판 유형 필터링: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유). null이면 전체 조회 |
+| searchType | String | 아니오 | null | 검색 타입: `title`(제목), `title_content`(제목+내용), `writer`(작성자). keyword와 함께 사용 |
+| keyword | String | 아니오 | null | 검색어. searchType과 함께 사용해야 검색이 적용됩니다 |
 | page | Integer | 아니오 | 0 | 페이지 번호 (0부터 시작) |
 | size | Integer | 아니오 | 20 | 페이지 크기 |
 
@@ -607,6 +609,23 @@ http://localhost:8080
 
 게시글 목록 조회 시 `boardType` 쿼리 파라미터를 사용하여 특정 게시판 유형만 필터링할 수 있습니다.  
 예: `GET /api/community/posts?boardType=QUESTION&sortBy=latest`
+
+### 검색 타입 (searchType)
+
+| 값 | 설명 |
+|----|------|
+| `title` | 제목만 검색 |
+| `title_content` | 제목 또는 내용 검색 |
+| `writer` | 작성자 닉네임 검색 |
+
+게시글 목록 조회 시 `searchType`과 `keyword` 쿼리 파라미터를 함께 사용하여 검색할 수 있습니다.  
+검색은 대소문자를 구분하지 않으며, 부분 일치 검색을 지원합니다.
+
+**사용 예시:**
+- 제목 검색: `GET /api/community/posts?searchType=title&keyword=강아지`
+- 제목+내용 검색: `GET /api/community/posts?searchType=title_content&keyword=산책`
+- 작성자 검색: `GET /api/community/posts?searchType=writer&keyword=집사`
+- 게시판 유형 + 검색: `GET /api/community/posts?boardType=QUESTION&searchType=title&keyword=추천`
 
 ### 에러 코드
 

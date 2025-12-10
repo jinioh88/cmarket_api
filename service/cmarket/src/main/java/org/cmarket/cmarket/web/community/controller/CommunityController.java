@@ -82,9 +82,12 @@ public class CommunityController {
      * - 비회원도 조회 가능
      * - 정렬 기준: latest (최신순), oldest (오래된순), views (조회수 많은순), comments (댓글 많은순)
      * - 게시판 유형: FREE (자유게시판), QUESTION (질문있어요), INFO (정보공유)
+     * - 검색 타입: title (제목), title_content (제목+내용), writer (작성자)
      * 
      * @param sortBy 정렬 기준 (기본값: "latest")
      * @param boardType 게시판 유형 (선택사항, null이면 전체 조회)
+     * @param searchType 검색 타입 (선택사항: "title", "title_content", "writer")
+     * @param keyword 검색어 (선택사항, searchType과 함께 사용)
      * @param page 페이지 번호 (기본값: 0)
      * @param size 페이지 크기 (기본값: 20)
      * @return 게시글 목록
@@ -93,12 +96,14 @@ public class CommunityController {
     public ResponseEntity<SuccessResponse<PostListResponse>> getPostList(
             @RequestParam(required = false, defaultValue = "latest") String sortBy,
             @RequestParam(required = false) BoardType boardType,
+            @RequestParam(required = false) String searchType,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size
     ) {
         // 앱 서비스 호출
         org.cmarket.cmarket.domain.community.app.dto.PostListDto postListDto = 
-                communityService.getPostList(sortBy, boardType, page, size);
+                communityService.getPostList(sortBy, boardType, searchType, keyword, page, size);
         
         // 앱 DTO → 웹 DTO 변환
         PostListResponse response = PostListResponse.fromDto(postListDto);

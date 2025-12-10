@@ -31,13 +31,38 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
     }
     
     @Override
-    public Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, Pageable pageable) {
+    public Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, String searchType, String keyword, Pageable pageable) {
         // 기본 조건: 소프트 삭제되지 않은 게시글만
         BooleanExpression whereCondition = post.deletedAt.isNull();
         
         // 게시판 유형 필터링 (boardType이 null이 아니면 해당 유형만 조회)
         if (boardType != null) {
             whereCondition = whereCondition.and(post.boardType.eq(boardType));
+        }
+        
+        // 검색 조건 추가
+        if (searchType != null && keyword != null && !keyword.trim().isEmpty()) {
+            String trimmedKeyword = keyword.trim();
+            switch (searchType.toLowerCase()) {
+                case "title":
+                    // 제목만 검색
+                    whereCondition = whereCondition.and(post.title.containsIgnoreCase(trimmedKeyword));
+                    break;
+                case "title_content":
+                    // 제목 또는 내용 검색
+                    whereCondition = whereCondition.and(
+                            post.title.containsIgnoreCase(trimmedKeyword)
+                                    .or(post.content.containsIgnoreCase(trimmedKeyword))
+                    );
+                    break;
+                case "writer":
+                    // 작성자 검색
+                    whereCondition = whereCondition.and(post.authorNickname.containsIgnoreCase(trimmedKeyword));
+                    break;
+                default:
+                    // 알 수 없는 검색 타입은 무시
+                    break;
+            }
         }
         
         JPAQuery<Post> query = queryFactory
