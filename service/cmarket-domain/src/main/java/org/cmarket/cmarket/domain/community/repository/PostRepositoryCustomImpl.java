@@ -2,9 +2,11 @@ package org.cmarket.cmarket.domain.community.repository;
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.model.Post;
 import org.cmarket.cmarket.domain.community.model.QPost;
 import org.springframework.data.domain.Page;
@@ -29,11 +31,18 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
     }
     
     @Override
-    public Page<Post> findPosts(String sortBy, String sortOrder, Pageable pageable) {
+    public Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, Pageable pageable) {
         // 기본 조건: 소프트 삭제되지 않은 게시글만
+        BooleanExpression whereCondition = post.deletedAt.isNull();
+        
+        // 게시판 유형 필터링 (boardType이 null이 아니면 해당 유형만 조회)
+        if (boardType != null) {
+            whereCondition = whereCondition.and(post.boardType.eq(boardType));
+        }
+        
         JPAQuery<Post> query = queryFactory
                 .selectFrom(post)
-                .where(post.deletedAt.isNull())
+                .where(whereCondition)
                 .orderBy(buildOrderSpecifiers(sortBy, sortOrder))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize());
@@ -42,7 +51,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
         JPAQuery<Long> countQuery = queryFactory
                 .select(post.count())
                 .from(post)
-                .where(post.deletedAt.isNull());
+                .where(whereCondition);
         
         // 페이지네이션 결과 반환
         List<Post> content = query.fetch();

@@ -4,6 +4,8 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -54,6 +56,10 @@ public class Post {
     @Column(nullable = false, length = 1000)
     private String content;  // 내용 (2-1000자)
     
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "board_type", length = 20)
+    private BoardType boardType;  // 게시판 유형 (자유게시판, 질문있어요, 정보공유)
+    
     @ElementCollection
     @CollectionTable(
         name = "post_images",
@@ -84,7 +90,8 @@ public class Post {
             String authorProfileImageUrl,
             String title,
             String content,
-            List<String> imageUrls
+            List<String> imageUrls,
+            BoardType boardType
     ) {
         this.authorId = authorId;
         this.authorNickname = authorNickname;
@@ -92,6 +99,7 @@ public class Post {
         this.title = title;
         this.content = content;
         this.imageUrls = imageUrls != null ? new ArrayList<>(imageUrls) : new ArrayList<>();
+        this.boardType = boardType;
         this.viewCount = 0L;
         this.commentCount = 0L;
         this.createdAt = LocalDateTime.now();
@@ -101,10 +109,11 @@ public class Post {
     /**
      * 게시글 정보 수정
      */
-    public void update(String title, String content, List<String> imageUrls) {
+    public void update(String title, String content, List<String> imageUrls, BoardType boardType) {
         this.title = title;
         this.content = content;
         this.imageUrls = imageUrls != null ? new ArrayList<>(imageUrls) : new ArrayList<>();
+        this.boardType = boardType;
         this.updatedAt = LocalDateTime.now();
     }
     

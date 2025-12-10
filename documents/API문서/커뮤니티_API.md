@@ -87,6 +87,7 @@ http://localhost:8080
 | title | String | 예 | 제목 (2~50자) |
 | content | String | 예 | 내용 (2~1000자) |
 | imageUrls | String[] | 옵션 | 이미지 URL 배열 (최대 5장) |
+| boardType | String | 예 | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
 
 #### Request 예시
 
@@ -97,7 +98,8 @@ http://localhost:8080
   "imageUrls": [
     "https://example.com/image1.jpg",
     "https://example.com/image2.jpg"
-  ]
+  ],
+  "boardType": "QUESTION"
 }
 ```
 
@@ -110,6 +112,7 @@ http://localhost:8080
 | title | String | 제목 |
 | content | String | 내용 |
 | imageUrls | String[] | 이미지 URL 배열 |
+| boardType | String | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
 | viewCount | Long | 조회수 (초기값 0) |
 | commentCount | Long | 댓글 개수 (초기값 0) |
 | createdAt | String | 생성일시 (ISO 8601) |
@@ -130,6 +133,7 @@ http://localhost:8080
       "https://example.com/image1.jpg",
       "https://example.com/image2.jpg"
     ],
+    "boardType": "QUESTION",
     "viewCount": 0,
     "commentCount": 0,
     "createdAt": "2025-01-15T10:30:00",
@@ -150,6 +154,7 @@ http://localhost:8080
 | 파라미터 | 타입 | 필수 | 기본값 | 설명 |
 |----------|------|------|--------|------|
 | sortBy | String | 아니오 | "latest" | 정렬 기준: `latest`(최신순), `oldest`(오래된순), `views`(조회수 많은순), `comments`(댓글 많은순) |
+| boardType | String | 아니오 | null | 게시판 유형 필터링: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유). null이면 전체 조회 |
 | page | Integer | 아니오 | 0 | 페이지 번호 (0부터 시작) |
 | size | Integer | 아니오 | 20 | 페이지 크기 |
 
@@ -174,6 +179,7 @@ http://localhost:8080
 | id | Long | 게시글 ID |
 | title | String | 제목 |
 | authorNickname | String | 작성자 닉네임 |
+| boardType | String | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
 | viewCount | Long | 조회수 |
 | commentCount | Long | 댓글 개수 |
 | createdAt | String | 생성일시 (ISO 8601) |
@@ -195,6 +201,7 @@ http://localhost:8080
         "id": 1,
         "title": "강아지 산책용품 추천해주세요",
         "authorNickname": "강아지집사",
+        "boardType": "QUESTION",
         "viewCount": 15,
         "commentCount": 3,
         "createdAt": "2025-01-15T10:30:00",
@@ -236,6 +243,7 @@ http://localhost:8080
 | title | String | 제목 |
 | content | String | 내용 |
 | imageUrls | String[] | 이미지 URL 배열 |
+| boardType | String | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
 | viewCount | Long | 조회수 |
 | commentCount | Long | 댓글 개수 |
 | createdAt | String | 생성일시 (ISO 8601) |
@@ -272,6 +280,7 @@ http://localhost:8080
       "https://example.com/image1.jpg",
       "https://example.com/image2.jpg"
     ],
+    "boardType": "QUESTION",
     "viewCount": 15,
     "commentCount": 3,
     "createdAt": "2025-01-15T10:30:00",
@@ -312,6 +321,7 @@ http://localhost:8080
 | title | String | 예 | 제목 (2~50자) |
 | content | String | 예 | 내용 (2~1000자) |
 | imageUrls | String[] | 옵션 | 이미지 URL 배열 (최대 5장) |
+| boardType | String | 예 | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
 
 #### Request 예시
 
@@ -323,7 +333,8 @@ http://localhost:8080
     "https://example.com/image1.jpg",
     "https://example.com/image2.jpg",
     "https://example.com/image3.jpg"
-  ]
+  ],
+  "boardType": "QUESTION"
 }
 ```
 
@@ -585,6 +596,17 @@ http://localhost:8080
 | `oldest` | 오래된순 | 오름차순 (asc) |
 | `views` | 조회수 많은순 | 내림차순 (desc) |
 | `comments` | 댓글 많은순 | 내림차순 (desc) |
+
+### 게시판 유형 (boardType)
+
+| 값 | 설명 |
+|----|------|
+| `FREE` | 자유게시판 |
+| `QUESTION` | 질문있어요 |
+| `INFO` | 정보공유 |
+
+게시글 목록 조회 시 `boardType` 쿼리 파라미터를 사용하여 특정 게시판 유형만 필터링할 수 있습니다.  
+예: `GET /api/community/posts?boardType=QUESTION&sortBy=latest`
 
 ### 에러 코드
 

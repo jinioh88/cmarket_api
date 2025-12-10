@@ -1,10 +1,12 @@
 package org.cmarket.cmarket.web.community.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.cmarket.cmarket.domain.community.app.dto.PostUpdateCommand;
+import org.cmarket.cmarket.domain.community.model.BoardType;
 
 import java.util.List;
 
@@ -28,6 +30,9 @@ public class PostUpdateRequest {
     @Size(max = 5, message = "이미지는 최대 5장까지 등록 가능합니다.")
     private List<String> imageUrls;
     
+    @NotNull(message = "게시판 유형은 필수입니다.")
+    private BoardType boardType;
+    
     /**
      * 웹 DTO를 앱 DTO로 변환
      * 
@@ -38,6 +43,7 @@ public class PostUpdateRequest {
                 .title(this.title)
                 .content(this.content)
                 .imageUrls(this.imageUrls)
+                .boardType(this.boardType)
                 .build();
     }
 }

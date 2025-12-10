@@ -2,6 +2,7 @@ package org.cmarket.cmarket.domain.community.app.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.cmarket.cmarket.domain.community.model.BoardType;
 
 import java.util.List;
 
@@ -17,5 +18,6 @@ public class PostCreateCommand {
     private String title;
     private String content;
     private List<String> imageUrls;
+    private BoardType boardType;
 }
 

@@ -3,6 +3,7 @@ package org.cmarket.cmarket.web.community.dto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.cmarket.cmarket.domain.community.app.dto.PostListItemDto;
+import org.cmarket.cmarket.domain.community.model.BoardType;
 
 import java.time.LocalDateTime;
 
@@ -17,6 +18,7 @@ public class PostListItemResponse {
     private Long id;
     private String title;
     private String authorNickname;
+    private BoardType boardType;
     private Long viewCount;
     private Long commentCount;
     private LocalDateTime createdAt;
@@ -34,6 +36,7 @@ public class PostListItemResponse {
         response.id = dto.getId();
         response.title = dto.getTitle();
         response.authorNickname = dto.getAuthorNickname();
+        response.boardType = dto.getBoardType();
         response.viewCount = dto.getViewCount();
         response.commentCount = dto.getCommentCount();
         response.createdAt = dto.getCreatedAt();

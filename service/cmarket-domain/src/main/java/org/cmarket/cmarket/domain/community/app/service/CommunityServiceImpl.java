@@ -10,6 +10,7 @@ import org.cmarket.cmarket.domain.community.app.dto.PostDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostListDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostListItemDto;
 import org.cmarket.cmarket.domain.community.app.exception.CommentAccessDeniedException;
+import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.app.exception.CommentDepthExceededException;
 import org.cmarket.cmarket.domain.community.app.exception.CommentNotFoundException;
 import org.cmarket.cmarket.domain.community.app.exception.InvalidImageCountException;
@@ -64,6 +65,7 @@ public class CommunityServiceImpl implements CommunityService {
                 .title(command.getTitle())
                 .content(command.getContent())
                 .imageUrls(command.getImageUrls())
+                .boardType(command.getBoardType())
                 .build();
         
         // 저장
@@ -75,7 +77,7 @@ public class CommunityServiceImpl implements CommunityService {
     
     @Override
     @Transactional(readOnly = true)
-    public PostListDto getPostList(String sortBy, Integer page, Integer size) {
+    public PostListDto getPostList(String sortBy, BoardType boardType, Integer page, Integer size) {
         // 정렬 기준 기본값 설정
         if (sortBy == null || sortBy.isEmpty()) {
             sortBy = "latest";
@@ -93,7 +95,7 @@ public class CommunityServiceImpl implements CommunityService {
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         
         // 게시글 목록 조회 (QueryDSL 사용)
-        Page<Post> postPage = postRepository.findPosts(sortBy, sortOrder, pageable);
+        Page<Post> postPage = postRepository.findPosts(sortBy, sortOrder, boardType, pageable);
         
         // Post 엔티티를 PostListItemDto로 변환 (엔티티에 저장된 작성자 정보 사용)
         PageResult<PostListItemDto> pageResult = PageResult.fromPage(
@@ -131,7 +133,7 @@ public class CommunityServiceImpl implements CommunityService {
         }
         
         // 게시글 정보 수정 (영속 상태 엔티티 변경은 트랜잭션 커밋 시 자동 반영)
-        post.update(command.getTitle(), command.getContent(), command.getImageUrls());
+        post.update(command.getTitle(), command.getContent(), command.getImageUrls(), command.getBoardType());
         
         // DTO로 변환하여 반환
         return PostDto.fromEntity(post);

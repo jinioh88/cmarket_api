@@ -4,6 +4,7 @@ import org.cmarket.cmarket.domain.community.app.dto.PostCreateCommand;
 import org.cmarket.cmarket.domain.community.app.dto.PostDetailDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostListDto;
+import org.cmarket.cmarket.domain.community.model.BoardType;
 
 /**
  * 커뮤니티 서비스 인터페이스
@@ -25,11 +26,12 @@ public interface CommunityService {
      * 게시글 목록 조회
      *
      * @param sortBy 정렬 기준 ("latest", "oldest", "views", "comments")
+     * @param boardType 게시판 유형 (null이면 전체 조회)
      * @param page 페이지 번호 (0부터 시작)
      * @param size 페이지 크기
      * @return 게시글 목록
      */
-    PostListDto getPostList(String sortBy, Integer page, Integer size);
+    PostListDto getPostList(String sortBy, BoardType boardType, Integer page, Integer size);
 
     /**
      * 게시글 상세 조회

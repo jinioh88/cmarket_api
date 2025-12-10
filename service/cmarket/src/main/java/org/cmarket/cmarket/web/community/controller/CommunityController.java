@@ -13,6 +13,7 @@ import org.cmarket.cmarket.web.community.dto.PostDetailResponse;
 import org.cmarket.cmarket.web.community.dto.PostListResponse;
 import org.cmarket.cmarket.web.community.dto.PostResponse;
 import org.cmarket.cmarket.web.community.dto.PostUpdateRequest;
+import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -80,8 +81,10 @@ public class CommunityController {
      * 커뮤니티 게시판의 게시글 목록을 조회합니다.
      * - 비회원도 조회 가능
      * - 정렬 기준: latest (최신순), oldest (오래된순), views (조회수 많은순), comments (댓글 많은순)
+     * - 게시판 유형: FREE (자유게시판), QUESTION (질문있어요), INFO (정보공유)
      * 
      * @param sortBy 정렬 기준 (기본값: "latest")
+     * @param boardType 게시판 유형 (선택사항, null이면 전체 조회)
      * @param page 페이지 번호 (기본값: 0)
      * @param size 페이지 크기 (기본값: 20)
      * @return 게시글 목록
@@ -89,12 +92,13 @@ public class CommunityController {
     @GetMapping("/posts")
     public ResponseEntity<SuccessResponse<PostListResponse>> getPostList(
             @RequestParam(required = false, defaultValue = "latest") String sortBy,
+            @RequestParam(required = false) BoardType boardType,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size
     ) {
         // 앱 서비스 호출
         org.cmarket.cmarket.domain.community.app.dto.PostListDto postListDto = 
-                communityService.getPostList(sortBy, page, size);
+                communityService.getPostList(sortBy, boardType, page, size);
         
         // 앱 DTO → 웹 DTO 변환
         PostListResponse response = PostListResponse.fromDto(postListDto);
