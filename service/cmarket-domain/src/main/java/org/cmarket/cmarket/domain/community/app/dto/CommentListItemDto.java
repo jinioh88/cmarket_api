@@ -23,15 +23,17 @@ public class CommentListItemDto {
     private Integer depth;
     private Long parentId;
     private Boolean hasChildren;  // 하위 댓글 존재 여부
+    private Integer childrenCount;  // 하위 댓글 개수
     
     /**
      * Comment 엔티티를 CommentListItemDto로 변환
      * 
      * @param comment Comment 엔티티
      * @param hasChildren 하위 댓글 존재 여부
+     * @param childrenCount 하위 댓글 개수
      * @return CommentListItemDto
      */
-    public static CommentListItemDto fromEntity(Comment comment, Boolean hasChildren) {
+    public static CommentListItemDto fromEntity(Comment comment, Boolean hasChildren, Integer childrenCount) {
         return CommentListItemDto.builder()
                 .id(comment.getId())
                 .authorId(comment.getAuthorId())
@@ -42,6 +44,7 @@ public class CommentListItemDto {
                 .depth(comment.getDepth())
                 .parentId(comment.getParentId())
                 .hasChildren(hasChildren != null ? hasChildren : false)
+                .childrenCount(childrenCount != null ? childrenCount : 0)
                 .build();
     }
 }

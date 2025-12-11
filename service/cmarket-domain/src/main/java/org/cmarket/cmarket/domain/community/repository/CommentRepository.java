@@ -81,5 +81,13 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      * @return 하위 댓글이 있으면 true, 없으면 false
      */
     boolean existsByParentIdAndDeletedAtIsNull(Long parentId);
+    
+    /**
+     * 하위 댓글 개수 조회 (소프트 삭제된 댓글 제외)
+     * 
+     * @param parentId 부모 댓글 ID
+     * @return 하위 댓글 개수
+     */
+    long countByParentIdAndDeletedAtIsNull(Long parentId);
 }
 

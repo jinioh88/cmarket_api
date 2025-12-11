@@ -248,11 +248,12 @@ public class CommunityServiceImpl implements CommunityService {
         List<Comment> comments = commentRepository
                 .findByPostIdAndParentIdIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(postId);
         
-        // 각 댓글의 하위 댓글 존재 여부 확인
+        // 각 댓글의 하위 댓글 개수 확인 (개수가 0보다 크면 hasChildren = true)
         List<org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto> commentDtos = comments.stream()
                 .map(comment -> {
-                    Boolean hasChildren = commentRepository.existsByParentIdAndDeletedAtIsNull(comment.getId());
-                    return org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto.fromEntity(comment, hasChildren);
+                    Integer childrenCount = (int) commentRepository.countByParentIdAndDeletedAtIsNull(comment.getId());
+                    Boolean hasChildren = childrenCount > 0;
+                    return org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto.fromEntity(comment, hasChildren, childrenCount);
                 })
                 .toList();
         
@@ -274,11 +275,12 @@ public class CommunityServiceImpl implements CommunityService {
         List<Comment> replies = commentRepository
                 .findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(commentId);
         
-        // 각 댓글의 하위 댓글 존재 여부 확인
+        // 각 댓글의 하위 댓글 개수 확인 (개수가 0보다 크면 hasChildren = true)
         List<org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto> replyDtos = replies.stream()
                 .map(reply -> {
-                    Boolean hasChildren = commentRepository.existsByParentIdAndDeletedAtIsNull(reply.getId());
-                    return org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto.fromEntity(reply, hasChildren);
+                    Integer childrenCount = (int) commentRepository.countByParentIdAndDeletedAtIsNull(reply.getId());
+                    Boolean hasChildren = childrenCount > 0;
+                    return org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto.fromEntity(reply, hasChildren, childrenCount);
                 })
                 .toList();
         

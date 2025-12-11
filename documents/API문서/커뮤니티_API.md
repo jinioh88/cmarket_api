@@ -450,6 +450,7 @@ http://localhost:8080
 | depth | Integer | 댓글 깊이 (1=댓글, 2=대댓글, 3=대대댓글) |
 | parentId | Long | 부모 댓글 ID (댓글인 경우 null) |
 | hasChildren | Boolean | 하위 댓글 존재 여부 |
+| childrenCount | Integer | 하위 댓글 개수 |
 
 #### Response 예시
 
@@ -468,7 +469,8 @@ http://localhost:8080
         "createdAt": "2025-01-15T11:00:00",
         "depth": 1,
         "parentId": null,
-        "hasChildren": true
+        "hasChildren": true,
+        "childrenCount": 3
       }
     ]
   }

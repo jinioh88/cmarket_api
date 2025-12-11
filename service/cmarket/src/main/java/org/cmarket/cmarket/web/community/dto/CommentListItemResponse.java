@@ -23,6 +23,7 @@ public class CommentListItemResponse {
     private Integer depth;
     private Long parentId;
     private Boolean hasChildren;
+    private Integer childrenCount;
     
     /**
      * 앱 DTO를 웹 DTO로 변환
@@ -41,6 +42,7 @@ public class CommentListItemResponse {
         response.depth = dto.getDepth();
         response.parentId = dto.getParentId();
         response.hasChildren = dto.getHasChildren();
+        response.childrenCount = dto.getChildrenCount();
         return response;
     }
 }
