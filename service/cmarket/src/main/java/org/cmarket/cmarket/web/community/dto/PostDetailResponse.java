@@ -28,7 +28,6 @@ public class PostDetailResponse {
     private Long commentCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<CommentSummaryResponse> comments;
 
     /**
      * 앱 DTO를 웹 DTO로 변환
@@ -50,9 +49,6 @@ public class PostDetailResponse {
         response.commentCount = dto.getCommentCount();
         response.createdAt = dto.getCreatedAt();
         response.updatedAt = dto.getUpdatedAt();
-        response.comments = dto.getComments().stream()
-                .map(CommentSummaryResponse::fromDto)
-                .toList();
         return response;
     }
 }

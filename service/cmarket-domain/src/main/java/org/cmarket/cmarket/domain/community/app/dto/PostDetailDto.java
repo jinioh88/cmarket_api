@@ -28,7 +28,6 @@ public class PostDetailDto {
     private Long commentCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<CommentSummaryDto> comments;
 
     /**
      * Post 엔티티를 PostDetailDto로 변환
@@ -36,14 +35,12 @@ public class PostDetailDto {
      * @param post 게시글 엔티티
      * @param authorNickname 작성자 닉네임
      * @param authorProfileImageUrl 작성자 프로필 이미지 URL
-     * @param comments 댓글 목록
      * @return PostDetailDto
      */
     public static PostDetailDto fromEntity(
             Post post,
             String authorNickname,
-            String authorProfileImageUrl,
-            List<CommentSummaryDto> comments
+            String authorProfileImageUrl
     ) {
         return PostDetailDto.builder()
                 .id(post.getId())
@@ -58,7 +55,6 @@ public class PostDetailDto {
                 .commentCount(post.getCommentCount())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
-                .comments(comments)
                 .build();
     }
 }

@@ -3,7 +3,6 @@ package org.cmarket.cmarket.domain.community.app.service;
 import lombok.RequiredArgsConstructor;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
-import org.cmarket.cmarket.domain.community.app.dto.CommentSummaryDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostCreateCommand;
 import org.cmarket.cmarket.domain.community.app.dto.PostDetailDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostDto;
@@ -332,25 +331,11 @@ public class CommunityServiceImpl implements CommunityService {
         // 조회수 증가 (로그인 사용자이면서 작성자 본인이 아닌 경우)
         increaseViewCount(post, email);
 
-        // 댓글 목록 조회 (부모 댓글만)
-        List<Comment> comments = commentRepository
-                .findByPostIdAndParentIdIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(postId);
-
-        // 댓글 DTO 변환 (엔티티에 저장된 작성자 정보 사용)
-        List<CommentSummaryDto> commentDtos = comments.stream()
-                .map(comment -> CommentSummaryDto.fromEntity(
-                        comment,
-                        comment.getAuthorNickname() != null ? comment.getAuthorNickname() : "탈퇴한 사용자",
-                        comment.getAuthorProfileImageUrl()
-                ))
-                .toList();
-
         // 게시글 상세 DTO 생성 (엔티티에 저장된 작성자 정보 사용)
         return PostDetailDto.fromEntity(
                 post,
                 post.getAuthorNickname() != null ? post.getAuthorNickname() : "탈퇴한 사용자",
-                post.getAuthorProfileImageUrl(),
-                commentDtos
+                post.getAuthorProfileImageUrl()
         );
     }
 

@@ -149,6 +149,10 @@ public class SecurityConfig {
                 // 이미지 조회는 인증 불필요
                 .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
                 
+                // 커뮤니티 게시글 조회는 인증 불필요 (목록, 상세 조회, 댓글 조회)
+                .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/community/comments/**").permitAll()
+                
                 // 나머지 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             );

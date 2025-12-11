@@ -250,20 +250,6 @@ http://localhost:8080
 | commentCount | Long | 댓글 개수 |
 | createdAt | String | 생성일시 (ISO 8601) |
 | updatedAt | String | 수정일시 (ISO 8601) |
-| comments | `CommentSummaryResponse[]` | 부모 댓글 목록 (최신순) |
-
-#### `CommentSummaryResponse` 필드
-
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | Long | 댓글 ID |
-| authorId | Long | 작성자 ID |
-| authorNickname | String | 작성자 닉네임 |
-| authorProfileImageUrl | String | 작성자 프로필 이미지 URL |
-| content | String | 댓글 내용 |
-| createdAt | String | 생성일시 (ISO 8601) |
-| depth | Integer | 댓글 깊이 (1=댓글, 2=대댓글, 3=대대댓글) |
-| parentId | Long | 부모 댓글 ID (댓글인 경우 null) |
 
 #### Response 예시
 
@@ -286,19 +272,7 @@ http://localhost:8080
     "viewCount": 15,
     "commentCount": 3,
     "createdAt": "2025-01-15T10:30:00",
-    "updatedAt": "2025-01-15T10:30:00",
-    "comments": [
-      {
-        "id": 1,
-        "authorId": 11,
-        "authorNickname": "고양이집사",
-        "authorProfileImageUrl": "https://example.com/profile2.jpg",
-        "content": "리드줄 추천드립니다!",
-        "createdAt": "2025-01-15T11:00:00",
-        "depth": 1,
-        "parentId": null
-      }
-    ]
+    "updatedAt": "2025-01-15T10:30:00"
   }
 }
 ```
