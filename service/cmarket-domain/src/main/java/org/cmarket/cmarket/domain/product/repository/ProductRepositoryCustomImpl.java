@@ -190,12 +190,15 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         Order order = "asc".equalsIgnoreCase(sortOrder) ? Order.ASC : Order.DESC;
         
         if (sortBy == null || sortBy.isEmpty()) {
-            // 기본 정렬: 최신순
+            // 기본 정렬: 최신순 (createdAt DESC, id DESC)
             orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, product.createdAt));
+            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, product.id));
         } else {
             switch (sortBy.toLowerCase()) {
                 case "createdat":
+                    // createdAt 기준 정렬 (동일 시간일 경우 id로 추가 정렬)
                     orderSpecifiers.add(new OrderSpecifier<>(order, product.createdAt));
+                    orderSpecifiers.add(new OrderSpecifier<>(order, product.id));
                     break;
                 case "price":
                     orderSpecifiers.add(new OrderSpecifier<>(order, product.price));
@@ -204,8 +207,9 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
                     orderSpecifiers.add(new OrderSpecifier<>(order, product.favoriteCount));
                     break;
                 default:
-                    // 기본 정렬: 최신순
+                    // 기본 정렬: 최신순 (createdAt DESC, id DESC)
                     orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, product.createdAt));
+                    orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, product.id));
                     break;
             }
         }

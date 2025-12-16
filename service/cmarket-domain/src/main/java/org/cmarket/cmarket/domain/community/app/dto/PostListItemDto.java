@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 public class PostListItemDto {
     private Long id;
     private String title;
+    private String content;
     private String authorNickname;
     private BoardType boardType;
     private Long viewCount;
@@ -38,6 +39,7 @@ public class PostListItemDto {
         return PostListItemDto.builder()
                 .id(post.getId())
                 .title(post.getTitle())
+                .content(post.getContent())
                 .authorNickname(authorNickname)
                 .boardType(post.getBoardType())
                 .viewCount(post.getViewCount())

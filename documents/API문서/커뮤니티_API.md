@@ -180,6 +180,7 @@ http://localhost:8080
 |------|------|------|
 | id | Long | 게시글 ID |
 | title | String | 제목 |
+| contentPreview | String | 내용 미리보기 (최대 100자) |
 | authorNickname | String | 작성자 닉네임 |
 | boardType | String | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
 | viewCount | Long | 조회수 |
@@ -202,6 +203,7 @@ http://localhost:8080
       {
         "id": 1,
         "title": "강아지 산책용품 추천해주세요",
+        "contentPreview": "강아지 산책할 때 필요한 용품 추천 부탁드립니다. 특히 리드줄과 하네스 추천 부탁드려요!",
         "authorNickname": "강아지집사",
         "boardType": "QUESTION",
         "viewCount": 15,

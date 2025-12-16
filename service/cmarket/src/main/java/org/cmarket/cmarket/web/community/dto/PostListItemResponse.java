@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 public class PostListItemResponse {
     private Long id;
     private String title;
+    private String contentPreview;  // 내용 미리보기 (최대 100자)
     private String authorNickname;
     private BoardType boardType;
     private Long viewCount;
@@ -35,6 +36,15 @@ public class PostListItemResponse {
         PostListItemResponse response = new PostListItemResponse();
         response.id = dto.getId();
         response.title = dto.getTitle();
+        
+        // content를 100글자로 제한
+        String content = dto.getContent();
+        if (content != null && content.length() > 100) {
+            response.contentPreview = content.substring(0, 100);
+        } else {
+            response.contentPreview = content;
+        }
+        
         response.authorNickname = dto.getAuthorNickname();
         response.boardType = dto.getBoardType();
         response.viewCount = dto.getViewCount();

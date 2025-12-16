@@ -25,7 +25,7 @@ public enum ErrorCode {
     NICKNAME_ALREADY_EXISTS(409, "이미 사용 중인 닉네임입니다."),
     
     // 사용자 관련 (404)
-    USER_NOT_FOUND(404, "사용자를 찾을 수 없습니다."),
+    USER_NOT_FOUND(401, "사용자를 찾을 수 없습니다."),
     BLOCKED_USER_NOT_FOUND(404, "차단된 사용자를 찾을 수 없습니다."),
     
     // 신고/차단 관련 (400)
