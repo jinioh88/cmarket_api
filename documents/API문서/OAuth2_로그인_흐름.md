@@ -10,8 +10,9 @@
 
 - [OAuth2란?](#oauth2란)
 - [두 가지 로그인 방식 비교](#두-가지-로그인-방식-비교)
-- [방식 1: ID Token 방식 (권장)](#방식-1-id-token-방식-권장)
-- [방식 2: Authorization Code Flow](#방식-2-authorization-code-flow)
+- [방식 1: Authorization Code Flow (권장)](#방식-1-authorization-code-flow-권장) - **패키지 설치 불필요!**
+- [방식 2: ID Token 방식](#방식-2-id-token-방식) - `@react-oauth/google` 패키지 필요
+- [백엔드 상세 구현](#백엔드-상세-구현-authorization-code-flow)
 - [설정 파일 설명](#설정-파일-설명)
 - [주요 클래스 설명](#주요-클래스-설명)
 - [에러 처리](#에러-처리)
@@ -42,33 +43,171 @@ OAuth2(Open Authorization 2.0)는 **제3자 서비스(구글, 카카오 등)의 
 
 ### 비교표
 
-| 항목 | ID Token 방식 (권장) | Authorization Code Flow |
-|------|---------------------|------------------------|
-| **엔드포인트** | `POST /api/auth/google` | `GET /oauth2/authorization/google` |
-| **프론트 작업** | Google Sign-In SDK 사용 | URL 리다이렉트만 |
-| **백엔드 작업** | ID Token 검증만 | OAuth2 전체 흐름 처리 |
-| **사용자 경험** | 팝업으로 처리 (페이지 이동 없음) | 페이지 리다이렉트 있음 |
-| **복잡도** | 낮음 | 높음 |
-| **React SPA 적합성** | ✅ 매우 적합 | ⚠️ 가능하지만 UX 제한 |
+| 항목 | Authorization Code Flow (권장) | ID Token 방식 |
+|------|-------------------------------|---------------|
+| **엔드포인트** | `GET /oauth2/authorization/google` | `POST /api/auth/google` |
+| **프론트 패키지 설치** | ❌ **불필요** | `@react-oauth/google` 필요 |
+| **프론트 코드량** | 매우 적음 (2개 함수) | 많음 |
+| **백엔드 작업** | OAuth2 전체 흐름 처리 (구현 완료) | ID Token 검증만 |
+| **사용자 경험** | 페이지 리다이렉트 | 팝업 로그인 |
+| **보안** | ✅ `client_secret` 백엔드에만 | ✅ `client_secret` 불필요 |
 
 ### 흐름 비교
 
 ```
-[ID Token 방식 - 권장]
+[Authorization Code Flow - 권장, 패키지 설치 불필요]
+프론트 → 백엔드(/oauth2/authorization/google) → 구글 → 백엔드 → 프론트(/oauth-redirect)
+         리다이렉트                              콜백      JWT 토큰
+
+[ID Token 방식 - @react-oauth/google 패키지 필요]
 프론트 → 구글(팝업) → 프론트 → 백엔드(/api/auth/google) → 프론트
                       ID Token          JWT 토큰
-
-[Authorization Code Flow]
-프론트 → 백엔드 → 구글 → 백엔드 → 프론트
-         리다이렉트    콜백      JWT 토큰
 ```
 
 ---
 
-## 방식 1: ID Token 방식 (권장)
+## 방식 1: Authorization Code Flow (권장)
 
-> **React SPA에서 권장하는 방식입니다.**  
-> 프론트엔드에서 Google Sign-In SDK를 사용하여 ID Token을 받고, 백엔드에서 검증합니다.
+> **패키지 설치 없이 가장 간단하게 구현할 수 있는 방식입니다.**  
+> 프론트엔드는 URL 리다이렉트만 하면 되고, 백엔드가 모든 OAuth2 처리를 담당합니다.  
+> `client_secret`이 백엔드에만 있어 보안상 안전합니다.
+
+### 전체 흐름
+
+```
+1. 프론트엔드: "구글 로그인" 버튼 클릭
+   ↓
+2. 프론트엔드: window.location.href로 백엔드 OAuth2 엔드포인트 호출
+   ↓
+3. 백엔드 → 구글: 인증 페이지로 리다이렉트
+   ↓
+4. 사용자: 구글에서 로그인 및 동의
+   ↓
+5. 구글 → 백엔드: 인가 코드 전달 (콜백)
+   ↓
+6. 백엔드: 사용자 조회/생성 + JWT 토큰 발급 + 프론트엔드로 리다이렉트
+   ↓
+7. 프론트엔드: URL에서 토큰 추출 및 저장
+```
+
+### 프론트엔드 구현 (React) - 패키지 설치 불필요!
+
+> **⚡ 단 2개의 코드만 작성하면 됩니다!**
+
+#### 1. 구글 로그인 버튼 (로그인 페이지)
+
+```javascript
+// LoginPage.jsx
+function LoginPage() {
+  // 구글 로그인 버튼 클릭 핸들러
+  const handleGoogleLogin = () => {
+    // 백엔드의 OAuth2 엔드포인트로 리다이렉트
+    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+  };
+
+  return (
+    <div>
+      <h1>로그인</h1>
+      <button onClick={handleGoogleLogin}>
+        구글로 로그인
+      </button>
+    </div>
+  );
+}
+```
+
+#### 2. OAuth 리다이렉트 페이지 (토큰 수신)
+
+```javascript
+// OAuthRedirect.jsx (또는 pages/oauth-redirect.jsx)
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+function OAuthRedirect() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // URL에서 토큰 추출
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('accessToken');
+    const refreshToken = params.get('refreshToken');
+
+    if (accessToken && refreshToken) {
+      // 토큰 저장
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      
+      console.log('구글 로그인 성공!');
+      
+      // 메인 페이지로 이동
+      navigate('/');
+    } else {
+      // 토큰이 없으면 로그인 페이지로
+      console.error('로그인 실패: 토큰이 없습니다.');
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  return (
+    <div style={{ textAlign: 'center', marginTop: '100px' }}>
+      <h2>로그인 처리 중...</h2>
+      <p>잠시만 기다려주세요.</p>
+    </div>
+  );
+}
+
+export default OAuthRedirect;
+```
+
+#### 3. 라우터 설정
+
+```javascript
+// App.jsx 또는 라우터 설정 파일
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/oauth-redirect" element={<OAuthRedirect />} />
+        {/* ... 기타 라우트 */}
+      </Routes>
+    </BrowserRouter>
+  );
+}
+```
+
+### 로그인 성공 시 리다이렉트 URL 형식
+
+구글 로그인이 성공하면, 백엔드에서 아래 URL로 리다이렉트합니다:
+
+```
+http://localhost:3000/oauth-redirect?accessToken=eyJhbGciOiJIUzUxMiJ9...&refreshToken=eyJhbGciOiJIUzUxMiJ9...
+```
+
+### 장점
+
+1. **패키지 설치 불필요**: `@react-oauth/google` 등 추가 패키지 없이 구현 가능
+2. **최소한의 코드**: 로그인 버튼 + 리다이렉트 페이지 2개만 작성
+3. **보안**: `client_secret`이 백엔드에만 있어 안전
+4. **안정성**: Spring Security의 검증된 OAuth2 구현 사용
+5. **자동 회원가입**: 신규 사용자는 자동으로 회원가입 처리
+
+### 주의사항
+
+- 프론트엔드 서버가 `http://localhost:3000`에서 실행 중이어야 합니다
+- `/oauth-redirect` 라우트가 설정되어 있어야 합니다
+- `fetch()`나 `axios`로 호출하면 안 됩니다 (반드시 `window.location.href` 사용)
+
+---
+
+## 방식 2: ID Token 방식
+
+> **`@react-oauth/google` 패키지를 사용하는 방식입니다.**  
+> 프론트엔드에서 Google Sign-In SDK를 사용하여 ID Token을 받고, 백엔드에서 검증합니다.  
+> 팝업으로 로그인하므로 페이지 이동이 없습니다.
 
 ### 전체 흐름
 
@@ -202,90 +341,23 @@ Content-Type: application/json
 }
 ```
 
-### 백엔드 처리 흐름
-
-```java
-// AuthController.java
-@PostMapping("/google")
-public ResponseEntity<SuccessResponse<LoginResponse>> googleLogin(
-        @Valid @RequestBody GoogleLoginRequest request
-) {
-    // 1. Google ID Token 검증 및 사용자 조회/생성
-    User user = googleAuthService.authenticateWithIdToken(request.getIdToken());
-    
-    // 2. JWT 토큰 생성
-    String accessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole().name());
-    String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail(), user.getRole().name());
-    
-    // 3. 응답 반환
-    return ResponseEntity.ok(new SuccessResponse<>(
-            ResponseCode.SUCCESS,
-            "Google 로그인 성공",
-            LoginResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .user(UserWebDto.from(user))
-                    .build()
-    ));
-}
-```
-
-### ID Token 검증 로직
-
-```java
-// GoogleIdTokenVerifierService.java
-public GoogleUserInfo verify(String idTokenString) {
-    // 1. Google의 공개키로 서명 검증
-    GoogleIdToken idToken = verifier.verify(idTokenString);
-    
-    if (idToken == null) {
-        return null;  // 유효하지 않은 토큰
-    }
-    
-    // 2. 페이로드에서 사용자 정보 추출
-    GoogleIdToken.Payload payload = idToken.getPayload();
-    
-    return new GoogleUserInfo(
-        payload.getSubject(),           // 소셜 ID
-        payload.getEmail(),             // 이메일
-        (String) payload.get("name"),   // 이름
-        (String) payload.get("picture") // 프로필 사진
-    );
-}
-```
-
 ### 장점
 
 1. **팝업 로그인**: 페이지 이동 없이 팝업으로 처리
-2. **빠른 응답**: 백엔드 왕복 최소화
-3. **유연한 UI**: Google Sign-In 버튼 커스터마이징 가능
-4. **원탭 로그인**: `useOneTap` 옵션으로 자동 로그인 지원
-5. **모바일 앱 연동**: 같은 방식으로 모바일 앱에서도 사용 가능
+2. **유연한 UI**: Google Sign-In 버튼 커스터마이징 가능
+3. **원탭 로그인**: `useOneTap` 옵션으로 자동 로그인 지원
+4. **모바일 앱 연동**: 같은 방식으로 모바일 앱에서도 사용 가능
+
+### 단점
+
+1. **패키지 설치 필요**: `@react-oauth/google` 패키지 설치 필요
+2. **코드량 많음**: Provider 설정 등 추가 코드 필요
 
 ---
 
-## 방식 2: Authorization Code Flow
+## 백엔드 상세 구현 (Authorization Code Flow)
 
-> **페이지 리다이렉트 방식입니다.**  
-> 백엔드가 OAuth2 전체 흐름을 처리하고, 프론트엔드는 URL 리다이렉트만 합니다.
-
-### 전체 흐름
-
-```
-1. 프론트엔드: GET /oauth2/authorization/google 호출
-   ↓
-2. Spring Security: 구글 인증 페이지로 리다이렉트
-   ↓
-3. 사용자: 구글에서 로그인 및 동의
-   ↓
-4. 구글: GET /login/oauth2/code/google?code=xxx&state=xxx 로 리다이렉트
-   ↓
-5. CustomOAuth2UserService: 사용자 정보 조회/생성
-   ↓
-6. OAuth2LoginSuccessHandler: JWT 토큰 생성 후 프론트엔드로 리다이렉트
-   ↓
-7. 프론트엔드: 토큰 수신 및 저장
-```
+> 아래는 백엔드에서 Authorization Code Flow를 처리하는 상세 내용입니다.
 
 ### 1단계: 프론트엔드에서 OAuth 로그인 시작
 
@@ -983,22 +1055,22 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 ## FAQ
 
-### Q1. ID Token 방식과 Authorization Code Flow 중 어떤 것을 사용해야 하나요?
+### Q1. Authorization Code Flow와 ID Token 방식 중 어떤 것을 사용해야 하나요?
 
-**A**: **React SPA에서는 ID Token 방식을 권장합니다.**
+**A**: **패키지 설치 없이 간단하게 구현하려면 Authorization Code Flow를 권장합니다.**
 
 | 상황 | 추천 방식 |
 |------|----------|
-| React/Vue SPA + 팝업 로그인 원함 | **ID Token 방식** |
-| 페이지 리다이렉트 OK | Authorization Code Flow |
-| 모바일 앱 연동 예정 | **ID Token 방식** |
-| 카카오 로그인도 함께 사용 | Authorization Code Flow (카카오는 ID Token 방식 미지원) |
+| 패키지 설치 없이 빠르게 구현 | **Authorization Code Flow** ✅ |
+| 팝업 로그인 원함 | ID Token 방식 |
+| 카카오 로그인도 함께 사용 | **Authorization Code Flow** (카카오는 ID Token 방식 미지원) |
+| 모바일 앱 연동 예정 | ID Token 방식 |
 
 ### Q2. OAuth 로그인 시 별도의 회원가입 API를 호출해야 하나요?
 
-**A**: 아니요. 두 방식 모두 자동 회원가입이 처리됩니다. 
-- ID Token 방식: `GoogleAuthService.authenticateWithIdToken()`에서 처리
+**A**: 아니요. 두 방식 모두 자동 회원가입이 처리됩니다.
 - Authorization Code Flow: `CustomOAuth2UserService.createNewUser()`에서 처리
+- ID Token 방식: `GoogleAuthService.authenticateWithIdToken()`에서 처리
 
 ### Q3. ID Token 방식에서 프론트엔드가 구글 SDK를 사용하면 client-secret은 어디서 쓰이나요?
 
@@ -1110,7 +1182,22 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 ## 요약
 
-### 방식 1: ID Token 방식 (권장 - React SPA)
+### 방식 1: Authorization Code Flow (권장 - 패키지 설치 불필요)
+
+```
+1. 프론트: window.location.href로 백엔드 OAuth2 엔드포인트 호출
+2. 백엔드 → 구글: 인증 페이지로 리다이렉트
+3. 사용자: 구글에서 로그인 및 동의
+4. 구글 → 백엔드: 인가 코드 전달
+5. 백엔드: 사용자 조회/생성 → JWT 발급 → 프론트로 리다이렉트
+6. 프론트: URL에서 토큰 추출 및 저장
+```
+
+**엔드포인트**: `GET /oauth2/authorization/google`  
+**프론트 필요 코드**: 로그인 버튼 + `/oauth-redirect` 페이지 (총 2개)  
+**패키지 설치**: ❌ 불필요
+
+### 방식 2: ID Token 방식 (패키지 설치 필요)
 
 ```
 1. 프론트: Google Sign-In SDK로 로그인 (팝업)
@@ -1119,23 +1206,13 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 4. 프론트: JWT 토큰 저장 → 로그인 완료
 ```
 
-**엔드포인트**: `POST /api/auth/google`
-
-### 방식 2: Authorization Code Flow
-
-```
-1. 프론트: /oauth2/authorization/{provider}로 리다이렉트
-2. Spring Security: OAuth 제공자 인증 페이지로 리다이렉트
-3. 사용자: OAuth 제공자에서 로그인 및 동의
-4. OAuth 제공자: 콜백 URL로 인증 코드 전송
-5. CustomOAuth2UserService: 사용자 정보 처리 및 User 엔티티 조회/생성
-6. OAuth2LoginSuccessHandler: JWT 토큰 생성 및 프론트엔드로 리다이렉트
-7. 프론트: 토큰 수신 및 저장
-```
-
-**엔드포인트**: `GET /oauth2/authorization/google` 또는 `GET /oauth2/authorization/kakao`
+**엔드포인트**: `POST /api/auth/google`  
+**프론트 필요 코드**: Provider 설정 + 로그인 컴포넌트  
+**패키지 설치**: `npm install @react-oauth/google`
 
 ---
+
+**💡 권장사항**: 패키지 설치 없이 간단하게 구현하려면 **방식 1 (Authorization Code Flow)** 사용  
 
 두 방식 모두 별도의 회원가입 없이 소셜 계정으로 바로 로그인할 수 있으며, 신규 사용자는 자동으로 회원가입 처리됩니다.
 
