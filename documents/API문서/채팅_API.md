@@ -122,6 +122,8 @@ http://localhost:8080
 | productTitle | String | 상품 제목 (스냅샷) |
 | productPrice | Long | 상품 가격 (스냅샷) |
 | productImageUrl | String | 상품 대표 이미지 URL (스냅샷) |
+| sellerNickname | String | 판매자 닉네임 |
+| sellerProfileImageUrl | String \| null | 판매자 프로필 이미지 URL |
 | createdAt | String | 생성일시 (ISO 8601) |
 
 #### Response 예시
@@ -136,6 +138,8 @@ http://localhost:8080
     "productTitle": "귀여운 강아지 옷",
     "productPrice": 15000,
     "productImageUrl": "https://example.com/image.jpg",
+    "sellerNickname": "멍멍이맘",
+    "sellerProfileImageUrl": "https://example.com/profile.jpg",
     "createdAt": "2025-01-15T10:30:00"
   }
 }
@@ -781,3 +785,4 @@ const client = new Client({
 | 버전 | 날짜 | 내용 |
 |------|------|------|
 | 1.0.0 | 2025-01-15 | 최초 작성 |
+| 1.1.0 | 2025-12-18 | 채팅방 생성 API 응답에 판매자 정보(sellerNickname, sellerProfileImageUrl) 추가 |

@@ -80,7 +80,7 @@ public class ChatServiceImpl implements ChatService {
         
         if (existingChatRoom.isPresent()) {
             // 기존 채팅방이 있으면 반환
-            return ChatRoomDto.fromEntity(existingChatRoom.get());
+            return ChatRoomDto.fromEntity(existingChatRoom.get(), seller.getNickname(), seller.getProfileImageUrl());
         }
         
         // 6. 새 채팅방 생성
@@ -113,7 +113,7 @@ public class ChatServiceImpl implements ChatService {
         
         chatRoomUserRepository.save(sellerUser);
         
-        return ChatRoomDto.fromEntity(savedChatRoom);
+        return ChatRoomDto.fromEntity(savedChatRoom, seller.getNickname(), seller.getProfileImageUrl());
     }
     
     @Override

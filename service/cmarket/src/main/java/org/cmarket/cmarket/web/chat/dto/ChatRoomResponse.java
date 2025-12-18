@@ -20,6 +20,8 @@ public class ChatRoomResponse {
     private String productTitle;
     private Long productPrice;
     private String productImageUrl;
+    private String sellerNickname;
+    private String sellerProfileImageUrl;
     private LocalDateTime createdAt;
     
     /**
@@ -35,6 +37,8 @@ public class ChatRoomResponse {
                 .productTitle(dto.getProductTitle())
                 .productPrice(dto.getProductPrice())
                 .productImageUrl(dto.getProductImageUrl())
+                .sellerNickname(dto.getSellerNickname())
+                .sellerProfileImageUrl(dto.getSellerProfileImageUrl())
                 .createdAt(dto.getCreatedAt())
                 .build();
     }
