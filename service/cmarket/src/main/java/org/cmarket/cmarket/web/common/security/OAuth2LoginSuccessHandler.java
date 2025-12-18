@@ -19,6 +19,8 @@ import java.io.IOException;
  * OAuth2 로그인이 최종 성공했을 때 호출됩니다.
  * PrincipalDetails에서 User 정보를 추출하여 JWT 토큰을 생성하고,
  * 프론트엔드로 리다이렉트합니다.
+ * 
+ * 인증 성공 후 OAuth2 인증 관련 쿠키를 삭제합니다.
  */
 @Slf4j
 @Component
@@ -26,6 +28,7 @@ import java.io.IOException;
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     
     private final JwtTokenProvider jwtTokenProvider;
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
     
     @Value("${oauth2.redirect-uri:http://localhost:3000/oauth-redirect}")
     private String redirectUri;
@@ -50,7 +53,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 user.getRole().name()
         );
         
-        // 3. 프론트엔드로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
+        // 3. OAuth2 인증 관련 쿠키 삭제
+        cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+        
+        // 4. 프론트엔드로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
         String redirectUrl = String.format(
                 "%s?accessToken=%s&refreshToken=%s",
                 redirectUri,
@@ -60,7 +66,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         
         log.info("OAuth2 로그인 성공: email={}, provider={}", user.getEmail(), user.getProvider());
         
-        // 4. 리다이렉트
+        // 5. 리다이렉트
         response.sendRedirect(redirectUrl);
     }
 }

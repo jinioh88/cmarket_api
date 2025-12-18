@@ -91,7 +91,7 @@ const handleKakaoLogin = () => {
 
 ```http
 GET /oauth2/authorization/google HTTP/1.1
-Host: localhost:8080
+Host: localhost:8080 G
 ```
 
 ### 중요 사항

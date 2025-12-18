@@ -47,19 +47,22 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
     
     public SecurityConfig(
             JwtTokenProvider jwtTokenProvider,
             org.cmarket.cmarket.domain.auth.repository.TokenBlacklistRepository tokenBlacklistRepository,
             AuthenticationConfiguration authenticationConfiguration,
             CustomOAuth2UserService customOAuth2UserService,
-            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
+            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
+            HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository
     ) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.tokenBlacklistRepository = tokenBlacklistRepository;
         this.authenticationConfiguration = authenticationConfiguration;
         this.customOAuth2UserService = customOAuth2UserService;
         this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
+        this.cookieAuthorizationRequestRepository = cookieAuthorizationRequestRepository;
     }
     
     /**
@@ -120,7 +123,12 @@ public class SecurityConfig {
             )
             
             // OAuth2 로그인 설정
+            // JWT 기반 STATELESS 세션 정책에서 OAuth2를 사용하기 위해
+            // 세션 대신 쿠키에 인증 요청 정보를 저장합니다.
             .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(authorization -> authorization
+                    .authorizationRequestRepository(cookieAuthorizationRequestRepository)
+                )
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
                 )
