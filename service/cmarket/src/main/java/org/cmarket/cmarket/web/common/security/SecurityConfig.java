@@ -142,6 +142,7 @@ public class SecurityConfig {
                     "/api/auth/signup",
                     "/api/auth/login",
                     "/api/auth/logout",
+                    "/api/auth/google",  // Google ID Token 로그인 엔드포인트
                     "/api/auth/email/**",
                     "/api/auth/password/reset/**",  // 비밀번호 재설정 엔드포인트
                     "/api/auth/nickname/check",  // 닉네임 중복 확인 엔드포인트

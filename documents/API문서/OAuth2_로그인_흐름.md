@@ -9,14 +9,9 @@
 ## 목차
 
 - [OAuth2란?](#oauth2란)
-- [전체 흐름 개요](#전체-흐름-개요)
-- [1단계: 프론트엔드에서 OAuth 로그인 시작](#1단계-프론트엔드에서-oauth-로그인-시작)
-- [2단계: Spring Security OAuth2 필터 처리](#2단계-spring-security-oauth2-필터-처리)
-- [3단계: OAuth 제공자(구글/카카오) 인증](#3단계-oauth-제공자구글카카오-인증)
-- [4단계: OAuth 제공자에서 콜백 처리](#4단계-oauth-제공자에서-콜백-처리)
-- [5단계: CustomOAuth2UserService 실행](#5단계-customoauth2userservice-실행)
-- [6단계: OAuth2LoginSuccessHandler 실행](#6단계-oauth2loginsuccesshandler-실행)
-- [7단계: 프론트엔드에서 토큰 수신](#7단계-프론트엔드에서-토큰-수신)
+- [두 가지 로그인 방식 비교](#두-가지-로그인-방식-비교)
+- [방식 1: ID Token 방식 (권장)](#방식-1-id-token-방식-권장)
+- [방식 2: Authorization Code Flow](#방식-2-authorization-code-flow)
 - [설정 파일 설명](#설정-파일-설명)
 - [주요 클래스 설명](#주요-클래스-설명)
 - [에러 처리](#에러-처리)
@@ -34,19 +29,247 @@ OAuth2(Open Authorization 2.0)는 **제3자 서비스(구글, 카카오 등)의 
 2. **보안성**: 비밀번호를 우리 서버에 저장하지 않아도 됨
 3. **빠른 온보딩**: 회원가입 절차 없이 즉시 서비스 이용 가능
 
-### OAuth2 인증 흐름 (Authorization Code Flow)
+### OAuth2 인증 흐름
+
+본 서비스는 **두 가지 OAuth2 인증 방식**을 지원합니다:
+
+1. **ID Token 방식 (권장)**: 프론트엔드에서 직접 구글 SDK 사용
+2. **Authorization Code Flow**: 백엔드가 모든 처리를 담당
+
+---
+
+## 두 가지 로그인 방식 비교
+
+### 비교표
+
+| 항목 | ID Token 방식 (권장) | Authorization Code Flow |
+|------|---------------------|------------------------|
+| **엔드포인트** | `POST /api/auth/google` | `GET /oauth2/authorization/google` |
+| **프론트 작업** | Google Sign-In SDK 사용 | URL 리다이렉트만 |
+| **백엔드 작업** | ID Token 검증만 | OAuth2 전체 흐름 처리 |
+| **사용자 경험** | 팝업으로 처리 (페이지 이동 없음) | 페이지 리다이렉트 있음 |
+| **복잡도** | 낮음 | 높음 |
+| **React SPA 적합성** | ✅ 매우 적합 | ⚠️ 가능하지만 UX 제한 |
+
+### 흐름 비교
 
 ```
-[사용자] → [우리 서비스] → [구글/카카오] → [우리 서비스] → [사용자]
-   ↓           ↓              ↓              ↓            ↓
-로그인 버튼   인증 요청      로그인/동의    사용자 정보   JWT 토큰
+[ID Token 방식 - 권장]
+프론트 → 구글(팝업) → 프론트 → 백엔드(/api/auth/google) → 프론트
+                      ID Token          JWT 토큰
+
+[Authorization Code Flow]
+프론트 → 백엔드 → 구글 → 백엔드 → 프론트
+         리다이렉트    콜백      JWT 토큰
 ```
 
 ---
 
-## 전체 흐름 개요
+## 방식 1: ID Token 방식 (권장)
 
-OAuth2 로그인은 다음 7단계로 진행됩니다:
+> **React SPA에서 권장하는 방식입니다.**  
+> 프론트엔드에서 Google Sign-In SDK를 사용하여 ID Token을 받고, 백엔드에서 검증합니다.
+
+### 전체 흐름
+
+```
+1. 프론트엔드: Google Sign-In SDK로 로그인 (팝업)
+   ↓
+2. 구글: ID Token 발급 (프론트엔드로 직접 전달)
+   ↓
+3. 프론트엔드: POST /api/auth/google (ID Token 전송)
+   ↓
+4. 백엔드: ID Token 검증 + 사용자 조회/생성 + JWT 토큰 발급
+   ↓
+5. 프론트엔드: JWT 토큰 수신 및 저장
+```
+
+### 프론트엔드 구현 (React)
+
+#### 1. 패키지 설치
+
+```bash
+npm install @react-oauth/google
+```
+
+#### 2. GoogleOAuthProvider 설정
+
+```javascript
+// App.jsx 또는 main.jsx
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+function App() {
+  return (
+    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+      {/* ... 앱 컴포넌트 */}
+    </GoogleOAuthProvider>
+  );
+}
+```
+
+#### 3. 로그인 버튼 구현
+
+```javascript
+// LoginPage.jsx
+import { GoogleLogin } from '@react-oauth/google';
+
+function LoginPage() {
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      // 백엔드로 ID Token 전송
+      const response = await fetch('http://localhost:8080/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          idToken: credentialResponse.credential 
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.code === 'SUCCESS') {
+        // 토큰 저장
+        localStorage.setItem('accessToken', result.data.accessToken);
+        localStorage.setItem('refreshToken', result.data.refreshToken);
+        
+        console.log('로그인 성공:', result.data.user);
+        // 메인 페이지로 이동
+        window.location.href = '/';
+      } else {
+        console.error('로그인 실패:', result.message);
+      }
+    } catch (error) {
+      console.error('로그인 에러:', error);
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.log('Google 로그인 실패');
+  };
+
+  return (
+    <div>
+      <h1>로그인</h1>
+      <GoogleLogin
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        useOneTap  // 원탭 로그인 (선택사항)
+      />
+    </div>
+  );
+}
+```
+
+### 백엔드 API 명세
+
+#### 요청
+
+```http
+POST /api/auth/google HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
+
+{
+  "idToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ij..."
+}
+```
+
+#### 응답 (성공)
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "Google 로그인 성공",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+    "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+    "user": {
+      "email": "user@gmail.com",
+      "nickname": "user123",
+      "name": "홍길동"
+    }
+  }
+}
+```
+
+#### 응답 (실패)
+
+```json
+{
+  "code": "BAD_REQUEST",
+  "message": "유효하지 않은 Google ID Token입니다.",
+  "traceId": "abc123..."
+}
+```
+
+### 백엔드 처리 흐름
+
+```java
+// AuthController.java
+@PostMapping("/google")
+public ResponseEntity<SuccessResponse<LoginResponse>> googleLogin(
+        @Valid @RequestBody GoogleLoginRequest request
+) {
+    // 1. Google ID Token 검증 및 사용자 조회/생성
+    User user = googleAuthService.authenticateWithIdToken(request.getIdToken());
+    
+    // 2. JWT 토큰 생성
+    String accessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole().name());
+    String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail(), user.getRole().name());
+    
+    // 3. 응답 반환
+    return ResponseEntity.ok(new SuccessResponse<>(
+            ResponseCode.SUCCESS,
+            "Google 로그인 성공",
+            LoginResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .user(UserWebDto.from(user))
+                    .build()
+    ));
+}
+```
+
+### ID Token 검증 로직
+
+```java
+// GoogleIdTokenVerifierService.java
+public GoogleUserInfo verify(String idTokenString) {
+    // 1. Google의 공개키로 서명 검증
+    GoogleIdToken idToken = verifier.verify(idTokenString);
+    
+    if (idToken == null) {
+        return null;  // 유효하지 않은 토큰
+    }
+    
+    // 2. 페이로드에서 사용자 정보 추출
+    GoogleIdToken.Payload payload = idToken.getPayload();
+    
+    return new GoogleUserInfo(
+        payload.getSubject(),           // 소셜 ID
+        payload.getEmail(),             // 이메일
+        (String) payload.get("name"),   // 이름
+        (String) payload.get("picture") // 프로필 사진
+    );
+}
+```
+
+### 장점
+
+1. **팝업 로그인**: 페이지 이동 없이 팝업으로 처리
+2. **빠른 응답**: 백엔드 왕복 최소화
+3. **유연한 UI**: Google Sign-In 버튼 커스터마이징 가능
+4. **원탭 로그인**: `useOneTap` 옵션으로 자동 로그인 지원
+5. **모바일 앱 연동**: 같은 방식으로 모바일 앱에서도 사용 가능
+
+---
+
+## 방식 2: Authorization Code Flow
+
+> **페이지 리다이렉트 방식입니다.**  
+> 백엔드가 OAuth2 전체 흐름을 처리하고, 프론트엔드는 URL 리다이렉트만 합니다.
+
+### 전체 흐름
 
 ```
 1. 프론트엔드: GET /oauth2/authorization/google 호출
@@ -64,15 +287,13 @@ OAuth2 로그인은 다음 7단계로 진행됩니다:
 7. 프론트엔드: 토큰 수신 및 저장
 ```
 
----
+### 1단계: 프론트엔드에서 OAuth 로그인 시작
 
-## 1단계: 프론트엔드에서 OAuth 로그인 시작
-
-### 사용자 동작
+#### 사용자 동작
 
 사용자가 프론트엔드에서 "구글 로그인" 또는 "카카오 로그인" 버튼을 클릭합니다.
 
-### 프론트엔드 코드 예시
+#### 프론트엔드 코드 예시
 
 ```javascript
 // React 예시
@@ -87,20 +308,20 @@ const handleKakaoLogin = () => {
 };
 ```
 
-### HTTP 요청
+#### HTTP 요청
 
 ```http
 GET /oauth2/authorization/google HTTP/1.1
-Host: localhost:8080 G
+Host: localhost:8080
 ```
 
-### 중요 사항
+#### 중요 사항
 
 - **이 엔드포인트는 컨트롤러에 정의할 필요가 없습니다**
 - Spring Security가 `.oauth2Login()` 설정을 통해 자동으로 제공합니다
 - `registrationId`(google, kakao)에 따라 엔드포인트가 자동 생성됩니다
 
-### 엔드포인트 형식
+#### 엔드포인트 형식
 
 ```
 /oauth2/authorization/{registrationId}
@@ -110,9 +331,7 @@ Host: localhost:8080 G
   - 구글: `google`
   - 카카오: `kakao`
 
----
-
-## 2단계: Spring Security OAuth2 필터 처리
+### 2단계: Spring Security OAuth2 필터 처리
 
 ### Spring Security 동작
 
@@ -165,9 +384,7 @@ HTTP/1.1 302 Found
 Location: https://accounts.google.com/o/oauth2/v2/auth?client_id=...
 ```
 
----
-
-## 3단계: OAuth 제공자(구글/카카오) 인증
+### 3단계: OAuth 제공자(구글/카카오) 인증
 
 ### 사용자 동작
 
@@ -206,9 +423,7 @@ Location: https://accounts.google.com/o/oauth2/v2/auth?client_id=...
 - **최초 1회만 동의**: 이후 로그인 시 자동으로 처리됩니다
 - **state 파라미터**: CSRF 공격 방지를 위한 랜덤 문자열 (Spring Security가 자동 생성)
 
----
-
-## 4단계: OAuth 제공자에서 콜백 처리
+### 4단계: OAuth 제공자에서 콜백 처리
 
 ### OAuth 제공자 동작
 
@@ -283,9 +498,7 @@ GET https://kapi.kakao.com/v2/user/me
 Authorization: Bearer {access_token}
 ```
 
----
-
-## 5단계: CustomOAuth2UserService 실행
+### 5단계: CustomOAuth2UserService 실행
 
 ### 호출 시점
 
@@ -454,9 +667,7 @@ return new PrincipalDetails(user, attributes);
 - `PrincipalDetails`: Spring Security의 `UserDetails`와 `OAuth2User`를 모두 구현
 - 이후 인증 정보로 사용됨
 
----
-
-## 6단계: OAuth2LoginSuccessHandler 실행
+### 6단계: OAuth2LoginSuccessHandler 실행
 
 ### 호출 시점
 
@@ -549,9 +760,7 @@ response.sendRedirect(redirectUrl);
 - HTTP 302 리다이렉트 응답
 - 브라우저가 자동으로 프론트엔드 URL로 이동
 
----
-
-## 7단계: 프론트엔드에서 토큰 수신
+### 7단계: 프론트엔드에서 토큰 수신
 
 ### 프론트엔드 동작
 
@@ -651,7 +860,31 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 ## 주요 클래스 설명
 
-### CustomOAuth2UserService
+### ID Token 방식 관련 클래스
+
+#### GoogleIdTokenVerifierService
+
+**역할**: Google ID Token 검증
+
+**주요 메서드:**
+- `verify(idToken)`: Google 공개키로 ID Token 서명 검증 및 사용자 정보 추출
+
+**위치**: `web/common/security/GoogleIdTokenVerifierService.java`
+
+#### GoogleAuthService
+
+**역할**: Google ID Token 기반 인증 및 사용자 처리
+
+**주요 메서드:**
+- `authenticateWithIdToken(idToken)`: ID Token 검증 후 사용자 조회/생성
+
+**위치**: `web/auth/service/GoogleAuthService.java`
+
+---
+
+### Authorization Code Flow 관련 클래스
+
+#### CustomOAuth2UserService
 
 **역할**: OAuth 제공자로부터 받은 사용자 정보를 처리하여 우리 DB의 User와 매핑
 
@@ -661,20 +894,41 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 - `extractSocialId()`: Provider별로 소셜 ID 추출
 - `createNewUser()`: 신규 사용자 자동 회원가입
 
-### OAuth2LoginSuccessHandler
+**위치**: `web/common/security/CustomOAuth2UserService.java`
+
+#### OAuth2LoginSuccessHandler
 
 **역할**: OAuth 로그인 성공 후 JWT 토큰 생성 및 프론트엔드로 리다이렉트
 
 **주요 메서드:**
 - `onAuthenticationSuccess()`: 로그인 성공 시 호출, JWT 토큰 생성 및 리다이렉트
 
-### PrincipalDetails
+**위치**: `web/common/security/OAuth2LoginSuccessHandler.java`
+
+#### HttpCookieOAuth2AuthorizationRequestRepository
+
+**역할**: STATELESS 세션 정책에서 OAuth2 인증 요청을 쿠키에 저장
+
+**주요 메서드:**
+- `saveAuthorizationRequest()`: 인증 요청을 쿠키에 저장
+- `loadAuthorizationRequest()`: 쿠키에서 인증 요청 로드
+- `removeAuthorizationRequestCookies()`: 인증 관련 쿠키 삭제
+
+**위치**: `web/common/security/HttpCookieOAuth2AuthorizationRequestRepository.java`
+
+---
+
+### 공통 클래스
+
+#### PrincipalDetails
 
 **역할**: Spring Security의 인증 정보를 담는 객체
 
 **특징:**
 - `UserDetails`와 `OAuth2User`를 모두 구현
 - 일반 로그인과 OAuth 로그인 모두 지원
+
+**위치**: `web/common/security/PrincipalDetails.java`
 
 ---
 
@@ -729,13 +983,32 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 ## FAQ
 
-### Q1. OAuth 로그인 시 별도의 회원가입 API를 호출해야 하나요?
+### Q1. ID Token 방식과 Authorization Code Flow 중 어떤 것을 사용해야 하나요?
 
-**A**: 아니요. OAuth 로그인은 자동 회원가입이 처리됩니다. `CustomOAuth2UserService.createNewUser()` 메서드에서 자동으로 User 엔티티를 생성합니다.
+**A**: **React SPA에서는 ID Token 방식을 권장합니다.**
 
-### Q2. 구글과 카카오 로그인을 동시에 지원하려면?
+| 상황 | 추천 방식 |
+|------|----------|
+| React/Vue SPA + 팝업 로그인 원함 | **ID Token 방식** |
+| 페이지 리다이렉트 OK | Authorization Code Flow |
+| 모바일 앱 연동 예정 | **ID Token 방식** |
+| 카카오 로그인도 함께 사용 | Authorization Code Flow (카카오는 ID Token 방식 미지원) |
 
-**A**: `application.properties`에 두 Provider 모두 등록하면 됩니다. 프론트엔드에서 `/oauth2/authorization/google` 또는 `/oauth2/authorization/kakao`로 리다이렉트하면 됩니다.
+### Q2. OAuth 로그인 시 별도의 회원가입 API를 호출해야 하나요?
+
+**A**: 아니요. 두 방식 모두 자동 회원가입이 처리됩니다. 
+- ID Token 방식: `GoogleAuthService.authenticateWithIdToken()`에서 처리
+- Authorization Code Flow: `CustomOAuth2UserService.createNewUser()`에서 처리
+
+### Q3. ID Token 방식에서 프론트엔드가 구글 SDK를 사용하면 client-secret은 어디서 쓰이나요?
+
+**A**: ID Token 방식에서는 **client-secret이 필요 없습니다.** 프론트엔드는 `client-id`만 사용하고, 백엔드는 Google의 공개키로 ID Token 서명을 검증합니다. 이것이 ID Token 방식의 보안적 장점 중 하나입니다.
+
+### Q4. 구글과 카카오 로그인을 동시에 지원하려면?
+
+**A**: 
+- **구글**: ID Token 방식 (`POST /api/auth/google`) 또는 Authorization Code Flow 모두 가능
+- **카카오**: Authorization Code Flow만 지원 (`/oauth2/authorization/kakao`)
 
 ### Q3. OAuth 로그인 사용자는 비밀번호가 없나요?
 
@@ -837,13 +1110,32 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 ## 요약
 
-1. **프론트엔드**: `/oauth2/authorization/{provider}`로 리다이렉트
-2. **Spring Security**: OAuth 제공자 인증 페이지로 리다이렉트
-3. **사용자**: OAuth 제공자에서 로그인 및 동의
-4. **OAuth 제공자**: 콜백 URL로 인증 코드 전송
-5. **CustomOAuth2UserService**: 사용자 정보 처리 및 User 엔티티 조회/생성
-6. **OAuth2LoginSuccessHandler**: JWT 토큰 생성 및 프론트엔드로 리다이렉트
-7. **프론트엔드**: 토큰 수신 및 저장
+### 방식 1: ID Token 방식 (권장 - React SPA)
 
-이 흐름을 통해 사용자는 별도의 회원가입 없이 소셜 계정으로 바로 로그인할 수 있습니다.
+```
+1. 프론트: Google Sign-In SDK로 로그인 (팝업)
+2. 프론트: POST /api/auth/google (ID Token 전송)
+3. 백엔드: ID Token 검증 → 사용자 조회/생성 → JWT 발급
+4. 프론트: JWT 토큰 저장 → 로그인 완료
+```
+
+**엔드포인트**: `POST /api/auth/google`
+
+### 방식 2: Authorization Code Flow
+
+```
+1. 프론트: /oauth2/authorization/{provider}로 리다이렉트
+2. Spring Security: OAuth 제공자 인증 페이지로 리다이렉트
+3. 사용자: OAuth 제공자에서 로그인 및 동의
+4. OAuth 제공자: 콜백 URL로 인증 코드 전송
+5. CustomOAuth2UserService: 사용자 정보 처리 및 User 엔티티 조회/생성
+6. OAuth2LoginSuccessHandler: JWT 토큰 생성 및 프론트엔드로 리다이렉트
+7. 프론트: 토큰 수신 및 저장
+```
+
+**엔드포인트**: `GET /oauth2/authorization/google` 또는 `GET /oauth2/authorization/kakao`
+
+---
+
+두 방식 모두 별도의 회원가입 없이 소셜 계정으로 바로 로그인할 수 있으며, 신규 사용자는 자동으로 회원가입 처리됩니다.
 

@@ -28,6 +28,9 @@ dependencies {
     // OAuth2 Client (소셜 로그인)
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     
+    // Google API Client (ID Token 검증용)
+    implementation 'com.google.api-client:google-api-client:2.2.0'
+    
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'

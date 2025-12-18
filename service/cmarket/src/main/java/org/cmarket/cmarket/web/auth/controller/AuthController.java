@@ -59,19 +59,22 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailVerificationService emailVerificationService;  // 검증용으로만 사용
     private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final org.cmarket.cmarket.web.auth.service.GoogleAuthService googleAuthService;
     
     public AuthController(
             AuthService authService,
             AuthenticationManager authenticationManager,
             JwtTokenProvider jwtTokenProvider,
             EmailVerificationService emailVerificationService,
-            TokenBlacklistRepository tokenBlacklistRepository
+            TokenBlacklistRepository tokenBlacklistRepository,
+            org.cmarket.cmarket.web.auth.service.GoogleAuthService googleAuthService
     ) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.emailVerificationService = emailVerificationService;
         this.tokenBlacklistRepository = tokenBlacklistRepository;
+        this.googleAuthService = googleAuthService;
     }
     
     /**
@@ -579,6 +582,75 @@ public class AuthController {
                         ResponseCode.SUCCESS,
                         isAvailable ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다.",
                         isAvailable
+                ));
+    }
+    
+    /**
+     * Google ID Token 로그인
+     * 
+     * POST /api/auth/google
+     * 
+     * 프론트엔드에서 Google Sign-In SDK를 통해 받은 ID Token으로 로그인합니다.
+     * 신규 사용자인 경우 자동으로 회원가입 처리됩니다.
+     * 
+     * @param request Google ID Token을 포함한 요청
+     * @return JWT Access Token과 Refresh Token
+     * 
+     * <h3>요청 예시</h3>
+     * <pre>
+     * POST /api/auth/google
+     * Content-Type: application/json
+     * 
+     * {
+     *   "idToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+     * }
+     * </pre>
+     * 
+     * <h3>응답 예시</h3>
+     * <pre>
+     * {
+     *   "code": "SUCCESS",
+     *   "message": "Google 로그인 성공",
+     *   "data": {
+     *     "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+     *     "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+     *     "user": {
+     *       "email": "user@gmail.com",
+     *       "nickname": "user123",
+     *       "name": "홍길동"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @PostMapping("/google")
+    public ResponseEntity<SuccessResponse<LoginResponse>> googleLogin(
+            @Valid @RequestBody org.cmarket.cmarket.web.auth.dto.GoogleLoginRequest request
+    ) {
+        // 1. Google ID Token 검증 및 사용자 조회/생성
+        org.cmarket.cmarket.domain.auth.model.User user = googleAuthService.authenticateWithIdToken(request.getIdToken());
+        
+        // 2. JWT 토큰 생성
+        String role = user.getRole().name();
+        String accessToken = jwtTokenProvider.createAccessToken(user.getEmail(), role);
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail(), role);
+        
+        // 3. 응답 생성
+        LoginResponse loginResponse = LoginResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .user(UserWebDto.builder()
+                        .email(user.getEmail())
+                        .nickname(user.getNickname())
+                        .name(user.getName())
+                        .build())
+                .build();
+        
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        "Google 로그인 성공",
+                        loginResponse
                 ));
     }
 }
