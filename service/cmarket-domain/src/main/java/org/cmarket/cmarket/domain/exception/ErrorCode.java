@@ -67,7 +67,19 @@ public enum ErrorCode {
     
     // 커뮤니티 관련 (404)
     POST_NOT_FOUND(404, "게시글을 찾을 수 없습니다."),
-    COMMENT_NOT_FOUND(404, "댓글을 찾을 수 없습니다.");
+    COMMENT_NOT_FOUND(404, "댓글을 찾을 수 없습니다."),
+    
+    // 채팅 관련 (400)
+    SELF_CHAT_NOT_ALLOWED(400, "본인과의 채팅은 불가능합니다."),
+    CHAT_ROOM_USER_LEFT(400, "상대방이 채팅방을 나갔습니다."),
+    MESSAGE_TOO_LONG(400, "메시지는 1000자를 초과할 수 없습니다."),
+    PRIVACY_VIOLATION(400, "개인정보가 포함된 메시지는 전송할 수 없습니다."),
+    
+    // 채팅 관련 (403)
+    CHAT_ROOM_ACCESS_DENIED(403, "채팅방에 대한 접근 권한이 없습니다."),
+    
+    // 채팅 관련 (404)
+    CHAT_ROOM_NOT_FOUND(404, "채팅방을 찾을 수 없습니다.");
     
     private final int statusCode;
     private final String message;

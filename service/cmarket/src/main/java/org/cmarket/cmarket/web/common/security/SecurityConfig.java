@@ -139,6 +139,7 @@ public class SecurityConfig {
                     "/api/auth/nickname/check",  // 닉네임 중복 확인 엔드포인트
                     "/oauth2/**",  // OAuth2 로그인 엔드포인트
                     "/login/oauth2/**",  // OAuth2 로그인 리다이렉트 엔드포인트
+                    "/ws-stomp/**",  // WebSocket 엔드포인트 (인증은 STOMP 레벨에서 처리)
                     "/actuator/health",
                     "/error"
                 ).permitAll()

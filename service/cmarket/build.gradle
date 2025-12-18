@@ -19,6 +19,12 @@ dependencies {
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
     
+    // WebSocket + STOMP
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    
     // OAuth2 Client (소셜 로그인)
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     
