@@ -198,5 +198,31 @@ public class User {
         this.introduction = introduction;
         this.updatedAt = LocalDateTime.now();
     }
+    
+    /**
+     * 소셜 계정 연동
+     * 
+     * 기존 일반 회원(LOCAL)에 소셜 로그인 정보를 연동합니다.
+     * 이미 소셜 계정이 연동된 경우에는 업데이트하지 않습니다.
+     * 
+     * @param provider 소셜 로그인 제공자 (GOOGLE, KAKAO)
+     * @param socialId 소셜 서비스의 고유 ID
+     */
+    public void linkSocialAccount(AuthProvider provider, String socialId) {
+        // 이미 소셜 계정이 연동되어 있으면 업데이트하지 않음
+        if (this.provider != AuthProvider.LOCAL && this.socialId != null) {
+            return;
+        }
+        this.provider = provider;
+        this.socialId = socialId;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    /**
+     * 소셜 계정 연동 여부 확인
+     */
+    public boolean hasSocialAccount() {
+        return this.provider != AuthProvider.LOCAL && this.socialId != null;
+    }
 }
 

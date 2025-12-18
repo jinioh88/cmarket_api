@@ -144,9 +144,24 @@ public class SecurityConfig {
                     exception.printStackTrace();
                     System.err.println("=========================================");
                     
+                    // 에러 메시지 추출 (null 방지)
+                    String errorMessage = exception.getMessage();
+                    if (errorMessage == null || errorMessage.isBlank()) {
+                        // OAuth2AuthenticationException의 경우 OAuth2Error에서 description 추출
+                        if (exception instanceof org.springframework.security.oauth2.core.OAuth2AuthenticationException) {
+                            org.springframework.security.oauth2.core.OAuth2Error error = 
+                                ((org.springframework.security.oauth2.core.OAuth2AuthenticationException) exception).getError();
+                            errorMessage = error.getDescription();
+                        }
+                        // 여전히 null이면 기본 메시지 사용
+                        if (errorMessage == null || errorMessage.isBlank()) {
+                            errorMessage = "인증에 실패했습니다";
+                        }
+                    }
+                    
                     // 프론트엔드 로그인 페이지로 리다이렉트 (오류 정보 포함)
                     String redirectUrl = "http://localhost:3000/login?error=oauth2_failed&message=" 
-                            + java.net.URLEncoder.encode(exception.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+                            + java.net.URLEncoder.encode(errorMessage, java.nio.charset.StandardCharsets.UTF_8);
                     response.sendRedirect(redirectUrl);
                 })
             )

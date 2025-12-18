@@ -10,6 +10,7 @@ import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +50,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         
         // 4. 이메일이 없으면 예외 발생 (구글은 항상 있지만, 카카오는 동의 필요)
         if (email == null || email.isEmpty()) {
-            throw new OAuth2AuthenticationException("이메일 정보가 필요합니다. 소셜 로그인 시 이메일 제공에 동의해주세요.");
+            throw new OAuth2AuthenticationException(
+                new OAuth2Error("email_required", "이메일 정보가 필요합니다. 소셜 로그인 시 이메일 제공에 동의해주세요.", null)
+            );
         }
         
         // 5. 기존 사용자 조회 (소셜 ID로 조회)
@@ -146,13 +149,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
     
     /**
-     * 신규 사용자 생성
+     * 신규 사용자 생성 또는 기존 계정에 소셜 연동
+     * 
+     * 동일한 이메일로 이미 가입된 계정이 있으면 소셜 계정을 연동하고,
+     * 없으면 새로운 사용자를 생성합니다.
      */
     private User createNewUser(String email, String socialId, String name, String nickname, AuthProvider provider) {
-        // 이메일 중복 확인 (다른 Provider로 가입한 경우)
+        // 이메일로 기존 사용자 조회
         Optional<User> existingUserByEmail = userRepository.findByEmailAndDeletedAtIsNull(email);
+        
         if (existingUserByEmail.isPresent()) {
-            throw new OAuth2AuthenticationException("이미 가입된 이메일입니다. 일반 로그인을 사용해주세요.");
+            // 기존 계정이 있으면 소셜 계정 연동
+            User existingUser = existingUserByEmail.get();
+            existingUser.linkSocialAccount(provider, socialId);
+            log.info("기존 계정에 소셜 로그인 연동: email={}, provider={}", email, provider);
+            return userRepository.save(existingUser);
         }
         
         // 닉네임이 없으면 이메일 앞부분 사용
@@ -182,6 +193,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .socialId(socialId)
                 .build();
         
+        log.info("소셜 로그인으로 신규 가입: email={}, provider={}", email, provider);
         return userRepository.save(user);
     }
 }
