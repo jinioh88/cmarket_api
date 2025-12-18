@@ -127,12 +127,28 @@ public class SecurityConfig {
             // 세션 대신 쿠키에 인증 요청 정보를 저장합니다.
             .oauth2Login(oauth2 -> oauth2
                 .authorizationEndpoint(authorization -> authorization
+                    .baseUri("/oauth2/authorization")
                     .authorizationRequestRepository(cookieAuthorizationRequestRepository)
+                )
+                .redirectionEndpoint(redirection -> redirection
+                    .baseUri("/login/oauth2/code/*")
                 )
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
                 )
                 .successHandler(oAuth2LoginSuccessHandler)
+                .failureHandler((request, response, exception) -> {
+                    // OAuth2 인증 실패 로그
+                    System.err.println("========== OAuth2 로그인 실패 ==========");
+                    System.err.println("오류 메시지: " + exception.getMessage());
+                    exception.printStackTrace();
+                    System.err.println("=========================================");
+                    
+                    // 프론트엔드 로그인 페이지로 리다이렉트 (오류 정보 포함)
+                    String redirectUrl = "http://localhost:3000/login?error=oauth2_failed&message=" 
+                            + java.net.URLEncoder.encode(exception.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+                    response.sendRedirect(redirectUrl);
+                })
             )
             
             // 접근 권한 설정
@@ -146,6 +162,8 @@ public class SecurityConfig {
                     "/api/auth/email/**",
                     "/api/auth/password/reset/**",  // 비밀번호 재설정 엔드포인트
                     "/api/auth/nickname/check",  // 닉네임 중복 확인 엔드포인트
+                    "/login",  // Spring Security 기본 로그인 페이지 (OAuth2 실패 시 리다이렉트)
+                    "/login/**",  // 로그인 관련 엔드포인트
                     "/oauth2/**",  // OAuth2 로그인 엔드포인트
                     "/login/oauth2/**",  // OAuth2 로그인 리다이렉트 엔드포인트
                     "/ws-stomp/**",  // WebSocket 엔드포인트 (인증은 STOMP 레벨에서 처리)
