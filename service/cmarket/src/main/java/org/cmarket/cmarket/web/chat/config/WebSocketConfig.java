@@ -1,9 +1,12 @@
 package org.cmarket.cmarket.web.chat.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -27,6 +30,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
     private final StompChannelInterceptor stompChannelInterceptor;
     
+    @Bean
+    public TaskScheduler websocketTaskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("ws-heartbeat-");
+        scheduler.initialize();
+        return scheduler;
+    }
+    
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // Simple Broker 설정 (서버 → 클라이언트)
@@ -35,7 +47,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // Heartbeat: 서버→클라이언트 2분, 클라이언트→서버 2분 간격
         // 세션 TTL(5분)보다 짧게 설정하여 연결 유지 시 자동 갱신
         registry.enableSimpleBroker("/topic", "/queue")
-                .setHeartbeatValue(new long[]{120000, 120000});  // [서버→클라이언트, 클라이언트→서버] ms
+                .setHeartbeatValue(new long[]{120000, 120000})  // [서버→클라이언트, 클라이언트→서버] ms
+                .setTaskScheduler(websocketTaskScheduler());
         
         // Application Destination Prefix 설정 (클라이언트 → 서버)
         // 클라이언트가 /app으로 시작하는 경로로 메시지를 보내면

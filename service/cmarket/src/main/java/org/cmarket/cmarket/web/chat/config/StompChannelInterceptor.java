@@ -1,11 +1,11 @@
 package org.cmarket.cmarket.web.chat.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cmarket.cmarket.domain.chat.app.service.ChatService;
 import org.cmarket.cmarket.web.chat.dto.ChatMessageRequest;
 import org.cmarket.cmarket.web.common.security.JwtTokenProvider;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -51,13 +51,23 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class StompChannelInterceptor implements ChannelInterceptor {
     
     private final JwtTokenProvider jwtTokenProvider;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
     private final ObjectMapper objectMapper;
+    
+    public StompChannelInterceptor(
+            JwtTokenProvider jwtTokenProvider,
+            @Lazy SimpMessagingTemplate messagingTemplate,
+            ChatService chatService,
+            ObjectMapper objectMapper) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.messagingTemplate = messagingTemplate;
+        this.chatService = chatService;
+        this.objectMapper = objectMapper;
+    }
     
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";

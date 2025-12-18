@@ -1,6 +1,5 @@
 package org.cmarket.cmarket.web.chat.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -27,9 +26,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
     
-    @Value("${chat.redis.ttl-days:30}")
-    private int ttlDays;
-    
     /**
      * RedisTemplate 설정
      * 
@@ -54,23 +50,4 @@ public class RedisConfig {
         return template;
     }
     
-    /**
-     * String 전용 RedisTemplate
-     * 
-     * 단순 문자열 값 저장에 사용합니다.
-     */
-    @Bean
-    public RedisTemplate<String, String> stringRedisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, String> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        
-        StringRedisSerializer stringSerializer = new StringRedisSerializer();
-        template.setKeySerializer(stringSerializer);
-        template.setValueSerializer(stringSerializer);
-        template.setHashKeySerializer(stringSerializer);
-        template.setHashValueSerializer(stringSerializer);
-        
-        template.afterPropertiesSet();
-        return template;
-    }
 }
