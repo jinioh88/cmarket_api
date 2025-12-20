@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatMessageCommand;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatMessageDto;
+import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomListItemDto;
 import org.cmarket.cmarket.domain.chat.app.service.ChatService;
 import org.cmarket.cmarket.web.chat.dto.ChatMessageRequest;
 import org.cmarket.cmarket.web.chat.dto.ChatMessageResponse;
+import org.cmarket.cmarket.web.chat.dto.ChatRoomListItemResponse;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -23,6 +25,7 @@ import java.security.Principal;
  * 구독 경로:
  * - /topic/chat/{chatRoomId}: 채팅방 메시지 구독 (일반 메시지)
  * - /user/queue/chat: 개인 메시지 (차단된 메시지 - 발신자 전용)
+ * - /user/queue/chat-room-list: 채팅방 목록 업데이트 이벤트 (실시간 목록 갱신용)
  * - /user/queue/errors: 에러 메시지
  */
 @Slf4j
@@ -55,6 +58,13 @@ public class ChatWebSocketController {
         
         String email = principal.getName();
         Long chatRoomId = request.getChatRoomId();
+        String content = request.getContent();
+        
+        // 경고: 짧은 메시지(1-2자)는 프론트엔드에서 메시지가 분할되어 전송되었을 가능성이 있음
+        if (content != null && content.length() <= 2) {
+            log.warn("⚠️ 짧은 메시지 감지: content=[{}], length={}. 프론트엔드에서 메시지가 분할되어 전송되었을 가능성이 있습니다. " +
+                    "프론트엔드 개발자에게 확인이 필요합니다.", content, content.length());
+        }
         
         try {
             // 1. 메시지 저장 및 처리
@@ -66,6 +76,7 @@ public class ChatWebSocketController {
                     .build();
             
             ChatMessageDto messageDto = chatService.sendMessage(email, command);
+
             ChatMessageResponse response = ChatMessageResponse.from(messageDto);
             
             // 2. 메시지 전송
@@ -84,9 +95,11 @@ public class ChatWebSocketController {
                         "/topic/chat/" + chatRoomId,
                         response
                 );
-                log.debug("메시지 전송 완료: chatRoomId={}, messageId={}", 
-                        chatRoomId, messageDto.getMessageId());
             }
+            
+            // 3. 채팅방 목록 실시간 업데이트 이벤트 전송
+            // 메시지가 전송되면 채팅방 목록 화면에 있는 모든 참여자에게 업데이트 이벤트 전송
+            sendChatRoomListUpdate(chatRoomId);
             
         } catch (Exception e) {
             log.error("메시지 전송 실패: chatRoomId={}, email={}", chatRoomId, email, e);
@@ -96,6 +109,44 @@ public class ChatWebSocketController {
                     "/queue/errors",
                     new ErrorMessage("MESSAGE_SEND_FAILED", e.getMessage())
             );
+        }
+    }
+    
+    /**
+     * 채팅방 목록 업데이트 이벤트 전송
+     * 
+     * 메시지가 전송되면 채팅방 목록 화면에 있는 모든 참여자에게 업데이트 이벤트를 전송합니다.
+     * 프론트엔드는 /user/queue/chat-room-list를 구독하여 실시간으로 목록을 업데이트할 수 있습니다.
+     * 
+     * @param chatRoomId 채팅방 ID
+     */
+    private void sendChatRoomListUpdate(Long chatRoomId) {
+        try {
+            // 1. 채팅방의 모든 활성 참여자 이메일 조회
+            java.util.List<String> participantEmails = chatService.getActiveParticipantEmails(chatRoomId);
+            
+            // 2. 각 참여자에게 채팅방 목록 아이템 전송
+            for (String participantEmail : participantEmails) {
+                ChatRoomListItemDto listItem = chatService.getChatRoomListItem(participantEmail, chatRoomId);
+                
+                if (listItem != null) {
+                    ChatRoomListItemResponse updateEvent = ChatRoomListItemResponse.fromDto(listItem);
+                    
+                    // 개인 큐로 전송 (각 사용자에게만 전달됨)
+                    messagingTemplate.convertAndSendToUser(
+                            participantEmail,
+                            "/queue/chat-room-list",
+                            updateEvent
+                    );
+                }
+            }
+            
+            log.debug("채팅방 목록 업데이트 이벤트 전송 완료: chatRoomId={}, participantCount={}", 
+                    chatRoomId, participantEmails.size());
+            
+        } catch (Exception e) {
+            // 목록 업데이트 실패는 메시지 전송에 영향을 주지 않도록 로그만 남김
+            log.warn("채팅방 목록 업데이트 이벤트 전송 실패: chatRoomId={}", chatRoomId, e);
         }
     }
     

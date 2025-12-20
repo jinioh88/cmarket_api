@@ -6,6 +6,9 @@ import org.cmarket.cmarket.domain.chat.app.dto.ChatMessageListDto;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomCreateCommand;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomDto;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomListDto;
+import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomListItemDto;
+
+import java.util.List;
 
 /**
  * 채팅 서비스 인터페이스
@@ -112,4 +115,26 @@ public interface ChatService {
      * @return 시스템 메시지 정보 (WebSocket 전송용)
      */
     ChatMessageDto leaveChatRoom(String email, Long chatRoomId);
+    
+    /**
+     * 단일 채팅방 목록 아이템 조회
+     * 
+     * 특정 채팅방에 대한 목록 아이템 정보를 조회합니다.
+     * 채팅방 목록 실시간 업데이트를 위해 사용됩니다.
+     * 
+     * @param email 현재 사용자 이메일
+     * @param chatRoomId 채팅방 ID
+     * @return 채팅방 목록 아이템 (없으면 null)
+     */
+    ChatRoomListItemDto getChatRoomListItem(String email, Long chatRoomId);
+    
+    /**
+     * 채팅방의 모든 활성 참여자 이메일 목록 조회
+     * 
+     * 채팅방 목록 실시간 업데이트를 위해 사용됩니다.
+     * 
+     * @param chatRoomId 채팅방 ID
+     * @return 활성 참여자 이메일 목록
+     */
+    List<String> getActiveParticipantEmails(Long chatRoomId);
 }

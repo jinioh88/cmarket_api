@@ -20,7 +20,11 @@ import org.cmarket.cmarket.domain.community.model.Post;
 import org.cmarket.cmarket.domain.community.model.Comment;
 import org.cmarket.cmarket.domain.community.repository.PostRepository;
 import org.cmarket.cmarket.domain.community.repository.CommentRepository;
+import org.cmarket.cmarket.domain.notification.app.dto.NotificationCreateCommand;
+import org.cmarket.cmarket.domain.notification.app.event.NotificationCreatedEvent;
+import org.cmarket.cmarket.domain.notification.model.NotificationType;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +46,7 @@ public class CommunityServiceImpl implements CommunityService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final ApplicationEventPublisher eventPublisher;
     
     @Override
     public PostDto createPost(String email, PostCreateCommand command) {
@@ -164,6 +169,11 @@ public class CommunityServiceImpl implements CommunityService {
         
         // 게시글 소프트 삭제 처리 (영속 상태 엔티티 변경은 트랜잭션 커밋 시 자동 반영)
         post.softDelete();
+        
+        // 알림 이벤트 발행 (게시글 작성자에게 삭제 알림)
+        // 단, 본인이 삭제한 경우는 알림 발행하지 않음 (어드민 삭제 시에만 알림 발행)
+        // 현재는 작성자 본인이 삭제하므로 알림 발행하지 않음
+        // TODO: 향후 Admin 도메인 연동 시 어드민이 삭제한 경우에만 알림 발행
     }
     
     @Override
@@ -231,6 +241,42 @@ public class CommunityServiceImpl implements CommunityService {
         // Post의 commentCount 증가
         post.increaseCommentCount();
         postRepository.save(post);
+        
+        // 알림 이벤트 발행
+        Long targetUserId = null;
+        NotificationType notificationType = null;
+        String title = null;
+        String content = null;
+        
+        if (command.getParentId() != null) {
+            // 댓글에 댓글을 작성한 경우: 부모 댓글 작성자에게 알림
+            Comment parentComment = commentRepository.findById(command.getParentId())
+                    .orElseThrow(() -> new CommentNotFoundException());
+            targetUserId = parentComment.getAuthorId();
+            notificationType = NotificationType.COMMENT_REPLY;
+            title = "내 댓글에 답글이 달렸습니다";
+            content = String.format("%s님이 내 댓글에 답글을 남겼습니다.", user.getNickname());
+        } else {
+            // 게시글에 댓글을 작성한 경우: 게시글 작성자에게 알림
+            targetUserId = post.getAuthorId();
+            notificationType = NotificationType.POST_COMMENT;
+            title = "내 게시글에 댓글이 달렸습니다";
+            content = String.format("%s님이 내 게시글에 댓글을 남겼습니다.", user.getNickname());
+        }
+        
+        // 본인에게는 알림 발행하지 않음
+        if (targetUserId != null && !targetUserId.equals(authorId)) {
+            NotificationCreateCommand notificationCommand = NotificationCreateCommand.builder()
+                    .userId(targetUserId)
+                    .notificationType(notificationType)
+                    .title(title)
+                    .content(content)
+                    .relatedEntityType(command.getParentId() != null ? "COMMENT" : "POST")
+                    .relatedEntityId(command.getParentId() != null ? command.getParentId() : postId)
+                    .build();
+            
+            eventPublisher.publishEvent(new NotificationCreatedEvent(this, targetUserId, notificationCommand));
+        }
         
         // DTO로 변환하여 반환
         return org.cmarket.cmarket.domain.community.app.dto.CommentDto.fromEntity(savedComment);

@@ -46,7 +46,7 @@ public class ProductUpdateRequest {
     @NotNull(message = "상품 상태는 필수입니다.")
     private ProductStatus productStatus;
     
-    @NotBlank(message = "대표 이미지는 필수입니다.")
+//    @NotBlank(message = "대표 이미지는 필수입니다.")
     private String mainImageUrl;
     
     @Size(max = 4, message = "서브 이미지는 최대 4장까지 등록 가능합니다.")

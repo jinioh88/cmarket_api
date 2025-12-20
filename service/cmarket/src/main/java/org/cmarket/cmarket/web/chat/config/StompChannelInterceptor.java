@@ -198,6 +198,19 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 // 메시지 페이로드에서 chatRoomId 추출
                 ChatMessageRequest request = parsePayload(message.getPayload());
                 
+                // 디버깅: 인터셉터에서 메시지 수신 로그
+                String requestContent = request != null ? request.getContent() : null;
+                int contentLength = requestContent != null ? requestContent.length() : 0;
+                log.info("=== StompChannelInterceptor.handleSend === email={}, chatRoomId={}, content=[{}], contentLength={}", 
+                        email, request != null ? request.getChatRoomId() : null,
+                        requestContent, contentLength);
+                
+                // 경고: 짧은 메시지(1-2자)는 프론트엔드에서 메시지가 분할되어 전송되었을 가능성이 있음
+                if (requestContent != null && contentLength <= 2) {
+                    log.warn("⚠️ [인터셉터] 짧은 메시지 감지: content=[{}], length={}. 프론트엔드에서 메시지가 분할되어 전송되었을 가능성이 있습니다.", 
+                            requestContent, contentLength);
+                }
+                
                 if (request == null || request.getChatRoomId() == null) {
                     log.warn("메시지 페이로드 파싱 실패");
                     sendErrorToUser(accessor, "INVALID_MESSAGE", "잘못된 메시지 형식입니다.");
@@ -213,7 +226,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                     throw new SecurityException("메시지 전송 권한이 없습니다.");
                 }
                 
-                log.debug("메시지 전송 권한 확인: chatRoomId={}, email={}", chatRoomId, email);
+                log.info("=== StompChannelInterceptor 권한 확인 완료 === chatRoomId={}, email={}", chatRoomId, email);
                 
             } catch (SecurityException e) {
                 throw e;

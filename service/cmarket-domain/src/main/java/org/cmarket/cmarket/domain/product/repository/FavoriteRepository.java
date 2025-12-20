@@ -69,5 +69,17 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
             @Param("userId") Long userId,
             @Param("productIds") java.util.List<Long> productIds
     );
+    
+    /**
+     * 상품을 찜한 사용자 ID 목록 조회
+     * 
+     * 특정 상품을 찜한 모든 사용자의 ID를 조회합니다.
+     * 알림 발행 시 사용됩니다.
+     * 
+     * @param productId 상품 ID
+     * @return 찜한 사용자 ID 목록
+     */
+    @Query("SELECT f.userId FROM Favorite f WHERE f.productId = :productId")
+    java.util.List<Long> findUserIdsByProductId(@Param("productId") Long productId);
 }
 

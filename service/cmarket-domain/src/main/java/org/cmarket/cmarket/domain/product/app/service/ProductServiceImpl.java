@@ -3,6 +3,9 @@ package org.cmarket.cmarket.domain.product.app.service;
 import lombok.RequiredArgsConstructor;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
+import org.cmarket.cmarket.domain.notification.app.dto.NotificationCreateCommand;
+import org.cmarket.cmarket.domain.notification.app.event.NotificationCreatedEvent;
+import org.cmarket.cmarket.domain.notification.model.NotificationType;
 import org.cmarket.cmarket.domain.product.app.dto.FavoriteItemDto;
 import org.cmarket.cmarket.domain.product.app.dto.FavoriteListDto;
 import org.cmarket.cmarket.domain.product.app.dto.ProductCreateCommand;
@@ -24,6 +27,7 @@ import org.cmarket.cmarket.domain.product.model.TradeStatus;
 import org.cmarket.cmarket.domain.product.repository.FavoriteRepository;
 import org.cmarket.cmarket.domain.product.repository.ProductRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +49,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
+    private final ApplicationEventPublisher eventPublisher;
     
     @Override
     public ProductDto createProduct(String email, ProductCreateCommand command) {
@@ -207,6 +212,10 @@ public class ProductServiceImpl implements ProductService {
             throw new org.cmarket.cmarket.domain.auth.app.exception.AuthenticationFailedException("상품을 수정할 권한이 없습니다.");
         }
         
+        // 가격 변경 여부 확인 (알림 발행용)
+        Long oldPrice = product.getPrice();
+        boolean priceChanged = !oldPrice.equals(command.price());
+        
         // 상품 정보 수정
         product.update(
                 command.petType(),
@@ -226,6 +235,24 @@ public class ProductServiceImpl implements ProductService {
         
         // 저장
         Product updatedProduct = productRepository.save(product);
+        
+        // 가격이 변경되었을 때 찜한 사용자들에게 알림 발행
+        if (priceChanged) {
+            List<Long> favoriteUserIds = favoriteRepository.findUserIdsByProductId(productId);
+            for (Long favoriteUserId : favoriteUserIds) {
+                NotificationCreateCommand notificationCommand = NotificationCreateCommand.builder()
+                        .userId(favoriteUserId)
+                        .notificationType(NotificationType.PRODUCT_FAVORITE_PRICE_CHANGED)
+                        .title("찜한 상품의 가격이 변경되었습니다")
+                        .content(String.format("'%s' 상품의 가격이 변경되었습니다. (기존: %,d원 → 변경: %,d원)", 
+                                product.getTitle(), oldPrice, command.price()))
+                        .relatedEntityType("PRODUCT")
+                        .relatedEntityId(productId)
+                        .build();
+                
+                eventPublisher.publishEvent(new NotificationCreatedEvent(this, favoriteUserId, notificationCommand));
+            }
+        }
         
         // DTO로 변환하여 반환
         return ProductDto.fromEntity(updatedProduct);
@@ -249,11 +276,33 @@ public class ProductServiceImpl implements ProductService {
             throw new org.cmarket.cmarket.domain.auth.app.exception.AuthenticationFailedException("거래 상태를 변경할 권한이 없습니다.");
         }
         
+        // 거래 상태 변경 여부 확인 (알림 발행용)
+        TradeStatus oldTradeStatus = product.getTradeStatus();
+        boolean statusChanged = !oldTradeStatus.equals(command.tradeStatus());
+        
         // 거래 상태 변경
         product.updateTradeStatus(command.tradeStatus());
         
         // 저장
         Product updatedProduct = productRepository.save(product);
+        
+        // 거래 상태가 변경되었을 때 찜한 사용자들에게 알림 발행
+        if (statusChanged) {
+            List<Long> favoriteUserIds = favoriteRepository.findUserIdsByProductId(productId);
+            for (Long favoriteUserId : favoriteUserIds) {
+                NotificationCreateCommand notificationCommand = NotificationCreateCommand.builder()
+                        .userId(favoriteUserId)
+                        .notificationType(NotificationType.PRODUCT_FAVORITE_STATUS_CHANGED)
+                        .title("찜한 상품의 거래 상태가 변경되었습니다")
+                        .content(String.format("'%s' 상품의 거래 상태가 '%s'에서 '%s'로 변경되었습니다.", 
+                                product.getTitle(), oldTradeStatus.name(), command.tradeStatus().name()))
+                        .relatedEntityType("PRODUCT")
+                        .relatedEntityId(productId)
+                        .build();
+                
+                eventPublisher.publishEvent(new NotificationCreatedEvent(this, favoriteUserId, notificationCommand));
+            }
+        }
         
         // DTO로 변환하여 반환
         return ProductDto.fromEntity(updatedProduct);

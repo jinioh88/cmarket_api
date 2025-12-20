@@ -1,6 +1,7 @@
 package org.cmarket.cmarket.domain.chat.app.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatMessageCommand;
@@ -11,6 +12,10 @@ import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomCreateCommand;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomDto;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomListDto;
 import org.cmarket.cmarket.domain.chat.app.dto.ChatRoomListItemDto;
+import org.cmarket.cmarket.domain.notification.app.dto.NotificationCreateCommand;
+import org.cmarket.cmarket.domain.notification.app.event.NotificationCreatedEvent;
+import org.cmarket.cmarket.domain.notification.model.NotificationType;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.cmarket.cmarket.domain.chat.model.ChatMessage;
@@ -37,6 +42,7 @@ import java.util.Optional;
  * 
  * 채팅 관련 비즈니스 로직을 구현합니다.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -50,6 +56,7 @@ public class ChatServiceImpl implements ChatService {
     private final ChatReadStatusService chatReadStatusService;
     private final ChatSessionService chatSessionService;
     private final PrivacyFilterService privacyFilterService;
+    private final ApplicationEventPublisher eventPublisher;
     
     @Override
     @Transactional
@@ -112,6 +119,18 @@ public class ChatServiceImpl implements ChatService {
                 .build();
         
         chatRoomUserRepository.save(sellerUser);
+        
+        // 9. 알림 이벤트 발행 (상대방에게 새 채팅방 생성 알림)
+        NotificationCreateCommand notificationCommand = NotificationCreateCommand.builder()
+                .userId(seller.getId())  // 수신자: 판매자
+                .notificationType(NotificationType.CHAT_NEW_ROOM)
+                .title("새로운 채팅이 시작되었습니다")
+                .content(String.format("%s님이 '%s' 상품에 대해 채팅을 시작했습니다.", buyer.getNickname(), product.getTitle()))
+                .relatedEntityType("CHAT_ROOM")
+                .relatedEntityId(savedChatRoom.getId())
+                .build();
+        
+        eventPublisher.publishEvent(new NotificationCreatedEvent(this, seller.getId(), notificationCommand));
         
         return ChatRoomDto.fromEntity(savedChatRoom, seller.getNickname(), seller.getProfileImageUrl());
     }
@@ -253,6 +272,12 @@ public class ChatServiceImpl implements ChatService {
         String blockReason = null;
         String content = command.getContent();
         
+        // 디버깅: 메시지 내용 로그
+        log.info("=== ChatServiceImpl.sendMessage 처리 시작 === chatRoomId={}, senderId={}, content=[{}], contentLength={}, contentBytes={}", 
+                chatRoomId, senderId, content, 
+                content != null ? content.length() : 0,
+                content != null ? java.util.Arrays.toString(content.getBytes(java.nio.charset.StandardCharsets.UTF_8)) : "null");
+        
         if (content != null && privacyFilterService.containsPrivateInfo(content)) {
             isBlocked = true;
             blockReason = privacyFilterService.getBlockReason(content);
@@ -271,7 +296,14 @@ public class ChatServiceImpl implements ChatService {
                 .blockReason(blockReason)
                 .build();
         
+        log.info("=== 메시지 저장 전 === message.content=[{}], message.contentLength={}", 
+                message.getContent(), message.getContent() != null ? message.getContent().length() : 0);
+        
         ChatMessage savedMessage = chatMessageRepository.save(message);
+        
+        log.info("=== 메시지 저장 후 === savedMessage.id={}, savedMessage.content=[{}], savedMessage.contentLength={}", 
+                savedMessage.getId(), savedMessage.getContent(), 
+                savedMessage.getContent() != null ? savedMessage.getContent().length() : 0);
         
         // 9. ChatRoomUser의 lastMessage 정보 업데이트 (양쪽 모두)
         senderChatRoomUser.updateLastMessage(content, now, isBlocked);
@@ -287,6 +319,22 @@ public class ChatServiceImpl implements ChatService {
             Long currentChatRoom = chatSessionService.getUserCurrentChatRoom(opponentId);
             if (currentChatRoom == null || !currentChatRoom.equals(chatRoomId)) {
                 chatReadStatusService.incrementUnreadCount(chatRoomId, opponentId);
+                
+                // 11. 알림 이벤트 발행 (상대방에게 새 메시지 알림)
+                ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                        .orElse(null);
+                String productTitle = chatRoom != null ? chatRoom.getProductTitle() : "상품";
+                
+                NotificationCreateCommand notificationCommand = NotificationCreateCommand.builder()
+                        .userId(opponentId)  // 수신자: 상대방
+                        .notificationType(NotificationType.CHAT_NEW_MESSAGE)
+                        .title("새로운 메시지가 도착했습니다")
+                        .content(String.format("%s님이 '%s' 상품 채팅에서 메시지를 보냈습니다.", sender.getNickname(), productTitle))
+                        .relatedEntityType("CHAT_ROOM")
+                        .relatedEntityId(chatRoomId)
+                        .build();
+                
+                eventPublisher.publishEvent(new NotificationCreatedEvent(this, opponentId, notificationCommand));
             }
         }
         
@@ -400,6 +448,86 @@ public class ChatServiceImpl implements ChatService {
         chatSessionService.clearUserCurrentChatRoom(userId);
         
         return ChatMessageDto.fromEntity(savedSystemMessage);
+    }
+    
+    @Override
+    public ChatRoomListItemDto getChatRoomListItem(String email, Long chatRoomId) {
+        // 1. 현재 사용자 조회
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        Long userId = user.getId();
+        
+        // 2. 사용자의 채팅방 참여 정보 조회
+        ChatRoomUser myChatRoomUser = chatRoomUserRepository
+                .findByChatRoomIdAndUserId(chatRoomId, userId)
+                .orElse(null);
+        
+        // 참여하지 않은 채팅방이거나 비활성 상태면 null 반환
+        if (myChatRoomUser == null || !Boolean.TRUE.equals(myChatRoomUser.getIsActive())) {
+            return null;
+        }
+        
+        // 3. 채팅방 정보 조회
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElse(null);
+        
+        if (chatRoom == null) {
+            return null;
+        }
+        
+        // 4. 상대방 정보 조회
+        ChatRoomUser opponent = chatRoomUserRepository
+                .findOpponentByChatRoomIdAndMyUserId(chatRoomId, userId)
+                .orElse(null);
+        
+        // 5. Redis에서 안 읽은 메시지 개수 조회
+        int unreadCount = chatReadStatusService.getUnreadCount(chatRoomId, userId);
+        
+        // 6. 상대방이 탈퇴한 경우 "알 수 없는 사용자"로 표시
+        Long opponentId = opponent != null ? opponent.getUserId() : null;
+        String opponentNickname = opponent != null ? opponent.getUserNickname() : "알 수 없는 사용자";
+        String opponentProfileImageUrl = opponent != null ? opponent.getUserProfileImageUrl() : null;
+        
+        // 7. 채팅방 목록 아이템 생성
+        return ChatRoomListItemDto.builder()
+                .chatRoomId(chatRoomId)
+                .productId(chatRoom.getProductId())
+                .productTitle(chatRoom.getProductTitle())
+                .productPrice(chatRoom.getProductPrice())
+                .productImageUrl(chatRoom.getProductImageUrl())
+                .opponentId(opponentId)
+                .opponentNickname(opponentNickname)
+                .opponentProfileImageUrl(opponentProfileImageUrl)
+                .lastMessage(myChatRoomUser.getLastMessageContent())
+                .lastMessageTime(myChatRoomUser.getLastMessageAt())
+                .hasUnread(unreadCount > 0)
+                .unreadCount(unreadCount)
+                .build();
+    }
+    
+    @Override
+    public List<String> getActiveParticipantEmails(Long chatRoomId) {
+        // 1. 채팅방의 모든 활성 참여자 조회
+        List<ChatRoomUser> participants = chatRoomUserRepository.findByChatRoomId(chatRoomId)
+                .stream()
+                .filter(participant -> Boolean.TRUE.equals(participant.getIsActive()))
+                .toList();
+        
+        // 2. 참여자 ID 목록 추출
+        List<Long> userIds = participants.stream()
+                .map(ChatRoomUser::getUserId)
+                .toList();
+        
+        if (userIds.isEmpty()) {
+            return List.of();
+        }
+        
+        // 3. 사용자 이메일 조회
+        return userRepository.findAllById(userIds).stream()
+                .map(User::getEmail)
+                .filter(email -> email != null && !email.isBlank())
+                .toList();
     }
     
     /**

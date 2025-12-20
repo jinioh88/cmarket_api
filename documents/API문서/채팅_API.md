@@ -426,6 +426,7 @@ http://localhost:8080
 |------|------|------|------|
 | `/topic/chat/{chatRoomId}` | `{chatRoomId}` = 채팅방 ID (Long) | **해당 채팅방 참여자 전체** | 일반 메시지, 시스템 메시지 수신 |
 | `/user/queue/chat` | 없음 | **나에게만** | 차단된 메시지 수신 (발신자 본인 확인용) |
+| `/user/queue/chat-room-list` | 없음 | **나에게만** | 채팅방 목록 업데이트 이벤트 수신 (실시간 목록 갱신용) |
 | `/user/queue/errors` | 없음 | **나에게만** | 에러 메시지 수신 (디버깅 필수) |
 
 > **중요**: `/user/` 로 시작하는 경로는 **로그인한 본인에게만** 메시지가 전달됩니다.  
@@ -450,7 +451,15 @@ client.subscribe('/user/queue/chat', (message) => {
   }
 });
 
-// 3. 채팅방 구독 (채팅방 진입 시)
+// 3. 채팅방 목록 업데이트 구독 (채팅방 목록 화면에서)
+// → 채팅방 밖에 있을 때도 새 메시지가 오면 목록이 실시간으로 업데이트됨
+client.subscribe('/user/queue/chat-room-list', (message) => {
+  const updatedChatRoom = JSON.parse(message.body);
+  // 채팅방 목록에서 해당 채팅방을 찾아 업데이트
+  updateChatRoomInList(updatedChatRoom);
+});
+
+// 4. 채팅방 구독 (채팅방 진입 시)
 // → {chatRoomId}에 실제 채팅방 ID를 넣어주세요
 const chatRoomId = 123;  // 예: REST API로 조회한 채팅방 ID
 client.subscribe(`/topic/chat/${chatRoomId}`, (message) => {
@@ -518,6 +527,9 @@ client.publish({
 1. 메시지가 DB에 저장됩니다.
 2. **일반 메시지**: `/topic/chat/{chatRoomId}` 구독자 전체에게 브로드캐스트됩니다.
 3. **차단된 메시지**: `/user/queue/chat`으로 발신자에게만 전송됩니다 (상대방에게는 전송 안 됨).
+4. **채팅방 목록 업데이트**: 모든 활성 참여자에게 `/user/queue/chat-room-list`로 업데이트 이벤트가 전송됩니다.
+   - 채팅방 목록 화면에 있는 사용자도 실시간으로 목록이 갱신됩니다.
+   - 최근 메시지 내용, 시간, 안 읽은 메시지 개수가 업데이트됩니다.
 
 #### 전송 에러
 
@@ -568,6 +580,12 @@ const client = new Client({
       if (msg.isBlocked) {
         showBlockedMessage(msg);  // UI에 차단 메시지 표시
       }
+    });
+    
+    // [권장] 채팅방 목록 업데이트 구독 - 실시간 목록 갱신
+    client.subscribe('/user/queue/chat-room-list', (message) => {
+      const updatedChatRoom = JSON.parse(message.body);
+      updateChatRoomInList(updatedChatRoom);  // 목록 업데이트
     });
   },
   
@@ -684,7 +702,88 @@ function disconnect() {
 
 ---
 
-### 4-6. 에러 수신
+### 4-6. 채팅방 목록 업데이트 이벤트
+
+> `/user/queue/chat-room-list` 구독을 통해 채팅방 목록 업데이트 이벤트를 수신합니다.  
+> 채팅방 목록 화면에서 실시간으로 목록을 갱신하려면 반드시 구독하세요.
+
+#### 발생 시점
+
+- 다른 사용자가 메시지를 전송했을 때
+- 채팅방의 최근 메시지 내용, 시간, 안 읽은 메시지 개수가 변경되었을 때
+
+#### Response Body (ChatRoomListItemResponse)
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| chatRoomId | Long | 채팅방 ID |
+| productId | Long | 상품 ID |
+| productTitle | String | 상품 제목 (스냅샷) |
+| productPrice | Long | 상품 가격 (스냅샷) |
+| productImageUrl | String \| null | 상품 대표 이미지 URL (스냅샷) |
+| opponentId | Long \| null | 상대방 사용자 ID (탈퇴 시 null) |
+| opponentNickname | String | 상대방 닉네임 (탈퇴 시 "알 수 없는 사용자") |
+| opponentProfileImageUrl | String \| null | 상대방 프로필 이미지 URL |
+| lastMessage | String \| null | 최근 메시지 내용 (100자 미리보기) |
+| lastMessageTime | String \| null | 최근 메시지 시간 (ISO 8601) |
+| hasUnread | Boolean | 안 읽은 메시지 여부 |
+| unreadCount | Integer | 안 읽은 메시지 개수 |
+
+#### Response 예시
+
+```json
+{
+  "chatRoomId": 1,
+  "productId": 123,
+  "productTitle": "귀여운 강아지 옷",
+  "productPrice": 15000,
+  "productImageUrl": "https://example.com/product.jpg",
+  "opponentId": 20,
+  "opponentNickname": "판매자닉네임",
+  "opponentProfileImageUrl": "https://example.com/profile.jpg",
+  "lastMessage": "네, 가능합니다!",
+  "lastMessageTime": "2025-01-15T10:35:00",
+  "hasUnread": true,
+  "unreadCount": 3
+}
+```
+
+#### 사용 예시
+
+```javascript
+// 채팅방 목록 업데이트 구독
+client.subscribe('/user/queue/chat-room-list', (message) => {
+  const updatedChatRoom = JSON.parse(message.body);
+  
+  // 채팅방 목록에서 해당 채팅방을 찾아 업데이트
+  const index = chatRoomList.findIndex(room => room.chatRoomId === updatedChatRoom.chatRoomId);
+  
+  if (index !== -1) {
+    // 기존 채팅방 업데이트
+    chatRoomList[index] = updatedChatRoom;
+  } else {
+    // 새 채팅방 추가 (새로 생성된 경우)
+    chatRoomList.unshift(updatedChatRoom);
+  }
+  
+  // 최근 메시지 시간 기준으로 정렬
+  chatRoomList.sort((a, b) => {
+    const timeA = new Date(a.lastMessageTime || 0);
+    const timeB = new Date(b.lastMessageTime || 0);
+    return timeB - timeA;
+  });
+  
+  // UI 업데이트
+  renderChatRoomList(chatRoomList);
+});
+```
+
+> **참고**: 채팅방 목록 화면에서는 이 구독을 통해 실시간으로 목록을 갱신할 수 있습니다.  
+> 주기적인 API 호출(`GET /api/chat/rooms`) 없이도 새 메시지가 오면 자동으로 목록이 업데이트됩니다.
+
+---
+
+### 4-7. 에러 수신
 
 > `/user/queue/errors` 구독을 통해 에러 메시지를 수신합니다.  
 > **디버깅에 필수**이므로 반드시 구독하세요.
@@ -778,6 +877,22 @@ const client = new Client({
 1. 먼저 이미지 업로드 API(`POST /api/images/upload`)로 이미지를 업로드합니다.
 2. 반환된 이미지 URL을 `imageUrl` 필드에 담아 `messageType: "IMAGE"`로 전송합니다.
 
+### Q7. 채팅방 목록 화면에서 실시간으로 목록이 업데이트되나요?
+
+네, 가능합니다. `/user/queue/chat-room-list`를 구독하면 됩니다.
+
+- 다른 사용자가 메시지를 보내면 자동으로 목록 업데이트 이벤트가 전송됩니다.
+- 최근 메시지 내용, 시간, 안 읽은 메시지 개수가 실시간으로 갱신됩니다.
+- 채팅방 상세 화면에 있지 않아도 목록 화면에서 새 메시지를 감지할 수 있습니다.
+
+```javascript
+// 채팅방 목록 화면 진입 시 구독
+client.subscribe('/user/queue/chat-room-list', (message) => {
+  const updatedChatRoom = JSON.parse(message.body);
+  updateChatRoomList(updatedChatRoom);
+});
+```
+
 ---
 
 ## 변경 이력
@@ -786,3 +901,4 @@ const client = new Client({
 |------|------|------|
 | 1.0.0 | 2025-01-15 | 최초 작성 |
 | 1.1.0 | 2025-12-18 | 채팅방 생성 API 응답에 판매자 정보(sellerNickname, sellerProfileImageUrl) 추가 |
+| 1.2.0 | 2025-12-19 | 채팅방 목록 실시간 업데이트 기능 추가 (`/user/queue/chat-room-list` 구독 경로 추가) |

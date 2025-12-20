@@ -79,7 +79,13 @@ public enum ErrorCode {
     CHAT_ROOM_ACCESS_DENIED(403, "채팅방에 대한 접근 권한이 없습니다."),
     
     // 채팅 관련 (404)
-    CHAT_ROOM_NOT_FOUND(404, "채팅방을 찾을 수 없습니다.");
+    CHAT_ROOM_NOT_FOUND(404, "채팅방을 찾을 수 없습니다."),
+    
+    // 알림 관련 (403)
+    NOTIFICATION_ACCESS_DENIED(403, "알림에 대한 접근 권한이 없습니다."),
+    
+    // 알림 관련 (404)
+    NOTIFICATION_NOT_FOUND(404, "알림을 찾을 수 없습니다.");
     
     private final int statusCode;
     private final String message;
