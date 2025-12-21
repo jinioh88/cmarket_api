@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # 1. 실제 스프링 부트 API 서버 (이전에 만든 Dockerfile 기준)
+  app:
+    build: .
+    container_name: cmarket-api
+    restart: always
+    depends_on:
+      - redis
+    volumes:
+      - ./h2data:/data
+      - ./uploads:/data/uploads
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - OAUTH2_REDIRECT_URI=https://cmarket-api.duckdns.org/oauth-redirect
+      - APP_IMAGE_SERVER_URL=https://cmarket-api.duckdns.org
+    networks:
+      - cmarket-network
+
+  # 2. Redis 서비스
+  redis:
+    image: redis:latest
+    container_name: cmarket-redis
+    restart: always
+    networks:
+      - cmarket-network
+
+  # 3. Nginx Proxy Manager (이름을 'proxy'로 변경하여 구분)
+  proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: cmarket-proxy
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - ./proxy/data:/data
+      - ./proxy/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - app
+    networks:
+      - cmarket-network
+
+volumes:
+  redis-data:
+
+networks:
+  cmarket-network:
+    driver: bridge

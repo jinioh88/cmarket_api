@@ -247,7 +247,8 @@ public class SecurityConfig {
                 "http://localhost:3000",  // 로컬 개발 환경
                 "http://localhost:8080",  // 필요시 추가
                 "http://localhost:5173",  // 외부 개발자 환경
-                "https://localhost:5173"
+                "https://localhost:5173",
+                "https://cuddle-market-fe.vercel.app"  // 프론트엔드 프로덕션 환경
         ));
         
         // 허용할 HTTP 메서드

@@ -1,0 +1,5 @@
+[21/Dec/2025:15:07:56 +0900] - 200 200 - GET http cmarket-api.duckdns.org "/api/products/search?page=0&size=10&sortBy=createdAt" [Client 192.168.65.1] [Length 189] [Gzip -] [Sent-to app] "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" "-"
+[21/Dec/2025:15:12:12 +0900] - 200 200 - GET https cmarket-api.duckdns.org "/api/products/search?page=0&size=10&sortBy=createdAt" [Client 192.168.65.1] [Length 189] [Gzip -] [Sent-to app] "PostmanRuntime/7.49.1" "-"
+[21/Dec/2025:15:13:13 +0900] - 201 201 - POST https cmarket-api.duckdns.org "/api/auth/signup" [Client 192.168.65.1] [Length 216] [Gzip -] [Sent-to app] "PostmanRuntime/7.49.1" "-"
+[21/Dec/2025:15:13:32 +0900] - 200 200 - POST https cmarket-api.duckdns.org "/api/auth/login" [Client 192.168.65.1] [Length 721] [Gzip -] [Sent-to app] "PostmanRuntime/7.49.1" "-"
+[21/Dec/2025:15:14:00 +0900] - 201 201 - POST https cmarket-api.duckdns.org "/api/products" [Client 192.168.65.1] [Length 651] [Gzip -] [Sent-to app] "PostmanRuntime/7.49.1" "-"
