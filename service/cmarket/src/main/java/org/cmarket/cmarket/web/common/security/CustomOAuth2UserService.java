@@ -48,40 +48,63 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name = extractName(attributes, provider);
         String nickname = extractNickname(attributes, provider);
         
-        // 4. 이메일이 없으면 예외 발생 (구글은 항상 있지만, 카카오는 동의 필요)
-        if (email == null || email.isEmpty()) {
+        // 4. 소셜 ID가 없으면 예외 발생
+        if (socialId == null || socialId.isEmpty()) {
+            log.error("소셜 ID 추출 실패: provider={}, attributes={}", provider, attributes);
             throw new OAuth2AuthenticationException(
-                new OAuth2Error("email_required", "이메일 정보가 필요합니다. 소셜 로그인 시 이메일 제공에 동의해주세요.", null)
+                new OAuth2Error("social_id_required", "소셜 로그인 정보를 가져오는데 실패했습니다. 다시 시도해주세요.", null)
             );
         }
         
-        // 5. 기존 사용자 조회 (소셜 ID로 조회)
+        // 5. 이메일이 없으면 임시 이메일 생성 (카카오 일반 웹페이지 로그인은 이메일을 받을 수 없음)
+        if (email == null || email.isEmpty()) {
+            if (provider == AuthProvider.KAKAO) {
+                // 카카오의 경우 이메일이 없으면 임시 이메일 생성
+                email = "kakao_" + socialId + "@kakao.local";
+                log.info("카카오 로그인: 이메일이 제공되지 않아 임시 이메일 생성. socialId={}, email={}", socialId, email);
+            } else {
+                // 구글은 항상 이메일이 있어야 함
+                throw new OAuth2AuthenticationException(
+                    new OAuth2Error("email_required", "이메일 정보가 필요합니다. 소셜 로그인 시 이메일 제공에 동의해주세요.", null)
+                );
+            }
+        }
+        
+        // 6. 기존 사용자 조회 (소셜 ID로 조회)
         Optional<User> existingUser = userRepository.findByProviderAndSocialId(provider, socialId);
         
         User user;
         if (existingUser.isPresent()) {
-            // 6-1. 기존 사용자: 정보 업데이트 (이름, 닉네임 등)
+            // 7-1. 기존 사용자: 정보 업데이트 (이름, 닉네임 등)
             user = existingUser.get();
             updateUserInfo(user, name, nickname);
+            log.info("OAuth2 기존 사용자 로그인: email={}, provider={}", email, provider);
         } else {
-            // 6-2. 신규 사용자: 자동 회원가입
+            // 7-2. 신규 사용자: 자동 회원가입
             user = createNewUser(email, socialId, name, nickname, provider);
         }
         
-        // 7. PrincipalDetails 생성 및 반환
+        // 8. PrincipalDetails 생성 및 반환
         return new PrincipalDetails(user, attributes);
     }
     
     /**
      * 이메일 추출
+     * 
+     * 카카오의 경우 kakao_account.email에서 추출합니다.
+     * 카카오는 이메일 제공에 대한 별도 동의가 필요하므로 null일 수 있습니다.
      */
     private String extractEmail(Map<String, Object> attributes, AuthProvider provider) {
         if (provider == AuthProvider.GOOGLE) {
-            return (String) attributes.get("email");
+            Object email = attributes.get("email");
+            return email != null ? String.valueOf(email) : null;
         } else if (provider == AuthProvider.KAKAO) {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null) {
-                return (String) kakaoAccount.get("email");
+            Object kakaoAccountObj = attributes.get("kakao_account");
+            if (kakaoAccountObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> kakaoAccount = (Map<String, Object>) kakaoAccountObj;
+                Object email = kakaoAccount.get("email");
+                return email != null ? String.valueOf(email) : null;
             }
         }
         return null;
@@ -89,28 +112,41 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     
     /**
      * 소셜 ID 추출
+     * 
+     * 구글의 경우 "sub" 필드에서, 카카오의 경우 "id" 필드에서 추출합니다.
+     * 카카오의 id는 Long 타입일 수 있으므로 String으로 변환합니다.
      */
     private String extractSocialId(Map<String, Object> attributes, AuthProvider provider) {
         if (provider == AuthProvider.GOOGLE) {
-            return (String) attributes.get("sub");
+            Object sub = attributes.get("sub");
+            return sub != null ? String.valueOf(sub) : null;
         } else if (provider == AuthProvider.KAKAO) {
-            return String.valueOf(attributes.get("id"));
+            Object id = attributes.get("id");
+            return id != null ? String.valueOf(id) : null;
         }
         return null;
     }
     
     /**
      * 이름 추출
+     * 
+     * 구글의 경우 "name" 필드에서, 카카오의 경우 kakao_account.profile.nickname에서 추출합니다.
      */
     private String extractName(Map<String, Object> attributes, AuthProvider provider) {
         if (provider == AuthProvider.GOOGLE) {
-            return (String) attributes.get("name");
+            Object name = attributes.get("name");
+            return name != null ? String.valueOf(name) : null;
         } else if (provider == AuthProvider.KAKAO) {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null) {
-                Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-                if (profile != null) {
-                    return (String) profile.get("nickname");
+            Object kakaoAccountObj = attributes.get("kakao_account");
+            if (kakaoAccountObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> kakaoAccount = (Map<String, Object>) kakaoAccountObj;
+                Object profileObj = kakaoAccount.get("profile");
+                if (profileObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> profile = (Map<String, Object>) profileObj;
+                    Object nickname = profile.get("nickname");
+                    return nickname != null ? String.valueOf(nickname) : null;
                 }
             }
         }
@@ -119,16 +155,25 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     
     /**
      * 닉네임 추출
+     * 
+     * 구글의 경우 "name" 필드를 닉네임으로 사용하고,
+     * 카카오의 경우 kakao_account.profile.nickname에서 추출합니다.
      */
     private String extractNickname(Map<String, Object> attributes, AuthProvider provider) {
         if (provider == AuthProvider.GOOGLE) {
-            return (String) attributes.get("name");
+            Object name = attributes.get("name");
+            return name != null ? String.valueOf(name) : null;
         } else if (provider == AuthProvider.KAKAO) {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null) {
-                Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-                if (profile != null) {
-                    return (String) profile.get("nickname");
+            Object kakaoAccountObj = attributes.get("kakao_account");
+            if (kakaoAccountObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> kakaoAccount = (Map<String, Object>) kakaoAccountObj;
+                Object profileObj = kakaoAccount.get("profile");
+                if (profileObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> profile = (Map<String, Object>) profileObj;
+                    Object nickname = profile.get("nickname");
+                    return nickname != null ? String.valueOf(nickname) : null;
                 }
             }
         }
@@ -166,9 +211,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             return userRepository.save(existingUser);
         }
         
-        // 닉네임이 없으면 이메일 앞부분 사용
+        // 닉네임이 없으면 생성
         if (nickname == null || nickname.isEmpty()) {
-            nickname = email.split("@")[0];
+            // 임시 이메일인 경우 (kakao_xxx@kakao.local) 소셜 ID 기반으로 생성
+            if (email.startsWith("kakao_") && email.endsWith("@kakao.local")) {
+                nickname = "카카오" + socialId.substring(0, Math.min(6, socialId.length()));
+            } else {
+                nickname = email.split("@")[0];
+            }
         }
         
         // 닉네임 중복 확인 및 처리

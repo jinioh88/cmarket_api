@@ -160,7 +160,7 @@ public class SecurityConfig {
                     }
                     
                     // 프론트엔드 로그인 페이지로 리다이렉트 (오류 정보 포함)
-                    String redirectUrl = "http://localhost:3000/login?error=oauth2_failed&message=" 
+                    String redirectUrl = "http://localhost:5173/login?error=oauth2_failed&message="
                             + java.net.URLEncoder.encode(errorMessage, java.nio.charset.StandardCharsets.UTF_8);
                     response.sendRedirect(redirectUrl);
                 })
@@ -242,13 +242,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 허용할 Origin (프론트엔드 주소)
-        configuration.setAllowedOrigins(List.of(
+        // 허용할 Origin 패턴 (프론트엔드 주소)
+        // Spring Boot 3.x에서는 setAllowCredentials(true)와 함께 사용할 때 
+        // setAllowedOriginPatterns를 사용해야 합니다.
+        // Vercel 배포: 프리뷰 배포와 프로덕션 배포 모두 지원하기 위해 와일드카드 패턴 사용
+        configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",  // 로컬 개발 환경
                 "http://localhost:8080",  // 필요시 추가
                 "http://localhost:5173",  // 외부 개발자 환경
                 "https://localhost:5173",
-                "https://cuddle-market-fe.vercel.app"  // 프론트엔드 프로덕션 환경
+                "https://*.vercel.app",  // Vercel 모든 서브도메인 (프리뷰 + 프로덕션)
+                "https://cuddle-market-fe.vercel.app"  // 프론트엔드 프로덕션 환경 (명시적)
         ));
         
         // 허용할 HTTP 메서드

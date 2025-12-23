@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 1. 실제 스프링 부트 API 서버 (이전에 만든 Dockerfile 기준)
   app:

@@ -30,7 +30,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
     
-    @Value("${oauth2.redirect-uri:http://localhost:3000/oauth-redirect}")
+    @Value("${oauth2.redirect-uri:http://localhost:5173/oauth-redirect}")
     private String redirectUri;
     
     @Override
