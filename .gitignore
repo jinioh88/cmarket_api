@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Application Properties (민감한 정보 포함) ###
+service/cmarket/src/main/resources/application.properties
+service/cmarket/src/main/resources/application-local.properties
