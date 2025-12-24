@@ -11,8 +11,9 @@ services:
       - ./uploads:/data/uploads
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - OAUTH2_REDIRECT_URI=https://cmarket-api.duckdns.org/oauth-redirect
+      - OAUTH2_REDIRECT_URI=https://cuddle-market.duckdns.org/oauth-redirect
       - APP_IMAGE_SERVER_URL=https://cmarket-api.duckdns.org
+      - FRONTEND_URL=https://cuddle-market.duckdns.org
     networks:
       - cmarket-network
 
@@ -21,25 +22,6 @@ services:
     image: redis:latest
     container_name: cmarket-redis
     restart: always
-    networks:
-      - cmarket-network
-
-  # 3. Nginx Proxy Manager (이름을 'proxy'로 변경하여 구분)
-  proxy:
-    image: 'jc21/nginx-proxy-manager:latest'
-    container_name: cmarket-proxy
-    restart: always
-    ports:
-      - '80:80'
-      - '443:443'
-      - '81:81'
-    environment:
-      - TZ=Asia/Seoul
-    volumes:
-      - ./proxy/data:/data
-      - ./proxy/letsencrypt:/etc/letsencrypt
-    depends_on:
-      - app
     networks:
       - cmarket-network
 

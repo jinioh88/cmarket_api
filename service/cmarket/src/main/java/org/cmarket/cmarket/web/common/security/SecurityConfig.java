@@ -160,7 +160,12 @@ public class SecurityConfig {
                     }
                     
                     // 프론트엔드 로그인 페이지로 리다이렉트 (오류 정보 포함)
-                    String redirectUrl = "http://localhost:5173/login?error=oauth2_failed&message="
+                    // 환경 변수에서 가져오거나 기본값 사용
+                    String frontendUrl = System.getenv("FRONTEND_URL");
+                    if (frontendUrl == null || frontendUrl.isBlank()) {
+                        frontendUrl = "https://cuddle-market.duckdns.org";
+                    }
+                    String redirectUrl = frontendUrl + "/login?error=oauth2_failed&message="
                             + java.net.URLEncoder.encode(errorMessage, java.nio.charset.StandardCharsets.UTF_8);
                     response.sendRedirect(redirectUrl);
                 })
@@ -252,7 +257,8 @@ public class SecurityConfig {
                 "http://localhost:5173",  // 외부 개발자 환경
                 "https://localhost:5173",
                 "https://*.vercel.app",  // Vercel 모든 서브도메인 (프리뷰 + 프로덕션)
-                "https://cuddle-market-fe.vercel.app"  // 프론트엔드 프로덕션 환경 (명시적)
+                "https://cuddle-market-fe.vercel.app",  // 프론트엔드 프로덕션 환경 (명시적)
+                "https://cuddle-market.duckdns.org"  // 프론트엔드 프로덕션 환경 (Duck DNS)
         ));
         
         // 허용할 HTTP 메서드
