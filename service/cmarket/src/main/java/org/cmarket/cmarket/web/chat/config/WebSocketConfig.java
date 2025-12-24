@@ -66,8 +66,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // 클라이언트는 /ws-stomp로 연결
         registry.addEndpoint("/ws-stomp")
                 .setAllowedOriginPatterns(
-                        "http://localhost:*",
-                        "https://localhost:*"
+                        "http://localhost:*",  // 로컬 개발 환경
+                        "https://localhost:*",  // 로컬 개발 환경 (HTTPS)
+                        "https://cuddle-market.duckdns.org",
+                        "http://cuddle-market.duckdns.org" // 프론트엔드 프로덕션 환경
                 )
                 // SockJS 폴백 지원 (WebSocket을 지원하지 않는 브라우저용)
                 .withSockJS();
