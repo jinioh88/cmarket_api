@@ -8,6 +8,14 @@ group = 'org.cmarket'
 version = '0.0.1-SNAPSHOT'
 description = 'cmarket_api'
 
+jar {
+    enabled = false
+}
+
+bootJar {
+    archiveClassifier = ''
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
