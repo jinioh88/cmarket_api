@@ -23,23 +23,29 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'org.springframework.boot' // 추가: 자식 모듈에 스프링 부트 적용
     apply plugin: 'io.spring.dependency-management'
-
-    // 자식 모듈(service 등)에서 빌드 설정을 처리하도록 이동
-    jar {
-        enabled = false
-    }
-
-    bootJar {
-        archiveClassifier = ''
-    }
 
     dependencyManagement {
         imports {
             mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
         }
     }
+}
 
-    // ... 나머지 기존 설정
+// cmarket 모듈에만 Spring Boot 플러그인 적용
+project(':service:cmarket') {
+    apply plugin: 'org.springframework.boot'
+    
+    jar {
+        enabled = false
+    }
+
+    bootJar {
+        archiveClassifier = ''
+        mainClass = 'org.cmarket.cmarket.web.CmarketApiApplication'
+    }
+    
+    springBoot {
+        mainClass = 'org.cmarket.cmarket.web.CmarketApiApplication'
+    }
 }

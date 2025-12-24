@@ -1,0 +1,3 @@
+// service는 빈 부모 프로젝트이므로 bootJar 태스크 비활성화
+tasks.matching { it.name == 'bootJar' }.all { enabled = false }
+
