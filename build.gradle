@@ -1,20 +1,13 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.7' apply false
+    id 'org.springframework.boot' version '3.2.5' apply false // 버전을 현재 가능한 안정 버전으로 확인 필요
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'org.cmarket'
 version = '0.0.1-SNAPSHOT'
-description = 'cmarket_api'
 
-jar {
-    enabled = false
-}
-
-bootJar {
-    archiveClassifier = ''
-}
+// --- (루트 레벨에 있던 jar, bootJar 설정 삭제) ---
 
 java {
     toolchain {
@@ -30,7 +23,17 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'org.springframework.boot' // 추가: 자식 모듈에 스프링 부트 적용
     apply plugin: 'io.spring.dependency-management'
+
+    // 자식 모듈(service 등)에서 빌드 설정을 처리하도록 이동
+    jar {
+        enabled = false
+    }
+
+    bootJar {
+        archiveClassifier = ''
+    }
 
     dependencyManagement {
         imports {
@@ -38,9 +41,5 @@ subprojects {
         }
     }
 
-    configurations {
-        compileOnly {
-            extendsFrom annotationProcessor
-        }
-    }
+    // ... 나머지 기존 설정
 }
