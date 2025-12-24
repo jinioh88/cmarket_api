@@ -2,6 +2,23 @@ plugins {
     id 'org.springframework.boot'
 }
 
+// JAR 파일 이름 명시적 설정
+jar {
+    enabled = false
+    archiveClassifier = ''
+}
+
+bootJar {
+    archiveBaseName = 'cmarket'
+    archiveVersion = '0.0.1-SNAPSHOT'
+    archiveClassifier = ''
+    mainClass = 'org.cmarket.cmarket.web.CmarketApiApplication'
+}
+
+springBoot {
+    mainClass = 'org.cmarket.cmarket.web.CmarketApiApplication'
+}
+
 dependencies {
     // Domain 모듈 의존
     implementation project(':service:cmarket-domain')
