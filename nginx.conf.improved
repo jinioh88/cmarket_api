@@ -45,6 +45,17 @@ http {
             root   /home/ec2-user/Cuddle-Market-FE/dist;
             index  index.html index.htm;
             try_files $uri $uri/ /index.html;
+            
+            # 정적 파일 캐시 무효화 (개발/배포 시 새 버전 즉시 반영)
+            add_header Cache-Control "no-cache, must-revalidate";
+            expires 0;
+        }
+        
+        # 정적 자산 파일 (JS/CSS) 캐시 무효화
+        location /assets {
+            root /home/ec2-user/Cuddle-Market-FE/dist;
+            add_header Cache-Control "no-cache, must-revalidate";
+            expires 0;
         }
 
         # 2. 백엔드 API 및 OAuth2 요청 통합 전달
@@ -67,6 +78,11 @@ http {
         # 3. WebSocket + STOMP 엔드포인트 (채팅 기능용)
         # SockJS는 /ws-stomp/info, /ws-stomp/websocket 등의 하위 경로를 사용하므로
         # /ws-stomp로 시작하는 모든 경로를 처리해야 합니다.
+        # 
+        # ⚠️ 중요: HTTPS 환경에서는 클라이언트에서 wss:// 프로토콜을 사용해야 합니다.
+        # 예: wss://cuddle-market.duckdns.org/ws-stomp
+        # 로컬 개발 환경: ws://localhost:8080/ws-stomp (HTTP)
+        # 프로덕션 환경: wss://cuddle-market.duckdns.org/ws-stomp (HTTPS)
         location /ws-stomp {
             proxy_pass http://localhost:8080;
             proxy_http_version 1.1;
