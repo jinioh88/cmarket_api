@@ -30,7 +30,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
     private final StompChannelInterceptor stompChannelInterceptor;
     
-    @Bean
+    /**
+     * WebSocket Heartbeat를 위한 TaskScheduler
+     * 
+     * @Primary를 사용하여 여러 TaskScheduler 중 기본으로 사용되도록 설정
+     */
+    @Bean(name = "websocketTaskScheduler")
+    @org.springframework.context.annotation.Primary
     public TaskScheduler websocketTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(1);
