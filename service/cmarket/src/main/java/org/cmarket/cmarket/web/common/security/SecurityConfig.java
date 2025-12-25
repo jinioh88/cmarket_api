@@ -258,7 +258,7 @@ public class SecurityConfig {
                 "https://localhost:5173",
                 "https://*.vercel.app",  // Vercel 모든 서브도메인 (프리뷰 + 프로덕션)
                 "https://cuddle-market-fe.vercel.app",  // 프론트엔드 프로덕션 환경 (명시적)
-                "https://cuddle-market.duckdns.org"  // 프론트엔드 프로덕션 환경 (Duck DNS)
+                "https://cuddle-market.duckdns.org"  // 프론트엔드 프로덕션 환경 (Duck DNS),
         ));
         
         // 허용할 HTTP 메서드
