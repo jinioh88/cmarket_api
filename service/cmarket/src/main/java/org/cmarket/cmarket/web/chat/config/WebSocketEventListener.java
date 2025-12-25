@@ -44,6 +44,8 @@ public class WebSocketEventListener {
      * 연결 완료 시 사용자 세션 정보를 Redis에 저장합니다.
      * 이를 통해 사용자의 온라인 상태를 추적할 수 있습니다.
      * 
+     * Redis 연결 실패 시에도 WebSocket 연결은 유지됩니다.
+     * 
      * @param event 연결 완료 이벤트
      */
     @EventListener
@@ -55,19 +57,32 @@ public class WebSocketEventListener {
         if (user != null && sessionId != null) {
             String email = user.getName();
             
-            // 이메일로 userId 조회
-            Optional<User> userOptional = userRepository.findByEmailAndDeletedAtIsNull(email);
-            
-            if (userOptional.isPresent()) {
-                Long userId = userOptional.get().getId();
+            try {
+                // 이메일로 userId 조회
+                Optional<User> userOptional = userRepository.findByEmailAndDeletedAtIsNull(email);
                 
-                // 세션 등록
-                chatSessionService.addUserSession(userId, sessionId);
-                
-                // sessionId → userId 매핑 저장 (Disconnect 시 사용)
-                sessionUserMap.put(sessionId, userId);
-                
-                log.debug("WebSocket 연결: sessionId={}, email={}, userId={}", sessionId, email, userId);
+                if (userOptional.isPresent()) {
+                    Long userId = userOptional.get().getId();
+                    
+                    try {
+                        // 세션 등록 (Redis 연결 실패 시 예외 처리)
+                        chatSessionService.addUserSession(userId, sessionId);
+                    } catch (Exception e) {
+                        // Redis 연결 실패 시에도 WebSocket 연결은 유지
+                        log.warn("Redis 세션 등록 실패 (WebSocket 연결은 유지): sessionId={}, userId={}, error={}", 
+                                sessionId, userId, e.getMessage());
+                    }
+                    
+                    // sessionId → userId 매핑 저장 (Disconnect 시 사용)
+                    // Redis 실패해도 메모리 캐시는 유지
+                    sessionUserMap.put(sessionId, userId);
+                    
+                    log.debug("WebSocket 연결: sessionId={}, email={}, userId={}", sessionId, email, userId);
+                }
+            } catch (Exception e) {
+                // 예상치 못한 예외 발생 시에도 WebSocket 연결은 유지
+                log.error("WebSocket 연결 이벤트 처리 중 오류 발생: sessionId={}, email={}", 
+                        sessionId, email, e);
             }
         }
     }
@@ -77,6 +92,8 @@ public class WebSocketEventListener {
      * 
      * 연결 해제 시 사용자 세션 정보를 Redis에서 제거합니다.
      * 사용자의 현재 채팅방 정보도 함께 제거됩니다.
+     * 
+     * Redis 연결 실패 시에도 정상적으로 처리됩니다.
      * 
      * @param event 연결 해제 이벤트
      */
@@ -90,8 +107,14 @@ public class WebSocketEventListener {
             Long userId = sessionUserMap.remove(sessionId);
             
             if (userId != null) {
-                // 세션 제거
-                chatSessionService.removeUserSession(userId, sessionId);
+                try {
+                    // 세션 제거 (Redis 연결 실패 시 예외 처리)
+                    chatSessionService.removeUserSession(userId, sessionId);
+                } catch (Exception e) {
+                    // Redis 연결 실패 시에도 정상적으로 처리
+                    log.warn("Redis 세션 제거 실패: sessionId={}, userId={}, error={}", 
+                            sessionId, userId, e.getMessage());
+                }
                 
                 log.debug("WebSocket 해제: sessionId={}, userId={}", sessionId, userId);
             }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.cmarket.cmarket.web.common.response.ErrorResponse;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +38,7 @@ import java.util.UUID;
  * - 필터 등록: JWT 인증 필터를 필터 체인에 추가
  * - 접근 권한 설정: 인증이 필요한 엔드포인트와 허용 엔드포인트 구분
  */
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -102,6 +104,23 @@ public class SecurityConfig {
             .exceptionHandling(exceptionHandling -> exceptionHandling
                 .authenticationEntryPoint((request, response, authException) -> {
                     String traceId = getOrCreateTraceId();
+                    String requestPath = request.getRequestURI();
+                    
+                    // 응답이 이미 커밋된 경우 처리하지 않음
+                    if (response.isCommitted()) {
+                        log.warn("[{}] Authentication required but response already committed: {}", traceId, requestPath);
+                        return;
+                    }
+                    
+                    // SSE나 WebSocket 엔드포인트에서 발생한 경우 별도 처리
+                    if (requestPath != null && 
+                        (requestPath.contains("/notifications/stream") || 
+                         requestPath.contains("/ws-stomp"))) {
+                        log.warn("[{}] Authentication required on streaming endpoint (response may be committed): {}", 
+                                traceId, requestPath);
+                        return;
+                    }
+                    
                     ErrorResponse errorResponse = new ErrorResponse(
                             ResponseCode.UNAUTHORIZED,
                             "인증이 필요합니다.",
@@ -112,6 +131,29 @@ public class SecurityConfig {
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     String traceId = getOrCreateTraceId();
+                    String requestPath = request.getRequestURI();
+                    String requestMethod = request.getMethod();
+                    
+                    // 항상 로그 출력 (요청 경로 확인용)
+                    log.warn("[{}] AccessDeniedException 발생: method={}, path={}, committed={}", 
+                            traceId, requestMethod, requestPath, response.isCommitted());
+                    
+                    // 응답이 이미 커밋된 경우 처리하지 않음
+                    if (response.isCommitted()) {
+                        log.warn("[{}] Access denied but response already committed: method={}, path={}", 
+                                traceId, requestMethod, requestPath);
+                        return;
+                    }
+                    
+                    // SSE나 WebSocket 엔드포인트에서 발생한 경우 별도 처리
+                    if (requestPath != null && 
+                        (requestPath.contains("/notifications/stream") || 
+                         requestPath.contains("/ws-stomp"))) {
+                        log.warn("[{}] Access denied on streaming endpoint (response may be committed): method={}, path={}", 
+                                traceId, requestMethod, requestPath);
+                        return;
+                    }
+                    
                     ErrorResponse errorResponse = new ErrorResponse(
                             ResponseCode.FORBIDDEN,
                             "접근 권한이 없습니다.",
@@ -220,12 +262,23 @@ public class SecurityConfig {
             HttpStatus status,
             ErrorResponse errorResponse
     ) throws IOException {
-        response.setStatus(status.value());
-        response.setContentType("application/json;charset=UTF-8");
+        // 응답이 이미 커밋된 경우 처리하지 않음
+        if (response.isCommitted()) {
+            log.warn("Response already committed, cannot write error response");
+            return;
+        }
         
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule()); // LocalDateTime 직렬화를 위한 모듈 등록
-        objectMapper.writeValue(response.getWriter(), errorResponse);
+        try {
+            response.setStatus(status.value());
+            response.setContentType("application/json;charset=UTF-8");
+            
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule()); // LocalDateTime 직렬화를 위한 모듈 등록
+            objectMapper.writeValue(response.getWriter(), errorResponse);
+        } catch (IllegalStateException e) {
+            // 응답이 커밋된 후에 setStatus나 writeValue를 호출한 경우
+            log.warn("Failed to write error response (response may be committed): {}", e.getMessage());
+        }
     }
     
     private String getOrCreateTraceId() {

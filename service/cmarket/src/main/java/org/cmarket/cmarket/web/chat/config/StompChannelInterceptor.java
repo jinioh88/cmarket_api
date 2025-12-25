@@ -89,18 +89,34 @@ public class StompChannelInterceptor implements ChannelInterceptor {
             return message;
         }
         
-        switch (command) {
-            case CONNECT:
-                handleConnect(accessor);
-                break;
-            case SUBSCRIBE:
-                handleSubscribe(accessor);
-                break;
-            case SEND:
-                handleSend(accessor, message);
-                break;
-            default:
-                break;
+        try {
+            switch (command) {
+                case CONNECT:
+                    if (!handleConnect(accessor)) {
+                        // 인증 실패 시 메시지 차단 (null 반환)
+                        return null;
+                    }
+                    break;
+                case SUBSCRIBE:
+                    if (!handleSubscribe(accessor)) {
+                        // 권한 없음 시 메시지 차단
+                        return null;
+                    }
+                    break;
+                case SEND:
+                    if (!handleSend(accessor, message)) {
+                        // 권한 없음 시 메시지 차단
+                        return null;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception e) {
+            // 예외 발생 시 로깅하고 메시지 차단
+            log.error("STOMP 메시지 처리 중 오류 발생: command={}, error={}", command, e.getMessage(), e);
+            sendErrorToUserOrSession(accessor, "INTERNAL_ERROR", "메시지 처리 중 오류가 발생했습니다.");
+            return null;
         }
         
         return message;
@@ -108,20 +124,22 @@ public class StompChannelInterceptor implements ChannelInterceptor {
     
     /**
      * CONNECT 명령어 처리 - JWT 인증
+     * 
+     * @return 인증 성공 시 true, 실패 시 false
      */
-    private void handleConnect(StompHeaderAccessor accessor) {
+    private boolean handleConnect(StompHeaderAccessor accessor) {
         String token = extractToken(accessor);
         
         if (token == null || token.isBlank()) {
             log.warn("WebSocket 연결 실패: Authorization 헤더 없음");
-            sendErrorToUser(accessor, "AUTH_REQUIRED", "인증 토큰이 필요합니다.");
-            throw new SecurityException("인증 토큰이 필요합니다.");
+            sendErrorToUserOrSession(accessor, "AUTH_REQUIRED", "인증 토큰이 필요합니다.");
+            return false;
         }
         
         if (!jwtTokenProvider.validateToken(token)) {
             log.warn("WebSocket 연결 실패: 유효하지 않은 토큰");
-            sendErrorToUser(accessor, "INVALID_TOKEN", "유효하지 않은 토큰입니다.");
-            throw new SecurityException("유효하지 않은 토큰입니다.");
+            sendErrorToUserOrSession(accessor, "INVALID_TOKEN", "유효하지 않은 토큰입니다.");
+            return false;
         }
         
         // 인증 정보 설정
@@ -136,6 +154,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
         }
         
         log.info("WebSocket 연결 성공: email={}", email);
+        return true;
     }
     
     /**
@@ -143,13 +162,16 @@ public class StompChannelInterceptor implements ChannelInterceptor {
      * 
      * 채팅방 구독 시 해당 채팅방의 참여자인지 확인합니다.
      * 구독 경로: /topic/chat/{chatRoomId}
+     * 
+     * @return 권한 확인 성공 시 true, 실패 시 false
      */
-    private void handleSubscribe(StompHeaderAccessor accessor) {
+    private boolean handleSubscribe(StompHeaderAccessor accessor) {
         String destination = accessor.getDestination();
         Principal user = accessor.getUser();
         
         if (destination == null || user == null) {
-            return;
+            // destination이나 user가 null이면 기본적으로 허용 (다른 구독일 수 있음)
+            return true;
         }
         
         // 채팅방 구독인 경우 권한 확인
@@ -164,7 +186,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 if (!chatService.isParticipant(chatRoomId, email)) {
                     log.warn("채팅방 구독 권한 없음: chatRoomId={}, email={}", chatRoomId, email);
                     sendErrorToUser(accessor, "ACCESS_DENIED", "해당 채팅방에 대한 접근 권한이 없습니다.");
-                    throw new SecurityException("채팅방 접근 권한이 없습니다.");
+                    return false;
                 }
                 
                 log.debug("채팅방 구독: chatRoomId={}, email={}", chatRoomId, email);
@@ -172,22 +194,27 @@ public class StompChannelInterceptor implements ChannelInterceptor {
             } catch (NumberFormatException e) {
                 log.warn("잘못된 채팅방 ID: {}", chatRoomIdStr);
                 sendErrorToUser(accessor, "INVALID_CHAT_ROOM", "잘못된 채팅방 ID입니다.");
-                throw new SecurityException("잘못된 채팅방 ID입니다.");
+                return false;
             }
         }
+        
+        return true;
     }
     
     /**
      * SEND 명령어 처리 - 전송 권한 확인
      * 
      * 메시지 전송 시 해당 채팅방의 참여자인지 확인합니다.
+     * 
+     * @return 권한 확인 성공 시 true, 실패 시 false
      */
-    private void handleSend(StompHeaderAccessor accessor, Message<?> message) {
+    private boolean handleSend(StompHeaderAccessor accessor, Message<?> message) {
         String destination = accessor.getDestination();
         Principal user = accessor.getUser();
         
         if (destination == null || user == null) {
-            return;
+            // destination이나 user가 null이면 기본적으로 허용 (다른 메시지일 수 있음)
+            return true;
         }
         
         // 채팅 메시지 전송인 경우
@@ -214,7 +241,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 if (request == null || request.getChatRoomId() == null) {
                     log.warn("메시지 페이로드 파싱 실패");
                     sendErrorToUser(accessor, "INVALID_MESSAGE", "잘못된 메시지 형식입니다.");
-                    throw new SecurityException("잘못된 메시지 형식입니다.");
+                    return false;
                 }
                 
                 Long chatRoomId = request.getChatRoomId();
@@ -223,18 +250,19 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                 if (!chatService.isParticipant(chatRoomId, email)) {
                     log.warn("메시지 전송 권한 없음: chatRoomId={}, email={}", chatRoomId, email);
                     sendErrorToUser(accessor, "ACCESS_DENIED", "해당 채팅방에 메시지를 보낼 권한이 없습니다.");
-                    throw new SecurityException("메시지 전송 권한이 없습니다.");
+                    return false;
                 }
                 
                 log.info("=== StompChannelInterceptor 권한 확인 완료 === chatRoomId={}, email={}", chatRoomId, email);
                 
-            } catch (SecurityException e) {
-                throw e;
             } catch (Exception e) {
                 log.error("메시지 전송 권한 확인 실패", e);
-                // 권한 확인 실패 시에도 메시지는 컨트롤러에서 처리
+                sendErrorToUser(accessor, "INTERNAL_ERROR", "메시지 처리 중 오류가 발생했습니다.");
+                return false;
             }
         }
+        
+        return true;
     }
     
     /**
@@ -288,6 +316,36 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                     "/queue/errors",
                     errorPayload
             );
+        }
+    }
+    
+    /**
+     * 사용자 또는 세션에 에러 메시지 전송
+     * 
+     * CONNECT 단계에서는 user가 null일 수 있으므로,
+     * 세션 ID를 사용하여 에러를 전송합니다.
+     */
+    private void sendErrorToUserOrSession(StompHeaderAccessor accessor, String errorCode, String errorMessage) {
+        Principal user = accessor.getUser();
+        
+        if (user != null) {
+            // user가 있으면 기존 방식 사용
+            sendErrorToUser(accessor, errorCode, errorMessage);
+        } else {
+            // user가 없으면 (CONNECT 단계) 세션 ID를 사용하여 에러 전송
+            String sessionId = accessor.getSessionId();
+            if (sessionId != null) {
+                Map<String, Object> errorPayload = Map.of(
+                        "code", errorCode,
+                        "message", errorMessage,
+                        "timestamp", System.currentTimeMillis()
+                );
+                
+                // 세션 ID를 사용하여 에러 전송
+                messagingTemplate.convertAndSend("/queue/errors/" + sessionId, errorPayload);
+            } else {
+                log.warn("에러 메시지 전송 실패: user와 sessionId 모두 null");
+            }
         }
     }
 }

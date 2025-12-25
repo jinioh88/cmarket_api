@@ -13,11 +13,14 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -124,18 +127,116 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * Spring Security AccessDeniedException 처리
+     * 
+     * SecurityConfig의 accessDeniedHandler에서 처리하지 못한 경우를 대비합니다.
+     * 주로 응답이 이미 커밋된 상태에서 발생하는 예외를 처리합니다.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException e, 
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        String traceId = getTraceId();
+        String requestPath = request.getRequestURI();
+        
+        // 응답이 이미 커밋된 경우 처리하지 않음
+        if (response.isCommitted()) {
+            log.warn("[{}] Access denied but response already committed: {}", traceId, requestPath);
+            return null;
+        }
+        
+        // SSE나 WebSocket 엔드포인트에서 발생한 경우 별도 처리
+        if (requestPath != null && 
+            (requestPath.contains("/notifications/stream") || 
+             requestPath.contains("/ws-stomp"))) {
+            log.warn("[{}] Access denied on streaming endpoint (response may be committed): {}", 
+                    traceId, requestPath);
+            return null;
+        }
+        
+        log.warn("[{}] Access denied: {}", traceId, requestPath);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.FORBIDDEN,
+                "접근 권한이 없습니다.",
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+    
+    /**
+     * Spring Security AuthenticationException 처리
+     * 
+     * SecurityConfig의 authenticationEntryPoint에서 처리하지 못한 경우를 대비합니다.
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            AuthenticationException e,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        String traceId = getTraceId();
+        String requestPath = request.getRequestURI();
+        
+        // 응답이 이미 커밋된 경우 처리하지 않음
+        if (response.isCommitted()) {
+            log.warn("[{}] Authentication required but response already committed: {}", traceId, requestPath);
+            return null;
+        }
+        
+        // SSE나 WebSocket 엔드포인트에서 발생한 경우 별도 처리
+        if (requestPath != null && 
+            (requestPath.contains("/notifications/stream") || 
+             requestPath.contains("/ws-stomp"))) {
+            log.warn("[{}] Authentication required on streaming endpoint (response may be committed): {}", 
+                    traceId, requestPath);
+            return null;
+        }
+        
+        log.warn("[{}] Authentication required: {}", traceId, requestPath);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                ResponseCode.UNAUTHORIZED,
+                "인증이 필요합니다.",
+                traceId
+        );
+        
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+    
+    /**
      * 예상치 못한 예외 처리 (최후의 안전망)
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleException(
+            Exception e, 
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
         String traceId = getTraceId();
         String requestPath = request.getRequestURI();
+        
+        // 응답이 이미 커밋된 경우 처리하지 않음
+        if (response.isCommitted()) {
+            log.warn("[{}] Exception occurred but response already committed: {} - {}", 
+                    traceId, requestPath, e.getClass().getSimpleName());
+            return null;
+        }
         
         // SSE 엔드포인트에서 발생한 예외는 별도 처리
         if (requestPath != null && requestPath.contains("/notifications/stream")) {
             // 응답이 이미 커밋되었거나 Content-Type이 text/event-stream인 경우
             // 에러 응답을 반환하지 않고 로그만 남김
             log.warn("[{}] SSE endpoint error (response may be committed): {}", traceId, e.getMessage());
+            return null;
+        }
+        
+        // WebSocket 엔드포인트에서 발생한 예외도 별도 처리
+        if (requestPath != null && requestPath.contains("/ws-stomp")) {
+            log.warn("[{}] WebSocket endpoint error (response may be committed): {}", traceId, e.getMessage());
             return null;
         }
         

@@ -33,11 +33,17 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     
     @Override
     public void addUserSession(Long userId, String sessionId) {
-        String key = buildSessionKey(userId);
-        stringRedisTemplate.opsForValue().set(key, sessionId);
-        stringRedisTemplate.expire(key, SESSION_TTL_MINUTES, TimeUnit.MINUTES);
-        
-        log.debug("사용자 세션 등록: userId={}, sessionId={}", userId, sessionId);
+        try {
+            String key = buildSessionKey(userId);
+            stringRedisTemplate.opsForValue().set(key, sessionId);
+            stringRedisTemplate.expire(key, SESSION_TTL_MINUTES, TimeUnit.MINUTES);
+            
+            log.debug("사용자 세션 등록: userId={}, sessionId={}", userId, sessionId);
+        } catch (Exception e) {
+            // Redis 연결 실패 시 예외를 다시 던져서 호출자가 처리할 수 있도록 함
+            log.error("Redis 세션 등록 실패: userId={}, sessionId={}", userId, sessionId, e);
+            throw new RuntimeException("Redis 세션 등록 실패: " + e.getMessage(), e);
+        }
     }
     
     /**
@@ -63,18 +69,24 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     
     @Override
     public void removeUserSession(Long userId, String sessionId) {
-        String sessionKey = buildSessionKey(userId);
-        String currentSessionId = stringRedisTemplate.opsForValue().get(sessionKey);
-        
-        // 현재 저장된 세션 ID와 일치하는 경우에만 삭제
-        // (다른 기기에서 접속한 경우 해당 세션만 삭제되도록)
-        if (sessionId.equals(currentSessionId)) {
-            stringRedisTemplate.delete(sessionKey);
+        try {
+            String sessionKey = buildSessionKey(userId);
+            String currentSessionId = stringRedisTemplate.opsForValue().get(sessionKey);
             
-            // 현재 채팅방 정보도 함께 삭제
-            clearUserCurrentChatRoom(userId);
-            
-            log.debug("사용자 세션 제거: userId={}, sessionId={}", userId, sessionId);
+            // 현재 저장된 세션 ID와 일치하는 경우에만 삭제
+            // (다른 기기에서 접속한 경우 해당 세션만 삭제되도록)
+            if (sessionId.equals(currentSessionId)) {
+                stringRedisTemplate.delete(sessionKey);
+                
+                // 현재 채팅방 정보도 함께 삭제
+                clearUserCurrentChatRoom(userId);
+                
+                log.debug("사용자 세션 제거: userId={}, sessionId={}", userId, sessionId);
+            }
+        } catch (Exception e) {
+            // Redis 연결 실패 시 예외를 다시 던져서 호출자가 처리할 수 있도록 함
+            log.error("Redis 세션 제거 실패: userId={}, sessionId={}", userId, sessionId, e);
+            throw new RuntimeException("Redis 세션 제거 실패: " + e.getMessage(), e);
         }
     }
     
