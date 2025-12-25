@@ -533,26 +533,17 @@ public class ChatServiceImpl implements ChatService {
     /**
      * 기존 채팅방 조회 (상품 + 두 사용자 기준)
      * 
+     * 상품 ID와 두 사용자 ID로 직접 조회하여 기존 채팅방을 찾습니다.
+     * 같은 상품에 대해 여러 채팅방이 존재할 수 있으므로, 두 사용자가 모두 참여한 채팅방만 반환합니다.
+     * 
      * @param productId 상품 ID
      * @param buyerId 구매자 ID
      * @param sellerId 판매자 ID
      * @return 기존 채팅방 (없으면 Optional.empty())
      */
     private Optional<ChatRoom> findExistingChatRoom(Long productId, Long buyerId, Long sellerId) {
-        // 1. 상품의 채팅방 조회
-        Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findByProductId(productId);
-        if (chatRoomOptional.isEmpty()) {
-            return Optional.empty();
-        }
-        
-        ChatRoom chatRoom = chatRoomOptional.get();
-        
-        // 2. 두 사용자가 모두 참여했는지 확인
-        long participantCount = chatRoomUserRepository.countByChatRoomIdAndUserIdIn(
-                chatRoom.getId(),
-                List.of(buyerId, sellerId)
-        );
-        
-        return participantCount == 2 ? Optional.of(chatRoom) : Optional.empty();
+        // 상품 ID와 두 사용자 ID로 직접 조회
+        // JOIN을 사용하여 두 사용자가 모두 활성 상태로 참여한 채팅방만 조회
+        return chatRoomRepository.findByProductIdAndUsers(productId, buyerId, sellerId);
     }
 }

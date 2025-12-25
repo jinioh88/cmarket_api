@@ -147,11 +147,14 @@ java -version
 ```yaml
 environment:
   - SPRING_PROFILES_ACTIVE=prod
-  - OAUTH2_REDIRECT_URI=https://cmarket-api.duckdns.org/oauth-redirect
+  - OAUTH2_REDIRECT_URI=https://cuddle-market.duckdns.org/oauth-redirect
   - APP_IMAGE_SERVER_URL=https://cmarket-api.duckdns.org
 ```
 
-> ⚠️ **중요**: Duck DNS 도메인이 `cmarket-api.duckdns.org`가 아니라면, 이 값들을 실제 도메인으로 수정해야 합니다.
+> ⚠️ **중요**: 
+> - `OAUTH2_REDIRECT_URI`는 **프론트엔드 도메인**으로 설정해야 합니다 (예: `https://cuddle-market.duckdns.org/oauth-redirect`)
+> - `APP_IMAGE_SERVER_URL`은 **백엔드 도메인**으로 설정해야 합니다 (예: `https://cmarket-api.duckdns.org`)
+> - Duck DNS 도메인이 다르다면, 이 값들을 실제 도메인으로 수정해야 합니다.
 
 #### 4-3. 볼륨 폴더 생성 및 권한 설정
 ```bash
@@ -199,6 +202,79 @@ docker-compose logs app
 docker-compose logs redis
 docker-compose logs proxy  # proxy 서비스를 사용하는 경우
 ```
+
+#### 5-4. JAR 직접 실행 (Docker Compose 미사용 시)
+
+Docker Compose를 사용하지 않고 JAR 파일을 직접 실행하는 경우:
+
+**방법 1: 환경 변수로 export 후 실행 (권장)**
+```bash
+# 환경 변수 설정
+export JWT_SECRET="your-actual-jwt-secret-key-here"
+export OAUTH2_REDIRECT_URI="https://cuddle-market.duckdns.org/oauth-redirect"
+export APP_IMAGE_SERVER_URL="https://cmarket-api.duckdns.org"
+export FRONTEND_URL="https://cuddle-market.duckdns.org"
+export REDIS_HOST="localhost"
+export REDIS_PORT="6379"
+
+# JAR 실행
+nohup java -jar \
+  -Dspring.profiles.active=prod \
+  service/cmarket/build/libs/cmarket-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+```
+
+**방법 2: 시스템 프로퍼티로 직접 전달**
+```bash
+nohup java -jar \
+  -Dspring.profiles.active=prod \
+  -DJWT_SECRET="your-actual-jwt-secret-key-here" \
+  -DREDIS_HOST=localhost \
+  -DREDIS_PORT=6379 \
+  -DAPP_IMAGE_SERVER_URL=https://cmarket-api.duckdns.org \
+  -DOAUTH2_REDIRECT_URI=https://cuddle-market.duckdns.org/oauth-redirect \
+  -DFRONTEND_URL=https://cuddle-market.duckdns.org \
+  service/cmarket/build/libs/cmarket-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+```
+
+**방법 3: 환경 변수 파일 사용 (가장 안전)**
+```bash
+# 환경 변수 파일 생성 (보안을 위해 권한 제한)
+cat > ~/.cmarket_env << EOF
+export JWT_SECRET="your-actual-jwt-secret-key-here"
+export OAUTH2_REDIRECT_URI="https://cuddle-market.duckdns.org/oauth-redirect"
+export APP_IMAGE_SERVER_URL="https://cmarket-api.duckdns.org"
+export FRONTEND_URL="https://cuddle-market.duckdns.org"
+export REDIS_HOST="localhost"
+export REDIS_PORT="6379"
+EOF
+
+# 권한 설정 (소유자만 읽기 가능)
+chmod 600 ~/.cmarket_env
+
+# 환경 변수 로드 후 실행
+source ~/.cmarket_env && nohup java -jar \
+  -Dspring.profiles.active=prod \
+  service/cmarket/build/libs/cmarket-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+```
+
+**실행 확인 및 관리**
+```bash
+# 프로세스 확인
+ps aux | grep java
+
+# 로그 확인
+tail -f app.log
+
+# 프로세스 종료
+# PID 확인 후
+kill <PID>
+```
+
+> ⚠️ **중요**: 
+> - `JWT_SECRET`은 반드시 실제 값으로 설정해야 합니다 (최소 32바이트 이상의 랜덤 문자열)
+> - `OAUTH2_REDIRECT_URI`는 **프론트엔드 도메인**으로 설정해야 합니다
+> - `APP_IMAGE_SERVER_URL`은 **백엔드 도메인**으로 설정해야 합니다
+> - 환경 변수 파일(`~/.cmarket_env`)은 Git에 커밋하지 않도록 주의하세요
 
 ---
 
@@ -319,6 +395,7 @@ docker stats
 - [Docker 공식 문서](https://docs.docker.com/)
 - [Docker Compose 공식 문서](https://docs.docker.com/compose/)
 - [Nginx Proxy Manager 공식 문서](https://nginxproxymanager.com/)
+
 
 
 

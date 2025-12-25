@@ -13,9 +13,11 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -101,11 +103,41 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * SSE 비동기 요청 타임아웃 예외 처리
+     * 
+     * SSE 연결의 정상적인 타임아웃이므로 에러로 처리하지 않습니다.
+     */
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    public ResponseEntity<Void> handleAsyncRequestTimeoutException(AsyncRequestTimeoutException e, HttpServletRequest request) {
+        String traceId = getTraceId();
+        String requestPath = request.getRequestURI();
+        
+        // SSE 엔드포인트의 타임아웃은 정상 동작이므로 DEBUG 레벨로만 로깅
+        if (requestPath != null && requestPath.contains("/notifications/stream")) {
+            log.debug("[{}] SSE connection timeout (normal): {}", traceId, requestPath);
+        } else {
+            log.warn("[{}] Async request timeout: {}", traceId, requestPath, e);
+        }
+        
+        // 응답이 이미 커밋되었을 수 있으므로 null 반환
+        return null;
+    }
+    
+    /**
      * 예상치 못한 예외 처리 (최후의 안전망)
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(Exception e) {
+    public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) {
         String traceId = getTraceId();
+        String requestPath = request.getRequestURI();
+        
+        // SSE 엔드포인트에서 발생한 예외는 별도 처리
+        if (requestPath != null && requestPath.contains("/notifications/stream")) {
+            // 응답이 이미 커밋되었거나 Content-Type이 text/event-stream인 경우
+            // 에러 응답을 반환하지 않고 로그만 남김
+            log.warn("[{}] SSE endpoint error (response may be committed): {}", traceId, e.getMessage());
+            return null;
+        }
         
         log.error("[{}] Unexpected error occurred", traceId, e);
         

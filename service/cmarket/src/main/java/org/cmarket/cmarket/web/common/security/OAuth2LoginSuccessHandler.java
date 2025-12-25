@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 
 /**
@@ -32,6 +33,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     
     @Value("${oauth2.redirect-uri:http://localhost:5173/oauth-redirect}")
     private String redirectUri;
+    
+    @PostConstruct
+    public void init() {
+        log.info("OAuth2LoginSuccessHandler 초기화: oauth2.redirect-uri={}", redirectUri);
+    }
     
     @Override
     public void onAuthenticationSuccess(
@@ -64,7 +70,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 refreshToken
         );
         
-        log.info("OAuth2 로그인 성공: email={}, provider={}", user.getEmail(), user.getProvider());
+        log.info("OAuth2 로그인 성공: email={}, provider={}, redirectUri={}, redirectUrl={}", 
+                user.getEmail(), user.getProvider(), redirectUri, redirectUrl);
         
         // 5. 리다이렉트
         response.sendRedirect(redirectUrl);
