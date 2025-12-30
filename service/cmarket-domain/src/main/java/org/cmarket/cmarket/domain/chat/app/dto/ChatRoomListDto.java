@@ -15,5 +15,9 @@ import java.util.List;
 public class ChatRoomListDto {
     
     private List<ChatRoomListItemDto> chatRooms;
-    private int totalCount;
+    private int currentPage;
+    private int totalPages;
+    private long totalElements;
+    private boolean hasNext;
+    private boolean hasPrevious;
 }

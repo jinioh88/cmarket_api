@@ -136,21 +136,28 @@ public class ChatServiceImpl implements ChatService {
     }
     
     @Override
-    public ChatRoomListDto getChatRoomList(String email) {
+    public ChatRoomListDto getChatRoomList(String email, int page, int size) {
         // 1. 현재 사용자 조회
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         Long userId = user.getId();
         
-        // 2. 사용자의 활성 채팅방 목록 조회 (최근 메시지 시간 기준 내림차순 - DB 레벨 정렬)
-        List<ChatRoomUser> myChatRoomUsers = chatRoomUserRepository
-                .findActiveByUserIdOrderByLastMessageAtDesc(userId);
+        // 2. 사용자의 활성 채팅방 목록 조회 (페이지네이션 적용)
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<ChatRoomUser> chatRoomUserPage = chatRoomUserRepository
+                .findActiveByUserIdOrderByLastMessageAtDesc(userId, pageRequest);
+        
+        List<ChatRoomUser> myChatRoomUsers = chatRoomUserPage.getContent();
         
         if (myChatRoomUsers.isEmpty()) {
             return ChatRoomListDto.builder()
                     .chatRooms(List.of())
-                    .totalCount(0)
+                    .currentPage(chatRoomUserPage.getNumber())
+                    .totalPages(chatRoomUserPage.getTotalPages())
+                    .totalElements(chatRoomUserPage.getTotalElements())
+                    .hasNext(chatRoomUserPage.hasNext())
+                    .hasPrevious(chatRoomUserPage.hasPrevious())
                     .build();
         }
         
@@ -215,7 +222,11 @@ public class ChatServiceImpl implements ChatService {
         
         return ChatRoomListDto.builder()
                 .chatRooms(chatRoomItems)
-                .totalCount(chatRoomItems.size())
+                .currentPage(chatRoomUserPage.getNumber())
+                .totalPages(chatRoomUserPage.getTotalPages())
+                .totalElements(chatRoomUserPage.getTotalElements())
+                .hasNext(chatRoomUserPage.hasNext())
+                .hasPrevious(chatRoomUserPage.hasPrevious())
                 .build();
     }
     

@@ -1,6 +1,8 @@
 package org.cmarket.cmarket.domain.chat.repository;
 
 import org.cmarket.cmarket.domain.chat.model.ChatRoomUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -32,6 +34,23 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUser, Long
            "WHERE cru.userId = :userId AND cru.isActive = true " +
            "ORDER BY COALESCE(cru.lastMessageAt, cru.createdAt) DESC")
     List<ChatRoomUser> findActiveByUserIdOrderByLastMessageAtDesc(@Param("userId") Long userId);
+    
+    /**
+     * 사용자의 활성 채팅방 목록 조회 (페이지네이션 지원)
+     * 
+     * lastMessageAt이 null인 경우 createdAt 기준으로 정렬합니다.
+     * 
+     * @param userId 사용자 ID
+     * @param pageable 페이지 정보
+     * @return 활성 채팅방 참여 정보 페이지 (최근 메시지 시간 순)
+     */
+    @Query("SELECT cru FROM ChatRoomUser cru " +
+           "WHERE cru.userId = :userId AND cru.isActive = true " +
+           "ORDER BY COALESCE(cru.lastMessageAt, cru.createdAt) DESC")
+    Page<ChatRoomUser> findActiveByUserIdOrderByLastMessageAtDesc(
+            @Param("userId") Long userId,
+            Pageable pageable
+    );
     
     /**
      * 채팅방의 모든 참여자 조회

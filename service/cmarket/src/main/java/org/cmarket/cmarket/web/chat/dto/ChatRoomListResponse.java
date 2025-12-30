@@ -17,7 +17,11 @@ import java.util.stream.Collectors;
 public class ChatRoomListResponse {
     
     private List<ChatRoomListItemResponse> chatRooms;
-    private int totalCount;
+    private int currentPage;
+    private int totalPages;
+    private long totalElements;
+    private boolean hasNext;
+    private boolean hasPrevious;
     
     /**
      * 앱 DTO를 웹 DTO로 변환
@@ -32,7 +36,11 @@ public class ChatRoomListResponse {
         
         return ChatRoomListResponse.builder()
                 .chatRooms(chatRooms)
-                .totalCount(dto.getTotalCount())
+                .currentPage(dto.getCurrentPage())
+                .totalPages(dto.getTotalPages())
+                .totalElements(dto.getTotalElements())
+                .hasNext(dto.isHasNext())
+                .hasPrevious(dto.isHasPrevious())
                 .build();
     }
 }

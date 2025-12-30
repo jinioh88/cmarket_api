@@ -80,17 +80,23 @@ public class ChatController {
      * - 활성 상태인 채팅방만 조회
      * - 최근 메시지 시간 기준 내림차순 정렬
      * - 각 채팅방의 안 읽은 메시지 개수 포함
+     * - 페이지네이션 지원
      * 
+     * @param page 페이지 번호 (기본값: 0)
+     * @param size 페이지 크기 (기본값: 20)
      * @return 채팅방 목록
      */
     @GetMapping("/rooms")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SuccessResponse<ChatRoomListResponse>> getChatRoomList() {
+    public ResponseEntity<SuccessResponse<ChatRoomListResponse>> getChatRoomList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
         // 현재 로그인한 사용자의 이메일 추출
         String email = SecurityUtils.getCurrentUserEmail();
         
         // 앱 서비스 호출
-        ChatRoomListDto chatRoomListDto = chatService.getChatRoomList(email);
+        ChatRoomListDto chatRoomListDto = chatService.getChatRoomList(email, page, size);
         
         // 앱 DTO → 웹 DTO 변환
         ChatRoomListResponse response = ChatRoomListResponse.fromDto(chatRoomListDto);

@@ -40,11 +40,14 @@ public interface ChatService {
      * - 각 채팅방의 최근 메시지 포함
      * - Redis에서 안 읽은 메시지 개수 조회 (실시간)
      * - 최근 메시지 시간 기준 내림차순 정렬
+     * - 페이지네이션 지원
      * 
      * @param email 현재 로그인한 사용자 이메일
+     * @param page 페이지 번호 (0부터 시작)
+     * @param size 페이지 크기
      * @return 채팅방 목록
      */
-    ChatRoomListDto getChatRoomList(String email);
+    ChatRoomListDto getChatRoomList(String email, int page, int size);
     
     /**
      * 채팅방 참여자 여부 확인
