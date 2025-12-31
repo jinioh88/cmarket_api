@@ -7,6 +7,16 @@
 
 이 에러는 카카오 서버에 토큰 교환 요청을 보냈을 때 401 Unauthorized 응답을 받았다는 의미입니다.
 
+## ⚠️ 중요: Spring Boot 3.x 버전 사용 시 필수 설정
+
+**Spring Boot 3.x 버전을 사용하는 경우**, 카카오 OAuth2 클라이언트 인증 방식을 명시적으로 설정해야 합니다:
+
+```properties
+spring.security.oauth2.client.registration.kakao.client-authentication-method=client_secret_post
+```
+
+이 설정이 없으면 Spring Security가 기본적으로 HTTP Basic 인증(`client_secret_basic`)을 사용하려고 시도하는데, 카카오는 POST body에 `client_secret`을 포함하는 방식을 요구하므로 401 에러가 발생합니다.
+
 ---
 
 ## 원인 체크리스트
@@ -98,7 +108,28 @@ spring.security.oauth2.client.registration.kakao.client-secret=vVvp0gxP0V9VmoYTT
 - 프로덕션용: `https://실제백엔드서버도메인/login/oauth2/code/kakao`
 - 두 URI를 모두 등록해도 됩니다
 
-### 방법 2: Client Secret 재생성
+### 방법 2: client-authentication-method 설정 추가 (Spring Boot 3.x 필수!)
+
+**Spring Boot 3.x 버전을 사용하는 경우 필수입니다!**
+
+1. `application.properties` 또는 `application-prod.properties` 파일 열기
+2. 카카오 OAuth2 설정 섹션에 다음 줄 추가:
+   ```properties
+   spring.security.oauth2.client.registration.kakao.client-authentication-method=client_secret_post
+   ```
+3. 전체 설정 예시:
+   ```properties
+   spring.security.oauth2.client.registration.kakao.client-id=${KAKAO_CLIENT_ID:your-kakao-client-id}
+   spring.security.oauth2.client.registration.kakao.client-secret=${KAKAO_CLIENT_SECRET:your-kakao-client-secret}
+   spring.security.oauth2.client.registration.kakao.authorization-grant-type=authorization_code
+   spring.security.oauth2.client.registration.kakao.client-authentication-method=client_secret_post
+   spring.security.oauth2.client.registration.kakao.redirect-uri={baseUrl}/login/oauth2/code/{registrationId}
+   spring.security.oauth2.client.registration.kakao.scope=profile_nickname
+   ```
+4. 서버 재시작
+5. 카카오 로그인 재시도
+
+### 방법 3: Client Secret 재생성
 1. 카카오 개발자 콘솔 접속
 2. 앱 설정 > 보안 > Client Secret
 3. "Client Secret 코드 발급" 클릭 (재생성)

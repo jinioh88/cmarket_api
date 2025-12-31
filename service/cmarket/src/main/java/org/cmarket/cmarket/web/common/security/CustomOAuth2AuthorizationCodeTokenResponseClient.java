@@ -47,8 +47,24 @@ public class CustomOAuth2AuthorizationCodeTokenResponseClient
             OAuth2AccessTokenResponse response = delegate.getTokenResponse(authorizationCodeGrantRequest);
             log.info("OAuth2 토큰 교환 성공");
             return response;
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.error("========== OAuth2 토큰 교환 HTTP 에러 ==========");
+            log.error("HTTP 상태 코드: {}", e.getStatusCode());
+            log.error("HTTP 응답 본문: {}", e.getResponseBodyAsString());
+            log.error("HTTP 요청 URI: {}", e.getRequest() != null ? e.getRequest().getURI() : "N/A");
+            log.error("HTTP 요청 메서드: {}", e.getRequest() != null ? e.getRequest().getMethod() : "N/A");
+            if (e.getRequest() != null && e.getRequest().getHeaders() != null) {
+                log.error("HTTP 요청 헤더: {}", e.getRequest().getHeaders());
+            }
+            log.error("=========================================");
+            throw e;
         } catch (Exception e) {
             log.error("OAuth2 토큰 교환 실패: {}", e.getMessage());
+            log.error("예외 타입: {}", e.getClass().getName());
+            if (e.getCause() != null) {
+                log.error("원인 예외: {}", e.getCause().getClass().getName());
+                log.error("원인 메시지: {}", e.getCause().getMessage());
+            }
             throw e;
         }
     }
