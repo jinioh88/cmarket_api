@@ -181,10 +181,50 @@ public class SecurityConfig {
                 .successHandler(oAuth2LoginSuccessHandler)
                 .failureHandler((request, response, exception) -> {
                     // OAuth2 인증 실패 로그
-                    System.err.println("========== OAuth2 로그인 실패 ==========");
-                    System.err.println("오류 메시지: " + exception.getMessage());
+                    log.error("========== OAuth2 로그인 실패 ==========");
+                    log.error("요청 URI: {}", request.getRequestURI());
+                    log.error("요청 쿼리: {}", request.getQueryString());
+                    log.error("요청 URL: {}://{}{}", 
+                            request.getScheme(), 
+                            request.getServerName(), 
+                            request.getRequestURI());
+                    log.error("Host 헤더: {}", request.getHeader("Host"));
+                    log.error("X-Forwarded-Host 헤더: {}", request.getHeader("X-Forwarded-Host"));
+                    log.error("X-Forwarded-Proto 헤더: {}", request.getHeader("X-Forwarded-Proto"));
+                    log.error("X-Forwarded-Port 헤더: {}", request.getHeader("X-Forwarded-Port"));
+                    log.error("예외 타입: {}", exception.getClass().getName());
+                    log.error("오류 메시지: {}", exception.getMessage());
+                    
+                    // OAuth2AuthenticationException의 경우 상세 정보 추출
+                    String errorCode = null;
+                    String errorDescription = null;
+                    String errorUri = null;
+                    if (exception instanceof org.springframework.security.oauth2.core.OAuth2AuthenticationException) {
+                        org.springframework.security.oauth2.core.OAuth2Error error = 
+                            ((org.springframework.security.oauth2.core.OAuth2AuthenticationException) exception).getError();
+                        errorCode = error.getErrorCode();
+                        errorDescription = error.getDescription();
+                        errorUri = error.getUri();
+                        log.error("OAuth2 Error Code: {}", errorCode);
+                        log.error("OAuth2 Error Description: {}", errorDescription);
+                        log.error("OAuth2 Error URI: {}", errorUri);
+                    }
+                    
+                    // 원인 예외가 있으면 출력
+                    Throwable cause = exception.getCause();
+                    if (cause != null) {
+                        log.error("원인 예외: {}", cause.getClass().getName());
+                        log.error("원인 메시지: {}", cause.getMessage());
+                        if (cause instanceof org.springframework.web.client.HttpClientErrorException) {
+                            org.springframework.web.client.HttpClientErrorException httpException = 
+                                (org.springframework.web.client.HttpClientErrorException) cause;
+                            log.error("HTTP 상태 코드: {}", httpException.getStatusCode());
+                            log.error("HTTP 응답 본문: {}", httpException.getResponseBodyAsString());
+                        }
+                    }
+                    
                     exception.printStackTrace();
-                    System.err.println("=========================================");
+                    log.error("=========================================");
                     
                     // 에러 메시지 추출 (null 방지)
                     String errorMessage = exception.getMessage();
