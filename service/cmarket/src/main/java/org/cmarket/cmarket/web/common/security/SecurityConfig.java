@@ -50,6 +50,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
+    private final CustomOAuth2AuthorizationCodeTokenResponseClient customOAuth2AuthorizationCodeTokenResponseClient;
     
     public SecurityConfig(
             JwtTokenProvider jwtTokenProvider,
@@ -57,7 +58,8 @@ public class SecurityConfig {
             AuthenticationConfiguration authenticationConfiguration,
             CustomOAuth2UserService customOAuth2UserService,
             OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
-            HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository
+            HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository,
+            CustomOAuth2AuthorizationCodeTokenResponseClient customOAuth2AuthorizationCodeTokenResponseClient
     ) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.tokenBlacklistRepository = tokenBlacklistRepository;
@@ -65,6 +67,7 @@ public class SecurityConfig {
         this.customOAuth2UserService = customOAuth2UserService;
         this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
         this.cookieAuthorizationRequestRepository = cookieAuthorizationRequestRepository;
+        this.customOAuth2AuthorizationCodeTokenResponseClient = customOAuth2AuthorizationCodeTokenResponseClient;
     }
     
     /**
@@ -174,6 +177,9 @@ public class SecurityConfig {
                 )
                 .redirectionEndpoint(redirection -> redirection
                     .baseUri("/login/oauth2/code/*")
+                )
+                .tokenEndpoint(token -> token
+                    .accessTokenResponseClient(customOAuth2AuthorizationCodeTokenResponseClient)
                 )
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
