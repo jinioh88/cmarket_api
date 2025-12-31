@@ -51,11 +51,6 @@ public class CustomOAuth2AuthorizationCodeTokenResponseClient
             log.error("========== OAuth2 토큰 교환 HTTP 에러 ==========");
             log.error("HTTP 상태 코드: {}", e.getStatusCode());
             log.error("HTTP 응답 본문: {}", e.getResponseBodyAsString());
-            log.error("HTTP 요청 URI: {}", e.getRequest() != null ? e.getRequest().getURI() : "N/A");
-            log.error("HTTP 요청 메서드: {}", e.getRequest() != null ? e.getRequest().getMethod() : "N/A");
-            if (e.getRequest() != null && e.getRequest().getHeaders() != null) {
-                log.error("HTTP 요청 헤더: {}", e.getRequest().getHeaders());
-            }
             log.error("=========================================");
             throw e;
         } catch (Exception e) {

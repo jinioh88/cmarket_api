@@ -170,19 +170,23 @@ spring.security.oauth2.client.registration.kakao.client-secret=vVvp0gxP0V9VmoYTT
 
 ## 일반적인 원인 순위
 
-1. **Redirect URI 불일치** (가장 흔함)
+1. **client-authentication-method 미설정 (Spring Boot 3.x)** ⭐ 가장 흔함!
+   - Spring Boot 3.x에서는 카카오 OAuth2 클라이언트 인증 방식을 명시적으로 설정해야 함
+   - 해결: `client-authentication-method=client_secret_post` 추가
+
+2. **Redirect URI 불일치**
    - 카카오 개발자 콘솔에 등록된 URI와 실제 사용되는 URI가 다름
    - 해결: URI를 정확히 일치시키기
 
-2. **Client Secret 불일치**
+3. **Client Secret 불일치**
    - 설정 파일의 Client Secret이 잘못되었거나 만료됨
    - 해결: Client Secret 재생성 후 설정 파일 업데이트
 
-3. **Client ID 불일치**
+4. **Client ID 불일치**
    - 설정 파일의 Client ID가 잘못됨
    - 해결: 개발자 콘솔의 REST API 키와 일치시키기
 
-4. **카카오 로그인 비활성화**
+5. **카카오 로그인 비활성화**
    - 제품 설정에서 카카오 로그인이 비활성화됨
    - 해결: 카카오 로그인 활성화
 
