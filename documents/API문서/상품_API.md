@@ -113,8 +113,6 @@ http://localhost:8080
 | subImageUrls | String[] | 옵션 | 최대 4개 URL |
 | addressSido | String | 예 | 거래 희망 지역 (시/도) |
 | addressGugun | String | 예 | 거래 희망 지역 (구/군) |
-| isDeliveryAvailable | Boolean | 옵션 | 기본 false |
-| preferredMeetingPlace | String | 옵션 | 선호 만남 장소 |
 
 #### Response Body (`ProductResponse`)
 
@@ -127,7 +125,7 @@ http://localhost:8080
 | title / description / price | 입력값 반영 |
 | productStatus / tradeStatus | `productStatus`, `SELLING`이 기본 |
 | mainImageUrl / subImageUrls | 이미지 URL |
-| addressSido / addressGugun / isDeliveryAvailable / preferredMeetingPlace | 지역/거래 정보 |
+| addressSido / addressGugun | 거래 희망 지역 |
 | viewCount / favoriteCount | 초기값 0 |
 | isFavorite | false (본인 등록 상품 기준) |
 | createdAt / updatedAt | 생성일시 |
@@ -329,6 +327,7 @@ Request Body는 [판매 상품 등록](#3-1-판매-상품-등록-post-apiproduct
 
 | 버전 | 날짜 | 변경 내용 |
 |------|------|-----------|
+| 1.1.0 | 2025-01-15 | `isDeliveryAvailable`, `preferredMeetingPlace` 필드 제거 |
 | 1.0.0 | 2025-01-15 | 최초 작성 |
 
 

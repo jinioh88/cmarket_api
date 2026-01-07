@@ -29,7 +29,5 @@ public class ProductCreateCommand {
     private List<String> subImageUrls;
     private String addressSido;
     private String addressGugun;
-    private Boolean isDeliveryAvailable;
-    private String preferredMeetingPlace;
 }
 

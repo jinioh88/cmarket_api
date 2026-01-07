@@ -74,8 +74,6 @@ public class ProductServiceImpl implements ProductService {
                 .subImageUrls(command.getSubImageUrls())
                 .addressSido(command.getAddressSido())
                 .addressGugun(command.getAddressGugun())
-                .isDeliveryAvailable(command.getIsDeliveryAvailable())
-                .preferredMeetingPlace(command.getPreferredMeetingPlace())
                 .build();
         
         // 저장
@@ -150,8 +148,6 @@ public class ProductServiceImpl implements ProductService {
                 .subImageUrls(product.getSubImageUrls())
                 .addressSido(product.getAddressSido())
                 .addressGugun(product.getAddressGugun())
-                .isDeliveryAvailable(product.getIsDeliveryAvailable())
-                .preferredMeetingPlace(product.getPreferredMeetingPlace())
                 .createdAt(product.getCreatedAt())
                 .viewCount(product.getViewCount())
                 .favoriteCount(product.getFavoriteCount())
@@ -227,10 +223,8 @@ public class ProductServiceImpl implements ProductService {
                 command.productStatus(),
                 command.mainImageUrl(),
                 command.subImageUrls(),
-                command.isDeliveryAvailable(),
                 command.addressSido(),
-                command.addressGugun(),
-                command.preferredMeetingPlace()
+                command.addressGugun()
         );
         
         // 저장
@@ -461,8 +455,6 @@ public class ProductServiceImpl implements ProductService {
                 .subImageUrls(command.getSubImageUrls())
                 .addressSido(command.getAddressSido())
                 .addressGugun(command.getAddressGugun())
-                .isDeliveryAvailable(false)  // 판매 요청은 기본값으로 false
-                .preferredMeetingPlace(null)  // 판매 요청은 선호 만남 장소 없음
                 .build();
         
         // 저장
@@ -554,10 +546,8 @@ public class ProductServiceImpl implements ProductService {
                 org.cmarket.cmarket.domain.product.model.ProductStatus.NEW,  // 판매 요청은 기본값으로 NEW 유지
                 command.mainImageUrl(),
                 command.subImageUrls(),
-                false,  // 판매 요청은 택배 거래 불가
                 command.addressSido(),
-                command.addressGugun(),
-                null  // 판매 요청은 선호 만남 장소 없음
+                command.addressGugun()
         );
         
         // 저장

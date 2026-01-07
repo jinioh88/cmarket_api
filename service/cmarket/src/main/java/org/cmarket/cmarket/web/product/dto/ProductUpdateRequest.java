@@ -58,10 +58,6 @@ public class ProductUpdateRequest {
     @NotBlank(message = "구/군은 필수입니다.")
     private String addressGugun;
     
-    private Boolean isDeliveryAvailable;
-    
-    private String preferredMeetingPlace;
-    
     /**
      * 웹 DTO를 앱 DTO로 변환
      * 
@@ -80,8 +76,6 @@ public class ProductUpdateRequest {
                 .subImageUrls(this.subImageUrls)
                 .addressSido(this.addressSido)
                 .addressGugun(this.addressGugun)
-                .isDeliveryAvailable(this.isDeliveryAvailable != null ? this.isDeliveryAvailable : false)
-                .preferredMeetingPlace(this.preferredMeetingPlace)
                 .build();
     }
 }

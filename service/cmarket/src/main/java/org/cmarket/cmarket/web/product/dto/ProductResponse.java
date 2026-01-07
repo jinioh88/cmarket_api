@@ -36,8 +36,6 @@ public class ProductResponse {
     private List<String> subImageUrls;
     private String addressSido;
     private String addressGugun;
-    private Boolean isDeliveryAvailable;
-    private String preferredMeetingPlace;
     private Long viewCount;
     private Long favoriteCount;
     private Boolean isFavorite;
@@ -67,8 +65,6 @@ public class ProductResponse {
         response.subImageUrls = productDto.getSubImageUrls();
         response.addressSido = productDto.getAddressSido();
         response.addressGugun = productDto.getAddressGugun();
-        response.isDeliveryAvailable = productDto.getIsDeliveryAvailable();
-        response.preferredMeetingPlace = productDto.getPreferredMeetingPlace();
         response.viewCount = productDto.getViewCount();
         response.favoriteCount = productDto.getFavoriteCount();
         response.isFavorite = productDto.getIsFavorite();

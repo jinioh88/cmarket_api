@@ -9,7 +9,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -94,12 +93,6 @@ public class Product {
     @Column(name = "address_gugun", length = 50)
     private String addressGugun;  // 거래 희망 지역 (구/군)
     
-    @Column(nullable = false, name = "is_delivery_available")
-    private Boolean isDeliveryAvailable;  // 택배 거래 가능 여부
-    
-    @Column(name = "preferred_meeting_place", length = 200)
-    private String preferredMeetingPlace;  // 선호하는 만남 장소
-    
     @Column(nullable = false, name = "view_count")
     private Long viewCount = 0L;  // 조회수 (기본값 0)
     
@@ -130,9 +123,7 @@ public class Product {
             String mainImageUrl,
             List<String> subImageUrls,
             String addressSido,
-            String addressGugun,
-            Boolean isDeliveryAvailable,
-            String preferredMeetingPlace
+            String addressGugun
     ) {
         this.sellerId = sellerId;
         this.productType = productType;
@@ -148,8 +139,6 @@ public class Product {
         this.subImageUrls = subImageUrls != null ? new ArrayList<>(subImageUrls) : new ArrayList<>();
         this.addressSido = addressSido;
         this.addressGugun = addressGugun;
-        this.isDeliveryAvailable = isDeliveryAvailable != null ? isDeliveryAvailable : false;
-        this.preferredMeetingPlace = preferredMeetingPlace;
         this.viewCount = 0L;
         this.favoriteCount = 0L;
         this.createdAt = LocalDateTime.now();
@@ -169,10 +158,8 @@ public class Product {
             ProductStatus productStatus,
             String mainImageUrl,
             List<String> subImageUrls,
-            Boolean isDeliveryAvailable,
             String addressSido,
-            String addressGugun,
-            String preferredMeetingPlace
+            String addressGugun
     ) {
         this.petType = petType;
         this.petDetailType = petDetailType;
@@ -183,10 +170,8 @@ public class Product {
         this.productStatus = productStatus;
         this.mainImageUrl = mainImageUrl;
         this.subImageUrls = subImageUrls != null ? new ArrayList<>(subImageUrls) : new ArrayList<>();
-        this.isDeliveryAvailable = isDeliveryAvailable != null ? isDeliveryAvailable : false;
         this.addressSido = addressSido;
         this.addressGugun = addressGugun;
-        this.preferredMeetingPlace = preferredMeetingPlace;
         this.updatedAt = LocalDateTime.now();
     }
     

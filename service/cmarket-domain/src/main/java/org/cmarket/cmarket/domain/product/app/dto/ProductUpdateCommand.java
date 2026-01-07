@@ -25,9 +25,7 @@ public record ProductUpdateCommand(
     String mainImageUrl,
     List<String> subImageUrls,
     String addressSido,
-    String addressGugun,
-    Boolean isDeliveryAvailable,
-    String preferredMeetingPlace
+    String addressGugun
 ) {
 }
 

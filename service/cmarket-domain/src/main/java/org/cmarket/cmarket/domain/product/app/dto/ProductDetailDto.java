@@ -35,8 +35,6 @@ public class ProductDetailDto {
     private List<String> subImageUrls;
     private String addressSido;
     private String addressGugun;
-    private Boolean isDeliveryAvailable;
-    private String preferredMeetingPlace;
     private LocalDateTime createdAt;
     private Long viewCount;
     private Long favoriteCount;

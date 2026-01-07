@@ -36,8 +36,6 @@ public class ProductDto {
     private List<String> subImageUrls;
     private String addressSido;
     private String addressGugun;
-    private Boolean isDeliveryAvailable;
-    private String preferredMeetingPlace;
     private Long viewCount;
     private Long favoriteCount;
     private Boolean isFavorite;
@@ -68,8 +66,6 @@ public class ProductDto {
                 .subImageUrls(product.getSubImageUrls())
                 .addressSido(product.getAddressSido())
                 .addressGugun(product.getAddressGugun())
-                .isDeliveryAvailable(product.getIsDeliveryAvailable())
-                .preferredMeetingPlace(product.getPreferredMeetingPlace())
                 .viewCount(product.getViewCount())
                 .favoriteCount(product.getFavoriteCount())
                 .isFavorite(isFavorite != null ? isFavorite : false)
