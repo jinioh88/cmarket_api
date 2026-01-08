@@ -68,8 +68,9 @@ dependencies {
     // DevTools
 //    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     
-    // Database (H2 for development)
-    runtimeOnly 'com.h2database:h2'
+    // Database
+    runtimeOnly 'com.h2database:h2'  // 개발 환경용
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'  // 프로덕션 환경용 (AWS RDS)
     
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
