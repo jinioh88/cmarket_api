@@ -6,15 +6,10 @@ import org.cmarket.cmarket.domain.auth.app.exception.NicknameAlreadyExistsExcept
 import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
-import org.cmarket.cmarket.domain.product.app.dto.FavoriteItemDto;
-import org.cmarket.cmarket.domain.product.app.dto.MyProductListItemDto;
-import org.cmarket.cmarket.domain.product.model.Favorite;
-import org.cmarket.cmarket.domain.product.model.Product;
-import org.cmarket.cmarket.domain.product.model.ProductType;
-import org.cmarket.cmarket.domain.product.repository.FavoriteRepository;
-import org.cmarket.cmarket.domain.product.repository.ProductRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserDto;
+import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserListDto;
 import org.cmarket.cmarket.domain.profile.app.dto.MyPageDto;
+import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
 import org.cmarket.cmarket.domain.profile.app.dto.ProfileUpdateCommand;
 import org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto;
 import org.cmarket.cmarket.domain.report.app.service.UserBlockQueryService;
@@ -22,14 +17,12 @@ import org.cmarket.cmarket.domain.report.model.ReportTargetType;
 import org.cmarket.cmarket.domain.report.model.UserBlock;
 import org.cmarket.cmarket.domain.report.repository.ReportRepository;
 import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -43,117 +36,8 @@ public class ProfileServiceImpl implements ProfileService {
     
     private final UserRepository userRepository;
     private final UserBlockRepository userBlockRepository;
-    private final FavoriteRepository favoriteRepository;
-    private final ProductRepository productRepository;
     private final UserBlockQueryService userBlockQueryService;
     private final ReportRepository reportRepository;
-    
-    @Override
-    public MyPageDto getMyPage(String email) {
-        // 1. 사용자 조회
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
-        
-        // 2. 차단한 유저 목록 조회 (최대 100개로 제한)
-        Pageable pageable = PageRequest.of(0, 100);
-        List<UserBlock> userBlocks = userBlockRepository
-                .findByBlockerIdOrderByCreatedAtDesc(user.getId(), pageable)
-                .getContent();
-        
-        // 3. 차단한 유저 정보 조회
-        List<BlockedUserDto> blockedUserDtos = userBlocks.stream()
-                .map(userBlock -> {
-                    User blockedUserEntity = userRepository.findById(userBlock.getBlockedUserId())
-                            .orElse(null);
-                    
-                    if (blockedUserEntity == null || blockedUserEntity.isDeleted()) {
-                        return null;  // 삭제된 사용자는 제외
-                    }
-                    
-                    return BlockedUserDto.builder()
-                            .blockedUserId(blockedUserEntity.getId())
-                            .nickname(blockedUserEntity.getNickname())
-                            .profileImageUrl(blockedUserEntity.getProfileImageUrl())
-                            .build();
-                })
-                .filter(blockedUserDto -> blockedUserDto != null)
-                .collect(Collectors.toList());
-        
-        // 4. 찜한 상품 목록 조회 (최신 5개)
-        Pageable favoritePageable = PageRequest.of(0, 5);
-        org.springframework.data.domain.Page<Favorite> favoritePage = favoriteRepository
-                .findByUserIdOrderByCreatedAtDesc(user.getId(), favoritePageable);
-        
-        List<Long> favoriteProductIds = favoritePage.getContent().stream()
-                .map(Favorite::getProductId)
-                .collect(Collectors.toList());
-        
-        List<FavoriteItemDto> favoriteProducts = Collections.emptyList();
-        if (!favoriteProductIds.isEmpty()) {
-            List<Product> favoriteProductsList = productRepository.findAllById(favoriteProductIds).stream()
-                    .filter(product -> product.getDeletedAt() == null)
-                    .collect(Collectors.toList());
-            
-            Map<Long, Product> productMap = favoriteProductsList.stream()
-                    .collect(Collectors.toMap(Product::getId, product -> product));
-            
-            favoriteProducts = favoritePage.getContent().stream()
-                    .map(favorite -> {
-                        Product product = productMap.get(favorite.getProductId());
-                        if (product == null) {
-                            return null;
-                        }
-                        return FavoriteItemDto.builder()
-                                .id(product.getId())
-                                .mainImageUrl(product.getMainImageUrl())
-                                .title(product.getTitle())
-                                .price(product.getPrice())
-                                .viewCount(product.getViewCount())
-                                .tradeStatus(product.getTradeStatus())
-                                .build();
-                    })
-                    .filter(item -> item != null)
-                    .collect(Collectors.toList());
-        }
-        
-        // 5. 등록한 상품 목록 조회 (판매 상품만, 최신 5개)
-        Pageable myProductPageable = PageRequest.of(0, 5);
-        org.springframework.data.domain.Page<Product> myProductPage = productRepository
-                .findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
-                        user.getId(), ProductType.SELL, myProductPageable);
-        
-        List<MyProductListItemDto> myProducts = myProductPage.getContent().stream()
-                .map(MyProductListItemDto::fromEntity)
-                .collect(Collectors.toList());
-        
-        // 6. 판매 요청 목록 조회 (최신 5개)
-        Pageable purchaseRequestPageable = PageRequest.of(0, 5);
-        org.springframework.data.domain.Page<Product> purchaseRequestPage = productRepository
-                .findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
-                        user.getId(), ProductType.REQUEST, purchaseRequestPageable);
-        
-        List<MyProductListItemDto> purchaseRequests = purchaseRequestPage.getContent().stream()
-                .map(MyProductListItemDto::fromEntity)
-                .collect(Collectors.toList());
-        
-        // 7. MyPageDto 생성 및 반환
-        return MyPageDto.builder()
-                .id(user.getId())
-                .profileImageUrl(user.getProfileImageUrl())
-                .nickname(user.getNickname())
-                .name(user.getName())
-                .introduction(user.getIntroduction())
-                .birthDate(user.getBirthDate())
-                .email(user.getEmail())
-                .addressSido(user.getAddressSido())
-                .addressGugun(user.getAddressGugun())
-                .createdAt(user.getCreatedAt())
-                .favoriteProducts(favoriteProducts.stream().map(item -> (Object) item).collect(Collectors.toList()))
-                .myProducts(myProducts.stream().map(item -> (Object) item).collect(Collectors.toList()))
-                .purchaseRequests(purchaseRequests.stream().map(item -> (Object) item).collect(Collectors.toList()))
-                .blockedUsers(blockedUserDtos)
-                .build();
-    }
     
     @Override
     public MyPageDto getUserInfo(String email) {
@@ -250,6 +134,53 @@ public class ProfileServiceImpl implements ProfileService {
                 .isBlocked(isBlocked)
                 .isReported(isReported)
                 .products(Collections.emptyList())  // todo: 향후 Product 도메인에서 구현
+                .build();
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public BlockedUserListDto getBlockedUsers(String email, org.springframework.data.domain.Pageable pageable) {
+        // 1. 사용자 조회
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 2. 차단 목록 조회 (페이지네이션, 최신순 정렬)
+        org.springframework.data.domain.Page<UserBlock> userBlockPage = userBlockRepository
+                .findByBlockerIdOrderByCreatedAtDesc(user.getId(), pageable);
+
+        // 3. 차단당한 사용자 정보 조회 및 DTO 변환
+        List<BlockedUserDto> blockedUserDtos = userBlockPage.getContent().stream()
+                .map(userBlock -> {
+                    User blockedUserEntity = userRepository.findById(userBlock.getBlockedUserId())
+                            .orElse(null);
+
+                    if (blockedUserEntity == null || blockedUserEntity.isDeleted()) {
+                        return null;  // 삭제된 사용자는 제외
+                    }
+
+                    return BlockedUserDto.builder()
+                            .blockedUserId(blockedUserEntity.getId())
+                            .nickname(blockedUserEntity.getNickname())
+                            .profileImageUrl(blockedUserEntity.getProfileImageUrl())
+                            .build();
+                })
+                .filter(blockedUserDto -> blockedUserDto != null)
+                .collect(Collectors.toList());
+
+        // 4. PageResult 생성 (삭제된 사용자를 제외한 실제 개수로 조정)
+        // Spring Data Page를 PageResult로 변환
+        org.springframework.data.domain.Page<BlockedUserDto> blockedUserDtoPage =
+                new PageImpl<>(
+                        blockedUserDtos,
+                        pageable,
+                        userBlockPage.getTotalElements()  // 전체 개수는 원본 페이지에서 가져옴
+                );
+
+        PageResult<BlockedUserDto> pageResult = PageResult.fromPage(blockedUserDtoPage);
+
+        // 5. BlockedUserListDto 생성 및 반환
+        return BlockedUserListDto.builder()
+                .blockedUsers(pageResult)
                 .build();
     }
     

@@ -9,6 +9,7 @@ import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.common.security.SecurityUtils;
 import org.cmarket.cmarket.web.product.dto.FavoriteListResponse;
 import org.cmarket.cmarket.web.product.dto.MyProductListResponse;
+import org.cmarket.cmarket.web.profile.dto.BlockedUserListResponse;
 import org.cmarket.cmarket.web.profile.dto.ProfileUpdateRequest;
 import org.cmarket.cmarket.web.profile.dto.UserProfileResponse;
 import org.springframework.data.domain.Pageable;
@@ -153,6 +154,37 @@ public class ProfileController {
         
         // 앱 DTO → 웹 DTO 변환
         MyProductListResponse response = MyProductListResponse.fromDto(myProductListDto);
+        
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+    
+    /**
+     * 차단한 유저 목록 조회
+     * 
+     * GET /api/profile/me/blocked-users
+     * 
+     * 현재 로그인한 사용자가 차단한 유저 목록을 조회합니다.
+     * - 최신순 정렬 (차단한 날짜 기준 내림차순)
+     * - 페이지네이션 지원 (기본값: page=0, size=10)
+     * 
+     * @param pageable 페이지네이션 정보 (기본값: page=0, size=10)
+     * @return 차단한 유저 목록 (페이지네이션 포함)
+     */
+    @GetMapping("/me/blocked-users")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<BlockedUserListResponse>> getBlockedUsers(
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        // 현재 로그인한 사용자의 이메일 추출
+        String email = SecurityUtils.getCurrentUserEmail();
+        
+        // 앱 서비스 호출
+        org.cmarket.cmarket.domain.profile.app.dto.BlockedUserListDto blockedUserListDto = 
+                profileService.getBlockedUsers(email, pageable);
+        
+        // 앱 DTO → 웹 DTO 변환
+        BlockedUserListResponse response = BlockedUserListResponse.fromDto(blockedUserListDto);
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));

@@ -1,6 +1,7 @@
 package org.cmarket.cmarket.domain.profile.app.service;
 
 import org.cmarket.cmarket.domain.auth.app.dto.UserDto;
+import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserListDto;
 import org.cmarket.cmarket.domain.profile.app.dto.MyPageDto;
 import org.cmarket.cmarket.domain.profile.app.dto.ProfileUpdateCommand;
 import org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto;
@@ -11,17 +12,6 @@ import org.cmarket.cmarket.domain.profile.app.dto.UserProfileDto;
  * 프로필 관련 비즈니스 로직을 담당합니다.
  */
 public interface ProfileService {
-    
-    /**
-     * 마이페이지 조회
-     * 
-     * 현재 로그인한 사용자의 마이페이지 정보를 조회합니다.
-     * 
-     * @param email 사용자 이메일
-     * @return 마이페이지 정보
-     * @throws org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException 사용자가 존재하지 않을 때
-     */
-    MyPageDto getMyPage(String email);
     
     /**
      * 사용자 정보 조회
@@ -57,6 +47,18 @@ public interface ProfileService {
      * @throws org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException 사용자가 존재하지 않을 때
      */
     UserProfileDto getUserProfile(Long userId, String currentUserEmail);
+    
+    /**
+     * 차단한 유저 목록 조회
+     * 
+     * 현재 로그인한 사용자가 차단한 유저 목록을 조회합니다.
+     * 
+     * @param email 사용자 이메일
+     * @param pageable 페이지네이션 정보
+     * @return 차단한 유저 목록 DTO
+     * @throws org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException 사용자가 존재하지 않을 때
+     */
+    BlockedUserListDto getBlockedUsers(String email, org.springframework.data.domain.Pageable pageable);
     
 }
 
