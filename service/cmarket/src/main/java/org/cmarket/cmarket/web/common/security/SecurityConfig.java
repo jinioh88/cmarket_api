@@ -261,6 +261,9 @@ public class SecurityConfig {
             
             // 접근 권한 설정
             .authorizeHttpRequests(auth -> auth
+                // OPTIONS 요청은 CORS preflight를 위해 항상 허용
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                
                 // 인증 없이 접근 가능한 엔드포인트
                 .requestMatchers(
                     "/api/auth/signup",
