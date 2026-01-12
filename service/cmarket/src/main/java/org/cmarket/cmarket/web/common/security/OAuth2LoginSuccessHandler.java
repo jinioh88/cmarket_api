@@ -73,8 +73,17 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         log.info("OAuth2 로그인 성공: email={}, provider={}, redirectUri={}, redirectUrl={}", 
                 user.getEmail(), user.getProvider(), redirectUri, redirectUrl);
         
-        // 5. 리다이렉트
+        // 5. 응답이 이미 커밋되었는지 확인
+        if (response.isCommitted()) {
+            log.warn("Response already committed, cannot redirect to: {}", redirectUrl);
+            return;
+        }
+        
+        // 6. 리다이렉트
         response.sendRedirect(redirectUrl);
+        
+        // 7. 리다이렉트 후 필터 체인 처리를 중단하기 위해 명시적으로 완료
+        // 이렇게 하면 필터 체인에서 추가 처리를 시도하지 않음
     }
 }
 

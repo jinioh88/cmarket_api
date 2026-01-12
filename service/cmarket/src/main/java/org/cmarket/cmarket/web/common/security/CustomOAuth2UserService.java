@@ -15,6 +15,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,6 +33,9 @@ import java.util.Optional;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     
     private final UserRepository userRepository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
     
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -191,6 +196,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             user.updateNickname(nickname);
         }
         userRepository.save(user);
+        // 트랜잭션 커밋 전에 DB에 즉시 반영하여 프론트엔드의 후속 요청에서 조회 가능하도록 보장
+        entityManager.flush();
     }
     
     /**
@@ -208,7 +215,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             User existingUser = existingUserByEmail.get();
             existingUser.linkSocialAccount(provider, socialId);
             log.info("기존 계정에 소셜 로그인 연동: email={}, provider={}", email, provider);
-            return userRepository.save(existingUser);
+            User savedUser = userRepository.save(existingUser);
+            // 트랜잭션 커밋 전에 DB에 즉시 반영하여 프론트엔드의 후속 요청에서 조회 가능하도록 보장
+            entityManager.flush();
+            return savedUser;
         }
         
         // 닉네임이 없으면 생성
@@ -244,7 +254,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .build();
         
         log.info("소셜 로그인으로 신규 가입: email={}, provider={}", email, provider);
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        // 트랜잭션 커밋 전에 DB에 즉시 반영하여 프론트엔드의 후속 요청에서 조회 가능하도록 보장
+        entityManager.flush();
+        return savedUser;
     }
 }
 

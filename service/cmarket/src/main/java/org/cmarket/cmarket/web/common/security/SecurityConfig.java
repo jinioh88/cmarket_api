@@ -251,10 +251,19 @@ public class SecurityConfig {
                     // 환경 변수에서 가져오거나 기본값 사용
                     String frontendUrl = System.getenv("FRONTEND_URL");
                     if (frontendUrl == null || frontendUrl.isBlank()) {
-                        frontendUrl = "https://cuddle-market.duckdns.org";
+                        // Vercel 배포 후 실제 프론트엔드 도메인으로 변경
+                        frontendUrl = "https://cuddle-market-fe.vercel.app";
                     }
-                    String redirectUrl = frontendUrl + "/login?error=oauth2_failed&message="
+                    // 프론트엔드의 실제 로그인 경로로 변경 (/auth/login)
+                    String redirectUrl = frontendUrl + "/auth/login?error=oauth2_failed&message="
                             + java.net.URLEncoder.encode(errorMessage, java.nio.charset.StandardCharsets.UTF_8);
+                    
+                    // 응답이 이미 커밋되었는지 확인
+                    if (response.isCommitted()) {
+                        log.warn("Response already committed, cannot redirect to: {}", redirectUrl);
+                        return;
+                    }
+                    
                     response.sendRedirect(redirectUrl);
                 })
             )

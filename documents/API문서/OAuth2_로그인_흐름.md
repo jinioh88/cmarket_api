@@ -9,9 +9,7 @@
 ## 목차
 
 - [OAuth2란?](#oauth2란)
-- [두 가지 로그인 방식 비교](#두-가지-로그인-방식-비교)
-- [방식 1: Authorization Code Flow (권장)](#방식-1-authorization-code-flow-권장) - **패키지 설치 불필요!**
-- [방식 2: ID Token 방식](#방식-2-id-token-방식) - `@react-oauth/google` 패키지 필요
+- [Authorization Code Flow (권장)](#authorization-code-flow-권장) - **패키지 설치 불필요!**
 - [백엔드 상세 구현](#백엔드-상세-구현-authorization-code-flow)
 - [설정 파일 설명](#설정-파일-설명)
 - [주요 클래스 설명](#주요-클래스-설명)
@@ -30,43 +28,10 @@ OAuth2(Open Authorization 2.0)는 **제3자 서비스(구글, 카카오 등)의 
 2. **보안성**: 비밀번호를 우리 서버에 저장하지 않아도 됨
 3. **빠른 온보딩**: 회원가입 절차 없이 즉시 서비스 이용 가능
 
-### OAuth2 인증 흐름
-
-본 서비스는 **두 가지 OAuth2 인증 방식**을 지원합니다:
-
-1. **ID Token 방식 (권장)**: 프론트엔드에서 직접 구글 SDK 사용
-2. **Authorization Code Flow**: 백엔드가 모든 처리를 담당
-
 ---
 
-## 두 가지 로그인 방식 비교
+## Authorization Code Flow (권장)
 
-### 비교표
-
-| 항목 | Authorization Code Flow (권장) | ID Token 방식 |
-|------|-------------------------------|---------------|
-| **엔드포인트** | `GET /oauth2/authorization/google` | `POST /api/auth/google` |
-| **프론트 패키지 설치** | ❌ **불필요** | `@react-oauth/google` 필요 |
-| **프론트 코드량** | 매우 적음 (2개 함수) | 많음 |
-| **백엔드 작업** | OAuth2 전체 흐름 처리 (구현 완료) | ID Token 검증만 |
-| **사용자 경험** | 페이지 리다이렉트 | 팝업 로그인 |
-| **보안** | ✅ `client_secret` 백엔드에만 | ✅ `client_secret` 불필요 |
-
-### 흐름 비교
-
-```
-[Authorization Code Flow - 권장, 패키지 설치 불필요]
-프론트 → 백엔드(/oauth2/authorization/google) → 구글 → 백엔드 → 프론트(/oauth-redirect)
-         리다이렉트                              콜백      JWT 토큰
-
-[ID Token 방식 - @react-oauth/google 패키지 필요]
-프론트 → 구글(팝업) → 프론트 → 백엔드(/api/auth/google) → 프론트
-                      ID Token          JWT 토큰
-```
-
----
-
-## 방식 1: Authorization Code Flow (권장)
 
 > **패키지 설치 없이 가장 간단하게 구현할 수 있는 방식입니다.**  
 > 프론트엔드는 URL 리다이렉트만 하면 되고, 백엔드가 모든 OAuth2 처리를 담당합니다.  
@@ -90,80 +55,192 @@ OAuth2(Open Authorization 2.0)는 **제3자 서비스(구글, 카카오 등)의 
 7. 프론트엔드: URL에서 토큰 추출 및 저장
 ```
 
+### 구글 클라우드 콘솔 설정
+
+#### 1. OAuth 2.0 클라이언트 ID 생성
+
+1. **Google Cloud Console 접속**
+   - https://console.cloud.google.com 접속
+   - 프로젝트 선택 또는 새 프로젝트 생성
+
+2. **API 및 서비스 > 사용자 인증 정보**
+   - 좌측 메뉴에서 "API 및 서비스" > "사용자 인증 정보" 선택
+   - 상단의 "+ 사용자 인증 정보 만들기" > "OAuth 클라이언트 ID" 선택
+
+3. **OAuth 동의 화면 설정** (최초 1회)
+   - 사용자 유형: 외부 선택
+   - 앱 정보 입력:
+     - 앱 이름: "커들마켓" (또는 원하는 이름)
+     - 사용자 지원 이메일: 본인 이메일
+     - 개발자 연락처 정보: 본인 이메일
+
+4. **OAuth 클라이언트 ID 생성**
+   - 애플리케이션 유형: **웹 애플리케이션** 선택
+   - 이름: "커들마켓" (또는 원하는 이름)
+
+#### 2. 승인된 JavaScript 원본 설정
+
+**설정 위치**: OAuth 2.0 클라이언트 ID 편집 화면 > "승인된 JavaScript 원본"
+
+**설명**: 브라우저에서 OAuth 요청을 시작할 수 있는 도메인 목록입니다.
+
+**등록해야 할 URI**:
+```
+http://localhost:3000
+http://localhost:8080
+https://cuddle-market-fe.vercel.app
+```
+
+**⚠️ 중요 사항**:
+- 백엔드 도메인(`cmarket-api.duckdns.org`)은 **등록하지 않습니다**
+- JavaScript 원본은 프론트엔드 도메인만 등록합니다
+- HTTP와 HTTPS를 구분하여 등록합니다
+
+#### 3. 승인된 리디렉션 URI 설정
+
+**설정 위치**: OAuth 2.0 클라이언트 ID 편집 화면 > "승인된 리디렉션 URI"
+
+**설명**: 구글이 인가 코드를 전달할 백엔드 콜백 URL 목록입니다.
+
+**등록해야 할 URI**:
+```
+http://localhost:8080/login/oauth2/code/google
+https://cmarket-api.duckdns.org/login/oauth2/code/google
+```
+
+**⚠️ 중요 사항**:
+- 프론트엔드 도메인(`cuddle-market-fe.vercel.app`)은 **등록하지 않습니다**
+- 리디렉션 URI는 백엔드 도메인만 등록합니다
+- 프로덕션 환경에서는 HTTPS를 사용합니다
+- 경로는 정확히 `/login/oauth2/code/google`이어야 합니다
+
+#### 4. 클라이언트 ID 및 클라이언트 보안 비밀번호 확인
+
+생성 후 다음 정보를 확인합니다:
+- **클라이언트 ID**: `13269763480-xxxxx.apps.googleusercontent.com` 형식
+- **클라이언트 보안 비밀번호**: `GOCSPX-xxxxx` 형식
+
+이 정보는 백엔드 설정에 사용됩니다.
+
+#### 5. 최종 설정 확인
+
+**승인된 JavaScript 원본**:
+```
+✅ http://localhost:3000
+✅ http://localhost:8080
+✅ https://cuddle-market-fe.vercel.app
+❌ http://cmarket-api.duckdns.org (등록하지 않음)
+```
+
+**승인된 리디렉션 URI**:
+```
+✅ http://localhost:8080/login/oauth2/code/google
+✅ https://cmarket-api.duckdns.org/login/oauth2/code/google
+❌ https://cuddle-market-fe.vercel.app/login/oauth2/code/google (등록하지 않음)
+```
+
 ### 프론트엔드 구현 (React) - 패키지 설치 불필요!
 
 > **⚡ 단 2개의 코드만 작성하면 됩니다!**
 
-#### 1. 구글 로그인 버튼 (로그인 페이지)
+#### 1. 환경 변수 설정
 
-```javascript
-// LoginPage.jsx
-function LoginPage() {
-  // 구글 로그인 버튼 클릭 핸들러
+프론트엔드 프로젝트 루트에 `.env` 파일 생성:
+
+```bash
+# .env (로컬 개발)
+VITE_API_BASE_URL=http://localhost:8080
+
+# .env.production (프로덕션)
+VITE_API_BASE_URL=https://cmarket-api.duckdns.org
+```
+
+**Vercel 배포 시**: Vercel 대시보드 > 프로젝트 설정 > Environment Variables에서 설정
+
+#### 2. 구글 로그인 버튼 (로그인 페이지)
+
+```typescript
+// components/SocialLoginButtons.tsx
+import { Button } from '@src/components/commons/button/Button'
+import google from '@assets/images/google.svg'
+
+export function SocialLoginButtons() {
+  // 백엔드 API URL을 환경 변수로 관리
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://cmarket-api.duckdns.org'
+
   const handleGoogleLogin = () => {
-    // 백엔드의 OAuth2 엔드포인트로 리다이렉트
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
-  };
+    // 백엔드 OAuth2 엔드포인트로 리다이렉트
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/google`
+  }
 
   return (
-    <div>
-      <h1>로그인</h1>
-      <button onClick={handleGoogleLogin}>
-        구글로 로그인
-      </button>
+    <div className="flex w-full flex-col gap-2">
+      <Button 
+        iconSrc={google} 
+        size="md" 
+        className="w-full cursor-pointer bg-[#F2F2F2]" 
+        onClick={handleGoogleLogin}
+      >
+        구글 간편 로그인
+      </Button>
     </div>
-  );
+  )
 }
 ```
 
-#### 2. OAuth 리다이렉트 페이지 (토큰 수신)
+**⚠️ 중요 사항**:
+- `window.location.href`를 사용하여 전체 페이지 리다이렉트를 수행합니다
+- `fetch()`나 `axios`를 사용하지 않습니다 (OAuth2는 브라우저 리다이렉트 방식)
+- 백엔드 도메인으로 요청을 보냅니다 (프론트엔드 도메인이 아님)
 
-```javascript
-// OAuthRedirect.jsx (또는 pages/oauth-redirect.jsx)
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+#### 3. OAuth 리다이렉트 페이지 (토큰 수신)
 
-function OAuthRedirect() {
-  const navigate = useNavigate();
+```typescript
+// pages/OAuthRedirect.tsx
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+export default function OAuthRedirect() {
+  const navigate = useNavigate()
 
   useEffect(() => {
     // URL에서 토큰 추출
-    const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get('accessToken');
-    const refreshToken = params.get('refreshToken');
+    const params = new URLSearchParams(window.location.search)
+    const accessToken = params.get('accessToken')
+    const refreshToken = params.get('refreshToken')
 
     if (accessToken && refreshToken) {
       // 토큰 저장
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('accessToken', accessToken)
+      localStorage.setItem('refreshToken', refreshToken)
       
-      console.log('구글 로그인 성공!');
+      console.log('구글 로그인 성공!')
       
       // 메인 페이지로 이동
-      navigate('/');
+      navigate('/')
     } else {
       // 토큰이 없으면 로그인 페이지로
-      console.error('로그인 실패: 토큰이 없습니다.');
-      navigate('/login');
+      console.error('로그인 실패: 토큰이 없습니다.')
+      navigate('/login')
     }
-  }, [navigate]);
+  }, [navigate])
 
   return (
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
       <h2>로그인 처리 중...</h2>
       <p>잠시만 기다려주세요.</p>
     </div>
-  );
+  )
 }
-
-export default OAuthRedirect;
 ```
 
-#### 3. 라우터 설정
+#### 4. 라우터 설정
 
-```javascript
-// App.jsx 또는 라우터 설정 파일
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+```typescript
+// App.tsx 또는 router 설정 파일
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import OAuthRedirect from './pages/OAuthRedirect'
+import LoginPage from './pages/LoginPage'
 
 function App() {
   return (
@@ -175,9 +252,13 @@ function App() {
         {/* ... 기타 라우트 */}
       </Routes>
     </BrowserRouter>
-  );
+  )
 }
 ```
+
+**⚠️ 중요 사항**:
+- `/oauth-redirect` 라우트는 반드시 설정해야 합니다
+- 이 경로가 없으면 백엔드에서 리다이렉트할 때 404 에러가 발생합니다
 
 ### 로그인 성공 시 리다이렉트 URL 형식
 
@@ -200,158 +281,47 @@ http://localhost:3000/oauth-redirect?accessToken=eyJhbGciOiJIUzUxMiJ9...&refresh
 - 프론트엔드 서버가 `http://localhost:3000`에서 실행 중이어야 합니다
 - `/oauth-redirect` 라우트가 설정되어 있어야 합니다
 - `fetch()`나 `axios`로 호출하면 안 됩니다 (반드시 `window.location.href` 사용)
+- 백엔드 도메인으로 요청을 보내야 합니다 (프론트엔드 도메인이 아님)
 
----
+### 백엔드 설정
 
-## 방식 2: ID Token 방식
+#### application-prod.properties 설정
 
-> **`@react-oauth/google` 패키지를 사용하는 방식입니다.**  
-> 프론트엔드에서 Google Sign-In SDK를 사용하여 ID Token을 받고, 백엔드에서 검증합니다.  
-> 팝업으로 로그인하므로 페이지 이동이 없습니다.
+```properties
+# Google OAuth2
+spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID:your-google-client-id}
+spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+spring.security.oauth2.client.registration.google.scope=profile,email
+spring.security.oauth2.client.registration.google.redirect-uri={baseUrl}/login/oauth2/code/{registrationId}
 
-### 전체 흐름
-
-```
-1. 프론트엔드: Google Sign-In SDK로 로그인 (팝업)
-   ↓
-2. 구글: ID Token 발급 (프론트엔드로 직접 전달)
-   ↓
-3. 프론트엔드: POST /api/auth/google (ID Token 전송)
-   ↓
-4. 백엔드: ID Token 검증 + 사용자 조회/생성 + JWT 토큰 발급
-   ↓
-5. 프론트엔드: JWT 토큰 수신 및 저장
+# OAuth2 리다이렉트 URL (프론트엔드)
+oauth2.redirect-uri=${OAUTH2_REDIRECT_URI:https://cuddle-market-fe.vercel.app/oauth-redirect}
 ```
 
-### 프론트엔드 구현 (React)
+**설정 항목 설명**:
 
-#### 1. 패키지 설치
+| 설정 항목 | 설명 | 예시 |
+|----------|------|------|
+| `client-id` | 구글 클라우드 콘솔에서 발급받은 클라이언트 ID | `13269763480-xxxxx.apps.googleusercontent.com` |
+| `client-secret` | 구글 클라우드 콘솔에서 발급받은 클라이언트 보안 비밀번호 | `GOCSPX-xxxxx` |
+| `scope` | 요청할 사용자 정보 범위 | `profile,email` |
+| `redirect-uri` | 구글이 인가 코드를 전달할 백엔드 콜백 URL | `{baseUrl}/login/oauth2/code/google` |
+| `oauth2.redirect-uri` | 백엔드가 최종적으로 프론트엔드로 리다이렉트할 URL | `https://cuddle-market-fe.vercel.app/oauth-redirect` |
+
+**⚠️ 중요 사항**:
+- `client-id`와 `client-secret`은 환경 변수로 관리해야 합니다 (보안)
+- `redirect-uri`는 Spring Security가 자동으로 `{baseUrl}`을 현재 서버 URL로 치환합니다
+- `oauth2.redirect-uri`는 프론트엔드 도메인을 사용합니다
+
+#### 환경 변수 설정 (프로덕션)
+
+EC2 또는 Docker 배포 시 환경 변수 설정:
 
 ```bash
-npm install @react-oauth/google
+export GOOGLE_CLIENT_ID="13269763480-xxxxx.apps.googleusercontent.com"
+export GOOGLE_CLIENT_SECRET="GOCSPX-xxxxx"
+export OAUTH2_REDIRECT_URI="https://cuddle-market-fe.vercel.app/oauth-redirect"
 ```
-
-#### 2. GoogleOAuthProvider 설정
-
-```javascript
-// App.jsx 또는 main.jsx
-import { GoogleOAuthProvider } from '@react-oauth/google';
-
-function App() {
-  return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
-      {/* ... 앱 컴포넌트 */}
-    </GoogleOAuthProvider>
-  );
-}
-```
-
-#### 3. 로그인 버튼 구현
-
-```javascript
-// LoginPage.jsx
-import { GoogleLogin } from '@react-oauth/google';
-
-function LoginPage() {
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      // 백엔드로 ID Token 전송
-      const response = await fetch('http://localhost:8080/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          idToken: credentialResponse.credential 
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.code === 'SUCCESS') {
-        // 토큰 저장
-        localStorage.setItem('accessToken', result.data.accessToken);
-        localStorage.setItem('refreshToken', result.data.refreshToken);
-        
-        console.log('로그인 성공:', result.data.user);
-        // 메인 페이지로 이동
-        window.location.href = '/';
-      } else {
-        console.error('로그인 실패:', result.message);
-      }
-    } catch (error) {
-      console.error('로그인 에러:', error);
-    }
-  };
-
-  const handleGoogleError = () => {
-    console.log('Google 로그인 실패');
-  };
-
-  return (
-    <div>
-      <h1>로그인</h1>
-      <GoogleLogin
-        onSuccess={handleGoogleSuccess}
-        onError={handleGoogleError}
-        useOneTap  // 원탭 로그인 (선택사항)
-      />
-    </div>
-  );
-}
-```
-
-### 백엔드 API 명세
-
-#### 요청
-
-```http
-POST /api/auth/google HTTP/1.1
-Host: localhost:8080
-Content-Type: application/json
-
-{
-  "idToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ij..."
-}
-```
-
-#### 응답 (성공)
-
-```json
-{
-  "code": "SUCCESS",
-  "message": "Google 로그인 성공",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
-    "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
-    "user": {
-      "email": "user@gmail.com",
-      "nickname": "user123",
-      "name": "홍길동"
-    }
-  }
-}
-```
-
-#### 응답 (실패)
-
-```json
-{
-  "code": "BAD_REQUEST",
-  "message": "유효하지 않은 Google ID Token입니다.",
-  "traceId": "abc123..."
-}
-```
-
-### 장점
-
-1. **팝업 로그인**: 페이지 이동 없이 팝업으로 처리
-2. **유연한 UI**: Google Sign-In 버튼 커스터마이징 가능
-3. **원탭 로그인**: `useOneTap` 옵션으로 자동 로그인 지원
-4. **모바일 앱 연동**: 같은 방식으로 모바일 앱에서도 사용 가능
-
-### 단점
-
-1. **패키지 설치 필요**: `@react-oauth/google` 패키지 설치 필요
-2. **코드량 많음**: Provider 설정 등 추가 코드 필요
 
 ---
 
@@ -405,36 +375,59 @@ Host: localhost:8080
 
 ### 2단계: Spring Security OAuth2 필터 처리
 
-### Spring Security 동작
+#### Spring Security 동작
 
 1. **요청 경로 확인**: `/oauth2/authorization/google` 경로를 인식
 2. **OAuth2 필터 활성화**: OAuth2 관련 필터들이 자동으로 실행됨
 3. **인증 URL 생성**: 구글/카카오 인증 페이지 URL 생성
 
-### SecurityConfig 설정
+#### SecurityConfig 설정
 
 ```java
 // SecurityConfig.java
 .oauth2Login(oauth2 -> oauth2
+    .authorizationEndpoint(authorization -> authorization
+        .baseUri("/oauth2/authorization")
+        .authorizationRequestRepository(cookieAuthorizationRequestRepository)
+    )
+    .redirectionEndpoint(redirection -> redirection
+        .baseUri("/login/oauth2/code/*")
+    )
+    .tokenEndpoint(token -> token
+        .accessTokenResponseClient(customOAuth2AuthorizationCodeTokenResponseClient)
+    )
     .userInfoEndpoint(userInfo -> userInfo
         .userService(customOAuth2UserService)  // 5단계에서 사용
     )
     .successHandler(oAuth2LoginSuccessHandler)  // 6단계에서 사용
+    .failureHandler(...)
 )
 ```
 
-### 인증 URL 생성 과정
+**설정 항목 설명**:
+
+| 설정 항목 | 설명 |
+|----------|------|
+| `authorizationEndpoint.baseUri` | OAuth2 인증 시작 엔드포인트 (`/oauth2/authorization/{registrationId}`) |
+| `authorizationRequestRepository` | 인증 요청 정보를 쿠키에 저장 (세션 대신) |
+| `redirectionEndpoint.baseUri` | 구글이 콜백할 엔드포인트 (`/login/oauth2/code/*`) |
+| `accessTokenResponseClient` | 인가 코드로 액세스 토큰을 교환하는 클라이언트 |
+| `userService` | 사용자 정보를 처리하는 서비스 |
+| `successHandler` | 로그인 성공 시 실행되는 핸들러 |
+| `failureHandler` | 로그인 실패 시 실행되는 핸들러 |
+
+#### 인증 URL 생성 과정
 
 Spring Security는 `application.properties`의 설정을 기반으로 인증 URL을 생성합니다:
 
 **구글의 경우:**
 ```
 https://accounts.google.com/o/oauth2/v2/auth?
-  client_id={client-id}&
-  redirect_uri={baseUrl}/login/oauth2/code/google&
+  client_id=13269763480-xxxxx.apps.googleusercontent.com&
+  redirect_uri=https://cmarket-api.duckdns.org/login/oauth2/code/google&
   response_type=code&
   scope=profile email&
-  state={랜덤_문자열}
+  state={랜덤_CSRF_토큰}
 ```
 
 **카카오의 경우:**
@@ -447,14 +440,19 @@ https://kauth.kakao.com/oauth/authorize?
   state={랜덤_문자열}
 ```
 
-### 리다이렉트
+#### 리다이렉트
 
 Spring Security는 생성한 인증 URL로 브라우저를 리다이렉트합니다:
 
 ```http
 HTTP/1.1 302 Found
 Location: https://accounts.google.com/o/oauth2/v2/auth?client_id=...
+Set-Cookie: oauth2_auth_request_state=...; HttpOnly; Secure; SameSite=Lax
 ```
+
+**인증 요청 정보 저장**: 
+- 인증 요청 정보(state, redirect_uri 등)는 쿠키에 저장됩니다
+- 세션 대신 쿠키를 사용하여 STATELESS 세션 정책을 지원합니다
 
 ### 3단계: OAuth 제공자(구글/카카오) 인증
 
@@ -497,49 +495,51 @@ Location: https://accounts.google.com/o/oauth2/v2/auth?client_id=...
 
 ### 4단계: OAuth 제공자에서 콜백 처리
 
-### OAuth 제공자 동작
+#### OAuth 제공자 동작
 
 사용자가 로그인 및 동의를 완료하면, 구글/카카오는 **인증 코드(Authorization Code)**를 포함하여 우리 서버의 콜백 URL로 리다이렉트합니다.
 
-### 콜백 URL
+#### 콜백 URL
 
 ```
 GET /login/oauth2/code/{registrationId}?code={authorization_code}&state={state}
 ```
 
 **예시:**
-```
+```http
 GET /login/oauth2/code/google?code=4/0AeanS...&state=abc123 HTTP/1.1
-Host: localhost:8080
+Host: cmarket-api.duckdns.org
+Cookie: oauth2_auth_request_state=...
 ```
 
-### 파라미터 설명
+#### 파라미터 설명
 
 | 파라미터 | 설명 |
 |---------|------|
 | `code` | 인증 코드 (일회용, 짧은 유효기간) |
 | `state` | CSRF 방지를 위한 상태값 (1단계에서 전송한 값과 일치해야 함) |
 
-### Spring Security 동작
+#### Spring Security 동작
 
-1. **state 검증**: 전송한 state와 일치하는지 확인 (CSRF 방지)
-2. **인증 코드 교환**: 인증 코드를 Access Token으로 교환
-3. **사용자 정보 요청**: Access Token으로 사용자 정보 API 호출
+1. **OAuth2LoginAuthenticationFilter**가 요청을 가로챕니다
+2. 쿠키에서 인증 요청 정보를 확인하고 CSRF 토큰 검증
+3. **인증 코드 교환**: 인증 코드를 Access Token으로 교환
+4. **사용자 정보 요청**: Access Token으로 사용자 정보 API 호출
 
-### 인증 코드 → Access Token 교환
+#### 인증 코드 → Access Token 교환
 
-Spring Security가 내부적으로 다음 API를 호출합니다:
+**CustomOAuth2AuthorizationCodeTokenResponseClient**가 인가 코드로 액세스 토큰을 교환합니다:
 
 **구글:**
 ```http
-POST https://oauth2.googleapis.com/token
+POST https://oauth2.googleapis.com/token HTTP/1.1
 Content-Type: application/x-www-form-urlencoded
 
-client_id={client-id}&
-client_secret={client-secret}&
-code={authorization_code}&
-grant_type=authorization_code&
-redirect_uri={baseUrl}/login/oauth2/code/google
+code=4/0AeanS...&
+client_id=13269763480-xxxxx&
+client_secret=GOCSPX-xxxxx&
+redirect_uri=https://cmarket-api.duckdns.org/login/oauth2/code/google&
+grant_type=authorization_code
 ```
 
 **카카오:**
@@ -554,13 +554,24 @@ grant_type=authorization_code&
 redirect_uri={baseUrl}/login/oauth2/code/kakao
 ```
 
-### 사용자 정보 요청
+**응답 예시 (구글):**
+```json
+{
+  "access_token": "ya29.a0AfH6SMB...",
+  "expires_in": 3599,
+  "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "scope": "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+  "token_type": "Bearer"
+}
+```
 
-Access Token을 받은 후, 사용자 정보를 요청합니다:
+#### 사용자 정보 요청
+
+**CustomOAuth2UserService**가 액세스 토큰으로 사용자 정보를 조회합니다:
 
 **구글:**
 ```http
-GET https://www.googleapis.com/oauth2/v2/userinfo
+GET https://www.googleapis.com/oauth2/v2/userinfo HTTP/1.1
 Authorization: Bearer {access_token}
 ```
 
@@ -568,6 +579,16 @@ Authorization: Bearer {access_token}
 ```http
 GET https://kapi.kakao.com/v2/user/me
 Authorization: Bearer {access_token}
+```
+
+**구글 사용자 정보 응답 예시:**
+```json
+{
+  "sub": "1234567890",
+  "email": "user@gmail.com",
+  "name": "홍길동",
+  "picture": "https://..."
+}
 ```
 
 ### 5단계: CustomOAuth2UserService 실행
@@ -741,11 +762,11 @@ return new PrincipalDetails(user, attributes);
 
 ### 6단계: OAuth2LoginSuccessHandler 실행
 
-### 호출 시점
+#### 호출 시점
 
 `CustomOAuth2UserService`가 `PrincipalDetails`를 반환한 후, `OAuth2LoginSuccessHandler.onAuthenticationSuccess()` 메서드가 자동으로 호출됩니다.
 
-### 코드 흐름
+#### 코드 흐름
 
 ```java
 // OAuth2LoginSuccessHandler.java
@@ -769,19 +790,30 @@ public void onAuthenticationSuccess(
             user.getRole().name()
     );
     
-    // 3. 프론트엔드로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
+    // 3. OAuth2 인증 관련 쿠키 삭제
+    cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+    
+    // 4. 프론트엔드로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
     String redirectUrl = String.format(
             "%s?accessToken=%s&refreshToken=%s",
-            redirectUri,
+            redirectUri,  // application-prod.properties의 oauth2.redirect-uri
             accessToken,
             refreshToken
     );
     
-    log.info("OAuth2 로그인 성공: email={}, provider={}", user.getEmail(), user.getProvider());
+    log.info("OAuth2 로그인 성공: email={}, provider={}, redirectUri={}, redirectUrl={}", 
+            user.getEmail(), user.getProvider(), redirectUri, redirectUrl);
     
-    // 4. 리다이렉트
+    // 5. 리다이렉트
     response.sendRedirect(redirectUrl);
 }
+```
+
+#### HTTP 응답
+
+```http
+HTTP/1.1 302 Found
+Location: https://cuddle-market-fe.vercel.app/oauth-redirect?accessToken=eyJhbGci...&refreshToken=eyJhbGci...
 ```
 
 ### 단계별 상세 설명
@@ -932,28 +964,6 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 ## 주요 클래스 설명
 
-### ID Token 방식 관련 클래스
-
-#### GoogleIdTokenVerifierService
-
-**역할**: Google ID Token 검증
-
-**주요 메서드:**
-- `verify(idToken)`: Google 공개키로 ID Token 서명 검증 및 사용자 정보 추출
-
-**위치**: `web/common/security/GoogleIdTokenVerifierService.java`
-
-#### GoogleAuthService
-
-**역할**: Google ID Token 기반 인증 및 사용자 처리
-
-**주요 메서드:**
-- `authenticateWithIdToken(idToken)`: ID Token 검증 후 사용자 조회/생성
-
-**위치**: `web/auth/service/GoogleAuthService.java`
-
----
-
 ### Authorization Code Flow 관련 클래스
 
 #### CustomOAuth2UserService
@@ -1004,9 +1014,43 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 ---
 
-## 에러 처리
+## 에러 처리 및 트러블슈팅
 
-### 1. 이메일 정보 없음
+### 일반적인 에러
+
+#### 1. 404 Not Found - `/oauth-redirect` 경로 없음
+
+**증상**: 
+```
+GET https://cuddle-market-fe.vercel.app/oauth-redirect?accessToken=... 404 Not Found
+```
+
+**원인**: 프론트엔드에 `/oauth-redirect` 라우트가 없음
+
+**해결**: 프론트엔드 라우터에 `/oauth-redirect` 라우트 추가
+
+#### 2. redirect_uri_mismatch
+
+**증상**: 구글에서 "redirect_uri_mismatch" 에러 발생
+
+**원인**: 구글 클라우드 콘솔에 등록된 리디렉션 URI와 실제 요청 URI가 일치하지 않음
+
+**해결**: 
+- 구글 클라우드 콘솔에서 정확한 URI 등록 확인
+- 프로토콜(HTTP/HTTPS) 확인
+- 경로 정확성 확인 (`/login/oauth2/code/google`)
+
+#### 3. invalid_client
+
+**증상**: "invalid_client" 에러 발생
+
+**원인**: 클라이언트 ID 또는 클라이언트 보안 비밀번호가 잘못됨
+
+**해결**: 
+- `application-prod.properties`의 `client-id`와 `client-secret` 확인
+- 환경 변수 설정 확인
+
+#### 4. 이메일 정보 없음
 
 **발생 시점**: 5단계 (CustomOAuth2UserService)
 
@@ -1015,24 +1059,23 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 이메일 정보가 필요합니다. 소셜 로그인 시 이메일 제공에 동의해주세요.
 ```
 
-**원인**: 카카오 로그인 시 이메일 제공에 동의하지 않음
+**원인**: 
+- 구글 로그인 시 이메일 제공에 동의하지 않음 (구글은 항상 이메일 제공)
+- 카카오 로그인 시 이메일 제공에 동의하지 않음
 
-**해결 방법**: 카카오 로그인 시 이메일 제공에 동의해야 함
+**해결 방법**: 소셜 로그인 시 이메일 제공에 동의해야 함
 
-### 2. 이미 가입된 이메일
+#### 5. 이미 가입된 이메일
 
 **발생 시점**: 5단계 (createNewUser)
 
-**에러 메시지:**
-```
-이미 가입된 이메일입니다. 일반 로그인을 사용해주세요.
-```
-
 **원인**: 일반 회원가입으로 이미 가입된 이메일로 OAuth 로그인 시도
 
-**해결 방법**: 일반 로그인 사용 또는 다른 이메일 사용
+**해결 방법**: 
+- 일반 로그인 사용
+- 또는 기존 계정에 소셜 계정 연동 (자동 처리됨)
 
-### 3. OAuth 제공자 인증 실패
+#### 6. OAuth 제공자 인증 실패
 
 **발생 시점**: 3단계 (구글/카카오 인증 페이지)
 
@@ -1043,7 +1086,7 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 **해결 방법**: `application.properties` 설정 확인
 
-### 4. state 불일치
+#### 7. state 불일치
 
 **발생 시점**: 4단계 (콜백 처리)
 
@@ -1051,63 +1094,80 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 **해결 방법**: Spring Security가 자동으로 처리 (요청 거부)
 
+### 디버깅 팁
+
+1. **백엔드 로그 확인**:
+   - `OAuth2LoginSuccessHandler`의 로그 확인
+   - `CustomOAuth2UserService`의 로그 확인
+
+2. **네트워크 탭 확인**:
+   - 브라우저 개발자 도구 > Network 탭
+   - `/oauth2/authorization/google` 요청 확인
+   - `/login/oauth2/code/google` 요청 확인
+   - `/oauth-redirect` 요청 확인
+
+3. **쿠키 확인**:
+   - 브라우저 개발자 도구 > Application > Cookies
+   - `oauth2_auth_request_state` 쿠키 확인
+
 ---
 
 ## FAQ
 
-### Q1. Authorization Code Flow와 ID Token 방식 중 어떤 것을 사용해야 하나요?
+### Q1. OAuth 로그인 시 별도의 회원가입 API를 호출해야 하나요?
 
-**A**: **패키지 설치 없이 간단하게 구현하려면 Authorization Code Flow를 권장합니다.**
-
-| 상황 | 추천 방식 |
-|------|----------|
-| 패키지 설치 없이 빠르게 구현 | **Authorization Code Flow** ✅ |
-| 팝업 로그인 원함 | ID Token 방식 |
-| 카카오 로그인도 함께 사용 | **Authorization Code Flow** (카카오는 ID Token 방식 미지원) |
-| 모바일 앱 연동 예정 | ID Token 방식 |
-
-### Q2. OAuth 로그인 시 별도의 회원가입 API를 호출해야 하나요?
-
-**A**: 아니요. 두 방식 모두 자동 회원가입이 처리됩니다.
+**A**: 아니요. 자동 회원가입이 처리됩니다.
 - Authorization Code Flow: `CustomOAuth2UserService.createNewUser()`에서 처리
-- ID Token 방식: `GoogleAuthService.authenticateWithIdToken()`에서 처리
 
-### Q3. ID Token 방식에서 프론트엔드가 구글 SDK를 사용하면 client-secret은 어디서 쓰이나요?
-
-**A**: ID Token 방식에서는 **client-secret이 필요 없습니다.** 프론트엔드는 `client-id`만 사용하고, 백엔드는 Google의 공개키로 ID Token 서명을 검증합니다. 이것이 ID Token 방식의 보안적 장점 중 하나입니다.
-
-### Q4. 구글과 카카오 로그인을 동시에 지원하려면?
-
-**A**: 
-- **구글**: ID Token 방식 (`POST /api/auth/google`) 또는 Authorization Code Flow 모두 가능
-- **카카오**: Authorization Code Flow만 지원 (`/oauth2/authorization/kakao`)
-
-### Q3. OAuth 로그인 사용자는 비밀번호가 없나요?
+### Q2. OAuth 로그인 사용자는 비밀번호가 없나요?
 
 **A**: 맞습니다. OAuth 로그인 사용자의 `password` 필드는 `null`입니다. 비밀번호 재설정 기능도 사용할 수 없습니다 (일반 회원가입 사용자만 가능).
 
-### Q4. 같은 이메일로 일반 회원가입과 OAuth 로그인을 모두 사용할 수 있나요?
+### Q3. 같은 이메일로 일반 회원가입과 OAuth 로그인을 모두 사용할 수 있나요?
 
-**A**: 아니요. 같은 이메일로는 하나의 Provider만 사용할 수 있습니다. 일반 회원가입으로 가입한 이메일로 OAuth 로그인을 시도하면 에러가 발생합니다.
+**A**: 자동으로 소셜 계정 연동이 처리됩니다. 일반 회원가입으로 가입한 이메일로 OAuth 로그인을 시도하면, `CustomOAuth2UserService.createNewUser()` 메서드에서 기존 계정에 소셜 계정을 연동합니다.
 
-### Q5. OAuth 로그인 사용자의 닉네임이 중복되면?
+### Q4. 구글 클라우드 콘솔에 프론트엔드 도메인을 등록해야 하나요?
+
+**A**: 
+- **승인된 JavaScript 원본**: 프론트엔드 도메인 등록 필요 (`https://cuddle-market-fe.vercel.app`)
+- **승인된 리디렉션 URI**: 프론트엔드 도메인 등록 불필요 (백엔드 도메인만 등록: `https://cmarket-api.duckdns.org/login/oauth2/code/google`)
+
+### Q5. 왜 프론트엔드 도메인으로 리다이렉트하나요?
+
+**A**: 백엔드가 OAuth2 인증을 완료한 후, 사용자를 프론트엔드 애플리케이션으로 돌려보내야 하기 때문입니다. 토큰을 쿼리 파라미터로 전달하여 프론트엔드에서 저장하도록 합니다.
+
+### Q6. 로컬 개발 환경과 프로덕션 환경을 어떻게 구분하나요?
+
+**A**: 
+- 환경 변수로 관리: `VITE_API_BASE_URL` (프론트엔드), `OAUTH2_REDIRECT_URI` (백엔드)
+- 구글 클라우드 콘솔에 로컬과 프로덕션 URI 모두 등록
+
+### Q7. OAuth 로그인 사용자의 닉네임이 중복되면?
 
 **A**: 자동으로 숫자가 추가됩니다. 예: `user`, `user1`, `user2`, ...
 
-### Q6. 프론트엔드에서 토큰을 어떻게 저장해야 하나요?
+### Q8. 프론트엔드에서 토큰을 어떻게 저장해야 하나요?
 
 **A**: `localStorage` 또는 `sessionStorage`에 저장하는 것을 권장합니다. 보안을 위해 `httpOnly` 쿠키를 사용할 수도 있습니다.
 
-### Q7. OAuth 로그인 후 로그아웃은 어떻게 하나요?
+### Q9. OAuth 로그인 후 로그아웃은 어떻게 하나요?
 
 **A**: 일반 로그인과 동일하게 `POST /api/auth/logout` API를 호출하면 됩니다. JWT 토큰을 블랙리스트에 등록하여 무효화합니다.
 
-### Q8. 개발 환경에서 OAuth 설정을 테스트하려면?
+### Q10. 개발 환경에서 OAuth 설정을 테스트하려면?
 
 **A**: 
 1. 구글/카카오 개발자 콘솔에서 OAuth 클라이언트 생성
 2. 리다이렉트 URI 등록: `http://localhost:8080/login/oauth2/code/{registrationId}`
 3. `application.properties`에 client-id와 client-secret 설정
+
+### Q11. 보안상 문제는 없나요?
+
+**A**: 
+- `client_secret`은 백엔드에만 있어 안전합니다
+- JWT 토큰은 HTTPS로 전달됩니다
+- CSRF 토큰으로 요청 변조를 방지합니다
 
 ---
 
@@ -1182,7 +1242,7 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 ## 요약
 
-### 방식 1: Authorization Code Flow (권장 - 패키지 설치 불필요)
+### Authorization Code Flow (권장 - 패키지 설치 불필요)
 
 ```
 1. 프론트: window.location.href로 백엔드 OAuth2 엔드포인트 호출
@@ -1197,22 +1257,9 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 **프론트 필요 코드**: 로그인 버튼 + `/oauth-redirect` 페이지 (총 2개)  
 **패키지 설치**: ❌ 불필요
 
-### 방식 2: ID Token 방식 (패키지 설치 필요)
-
-```
-1. 프론트: Google Sign-In SDK로 로그인 (팝업)
-2. 프론트: POST /api/auth/google (ID Token 전송)
-3. 백엔드: ID Token 검증 → 사용자 조회/생성 → JWT 발급
-4. 프론트: JWT 토큰 저장 → 로그인 완료
-```
-
-**엔드포인트**: `POST /api/auth/google`  
-**프론트 필요 코드**: Provider 설정 + 로그인 컴포넌트  
-**패키지 설치**: `npm install @react-oauth/google`
-
 ---
 
-**💡 권장사항**: 패키지 설치 없이 간단하게 구현하려면 **방식 1 (Authorization Code Flow)** 사용  
+**💡 권장사항**: 패키지 설치 없이 간단하게 구현할 수 있는 **Authorization Code Flow**를 사용합니다.
 
-두 방식 모두 별도의 회원가입 없이 소셜 계정으로 바로 로그인할 수 있으며, 신규 사용자는 자동으로 회원가입 처리됩니다.
+별도의 회원가입 없이 소셜 계정으로 바로 로그인할 수 있으며, 신규 사용자는 자동으로 회원가입 처리됩니다.
 
