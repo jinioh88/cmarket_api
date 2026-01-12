@@ -75,17 +75,25 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
         }
         
-        // 6. 기존 사용자 조회 (소셜 ID로 조회)
+        // 6. 기존 사용자 조회 (소셜 ID로 조회 - 삭제된 사용자도 포함)
         Optional<User> existingUser = userRepository.findByProviderAndSocialId(provider, socialId);
         
         User user;
         if (existingUser.isPresent()) {
-            // 7-1. 기존 사용자: 정보 업데이트 (이름, 닉네임 등)
             user = existingUser.get();
-            updateUserInfo(user, name, nickname);
-            log.info("OAuth2 기존 사용자 로그인: email={}, provider={}", email, provider);
+            
+            // 7-1. 삭제된 사용자인 경우 재가입 처리
+            if (user.isDeleted()) {
+                user.restore();
+                updateUserInfo(user, name, nickname);
+                log.info("OAuth2 삭제된 계정 재가입: email={}, provider={}", email, provider);
+            } else {
+                // 7-2. 활성 사용자: 정보 업데이트 (이름, 닉네임 등)
+                updateUserInfo(user, name, nickname);
+                log.info("OAuth2 기존 사용자 로그인: email={}, provider={}", email, provider);
+            }
         } else {
-            // 7-2. 신규 사용자: 자동 회원가입
+            // 7-3. 신규 사용자: 자동 회원가입
             user = createNewUser(email, socialId, name, nickname, provider);
         }
         

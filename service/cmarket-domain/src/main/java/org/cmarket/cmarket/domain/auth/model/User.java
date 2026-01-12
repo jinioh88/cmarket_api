@@ -149,6 +149,19 @@ public class User {
     }
     
     /**
+     * 삭제된 계정 복구 (재가입)
+     * 
+     * 소셜 로그인으로 탈퇴한 계정을 다시 활성화합니다.
+     * deletedAt, withdrawalReason, withdrawalDetailReason을 초기화합니다.
+     */
+    public void restore() {
+        this.deletedAt = null;
+        this.withdrawalReason = null;
+        this.withdrawalDetailReason = null;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    /**
      * 정보 업데이트
      */
     public void updateInfo(String name, String nickname, String addressSido, String addressGugun) {
