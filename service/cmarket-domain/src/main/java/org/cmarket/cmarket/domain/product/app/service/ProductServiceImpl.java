@@ -531,9 +531,9 @@ public class ProductServiceImpl implements ProductService {
         }
         
         // 거래 상태 확인: SELLING 상태일 때만 수정 가능
-        if (product.getTradeStatus() != TradeStatus.SELLING) {
-            throw new org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException("거래 상태가 '판매중'인 경우에만 수정할 수 있습니다.");
-        }
+//        if (product.getTradeStatus() != TradeStatus.SELLING) {
+//            throw new org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException("거래 상태가 '판매중'인 경우에만 수정할 수 있습니다.");
+//        }
         
         // 판매 요청 정보 수정
         product.update(
