@@ -29,8 +29,8 @@ public class SignUpRequest {
     @Size(max = 10, message = "이름은 최대 10자까지 입력 가능합니다.")
     private String name;
     
-    @NotBlank(message = "닉네임은 필수입니다.")
-    @Size(max = 10, message = "닉네임은 최대 10자까지 입력 가능합니다.")
+    @NotNull(message = "닉네임은 필수입니다.")
+    @Size(min = 1, max = 10, message = "닉네임은 1자 이상 10자 이하여야 합니다.")
     private String nickname;
     
     @NotNull(message = "생년월일은 필수입니다.")
