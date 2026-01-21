@@ -68,7 +68,7 @@ public class EmailServiceImpl implements EmailService {
     private String buildVerificationEmailContent(String verificationCode) {
         return String.format(
                 """
-                안녕하세요. Cmarket입니다.
+                안녕하세요. Cuddle Market입니다.
                 
                 요청하신 이메일 인증코드입니다.
                 
