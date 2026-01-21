@@ -272,7 +272,8 @@ public class ProductServiceImpl implements ProductService {
         
         // 거래 상태 변경 여부 확인 (알림 발행용)
         TradeStatus oldTradeStatus = product.getTradeStatus();
-        boolean statusChanged = !oldTradeStatus.equals(command.tradeStatus());
+        // 판매요청 상품의 경우 초기 tradeStatus가 null일 수 있으므로 null 체크 필요
+        boolean statusChanged = oldTradeStatus == null || !oldTradeStatus.equals(command.tradeStatus());
         
         // 거래 상태 변경
         product.updateTradeStatus(command.tradeStatus());
@@ -284,12 +285,14 @@ public class ProductServiceImpl implements ProductService {
         if (statusChanged) {
             List<Long> favoriteUserIds = favoriteRepository.findUserIdsByProductId(productId);
             for (Long favoriteUserId : favoriteUserIds) {
+                // oldTradeStatus가 null인 경우 null로 전달
+                String oldStatusName = oldTradeStatus != null ? oldTradeStatus.name() : null;
                 NotificationCreateCommand notificationCommand = NotificationCreateCommand.builder()
                         .userId(favoriteUserId)
                         .notificationType(NotificationType.PRODUCT_FAVORITE_STATUS_CHANGED)
                         .title("찜한 상품의 거래 상태가 변경되었습니다")
                         .content(String.format("'%s' 상품의 거래 상태가 '%s'에서 '%s'로 변경되었습니다.", 
-                                product.getTitle(), oldTradeStatus.name(), command.tradeStatus().name()))
+                                product.getTitle(), oldStatusName, command.tradeStatus().name()))
                         .relatedEntityType("PRODUCT")
                         .relatedEntityId(productId)
                         .build();
