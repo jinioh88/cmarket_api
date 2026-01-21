@@ -44,7 +44,7 @@ public class EmailServiceImpl implements EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(to);
-            message.setSubject("[Cmarket] 이메일 인증코드");
+            message.setSubject("[Cuddle Market] 이메일 인증코드");
             message.setText(emailContent);
             
             mailSender.send(message);
