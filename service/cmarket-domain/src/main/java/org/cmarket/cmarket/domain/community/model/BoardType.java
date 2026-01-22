@@ -7,11 +7,6 @@ package org.cmarket.cmarket.domain.community.model;
  */
 public enum BoardType {
     /**
-     * 자유게시판
-     */
-    FREE,
-    
-    /**
      * 질문있어요
      */
     QUESTION,

@@ -87,7 +87,7 @@ http://localhost:8080
 | title | String | 예 | 제목 (2~50자) |
 | content | String | 예 | 내용 (2~1000자) |
 | imageUrls | String[] | 옵션 | 이미지 URL 배열 (최대 5장) |
-| boardType | String | 예 | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
+| boardType | String | 예 | 게시판 유형: `QUESTION`(질문있어요), `INFO`(정보공유) |
 
 #### Request 예시
 
@@ -112,7 +112,7 @@ http://localhost:8080
 | title | String | 제목 |
 | content | String | 내용 |
 | imageUrls | String[] | 이미지 URL 배열 |
-| boardType | String | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
+| boardType | String | 게시판 유형: `QUESTION`(질문있어요), `INFO`(정보공유) |
 | viewCount | Long | 조회수 (초기값 0) |
 | commentCount | Long | 댓글 개수 (초기값 0) |
 | createdAt | String | 생성일시 (ISO 8601) |
@@ -154,7 +154,7 @@ http://localhost:8080
 | 파라미터 | 타입 | 필수 | 기본값 | 설명 |
 |----------|------|------|--------|------|
 | sortBy | String | 아니오 | "latest" | 정렬 기준: `latest`(최신순), `oldest`(오래된순), `views`(조회수 많은순), `comments`(댓글 많은순) |
-| boardType | String | 아니오 | null | 게시판 유형 필터링: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유). null이면 전체 조회 |
+| boardType | String | 아니오 | null | 게시판 유형 필터링: `QUESTION`(질문있어요), `INFO`(정보공유). null이면 전체 조회 |
 | searchType | String | 아니오 | null | 검색 타입: `title`(제목), `title_content`(제목+내용), `writer`(작성자). keyword와 함께 사용 |
 | keyword | String | 아니오 | null | 검색어. searchType과 함께 사용해야 검색이 적용됩니다 |
 | page | Integer | 아니오 | 0 | 페이지 번호 (0부터 시작) |
@@ -182,7 +182,7 @@ http://localhost:8080
 | title | String | 제목 |
 | contentPreview | String | 내용 미리보기 (최대 100자) |
 | authorNickname | String | 작성자 닉네임 |
-| boardType | String | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
+| boardType | String | 게시판 유형: `QUESTION`(질문있어요), `INFO`(정보공유) |
 | viewCount | Long | 조회수 |
 | commentCount | Long | 댓글 개수 |
 | createdAt | String | 생성일시 (ISO 8601) |
@@ -247,7 +247,7 @@ http://localhost:8080
 | title | String | 제목 |
 | content | String | 내용 |
 | imageUrls | String[] | 이미지 URL 배열 |
-| boardType | String | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
+| boardType | String | 게시판 유형: `QUESTION`(질문있어요), `INFO`(정보공유) |
 | viewCount | Long | 조회수 |
 | commentCount | Long | 댓글 개수 |
 | createdAt | String | 생성일시 (ISO 8601) |
@@ -299,7 +299,7 @@ http://localhost:8080
 | title | String | 예 | 제목 (2~50자) |
 | content | String | 예 | 내용 (2~1000자) |
 | imageUrls | String[] | 옵션 | 이미지 URL 배열 (최대 5장) |
-| boardType | String | 예 | 게시판 유형: `FREE`(자유게시판), `QUESTION`(질문있어요), `INFO`(정보공유) |
+| boardType | String | 예 | 게시판 유형: `QUESTION`(질문있어요), `INFO`(정보공유) |
 
 #### Request 예시
 
@@ -581,7 +581,6 @@ http://localhost:8080
 
 | 값 | 설명 |
 |----|------|
-| `FREE` | 자유게시판 |
 | `QUESTION` | 질문있어요 |
 | `INFO` | 정보공유 |
 

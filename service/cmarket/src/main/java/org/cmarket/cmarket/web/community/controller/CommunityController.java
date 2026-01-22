@@ -81,7 +81,7 @@ public class CommunityController {
      * 커뮤니티 게시판의 게시글 목록을 조회합니다.
      * - 비회원도 조회 가능
      * - 정렬 기준: latest (최신순), oldest (오래된순), views (조회수 많은순), comments (댓글 많은순)
-     * - 게시판 유형: FREE (자유게시판), QUESTION (질문있어요), INFO (정보공유)
+     * - 게시판 유형: QUESTION (질문있어요), INFO (정보공유)
      * - 검색 타입: title (제목), title_content (제목+내용), writer (작성자)
      * 
      * @param sortBy 정렬 기준 (기본값: "latest")

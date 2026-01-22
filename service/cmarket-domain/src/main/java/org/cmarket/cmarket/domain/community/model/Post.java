@@ -58,7 +58,7 @@ public class Post {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "board_type", length = 20)
-    private BoardType boardType;  // 게시판 유형 (자유게시판, 질문있어요, 정보공유)
+    private BoardType boardType;  // 게시판 유형 (질문있어요, 정보공유)
     
     @ElementCollection
     @CollectionTable(
