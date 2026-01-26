@@ -75,6 +75,7 @@ dependencies {
     
     // Database
     runtimeOnly 'com.h2database:h2'  // 개발 환경용
+    runtimeOnly 'com.mysql:mysql-connector-j'  // MySQL 드라이버 (프로덕션 환경용)
     
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
