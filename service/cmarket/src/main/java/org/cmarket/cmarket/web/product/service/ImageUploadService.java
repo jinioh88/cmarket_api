@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -23,18 +24,21 @@ import java.util.UUID;
 /**
  * 이미지 업로드 서비스
  * 
- * AWS S3에 이미지를 저장하고 S3 URL을 반환합니다.
- * 외부 인프라(S3)를 다루는 웹 계층 서비스입니다.
+ * AWS S3에 이미지를 저장하고 CloudFront URL을 반환합니다.
+ * 이미지 리사이징, WebP 변환, 썸네일 생성을 수행합니다.
+ * 외부 인프라(S3, CloudFront)를 다루는 웹 계층 서비스입니다.
  */
 @Slf4j
 @Service
 public class ImageUploadService {
     
     private final UserRepository userRepository;
+    private final ImageResizeService imageResizeService;
     private S3Client s3Client;
     
-    public ImageUploadService(UserRepository userRepository) {
+    public ImageUploadService(UserRepository userRepository, ImageResizeService imageResizeService) {
         this.userRepository = userRepository;
+        this.imageResizeService = imageResizeService;
     }
     
     private static final List<String> ALLOWED_IMAGE_TYPES = List.of(
@@ -50,6 +54,12 @@ public class ImageUploadService {
     
     @Value("${aws.s3.region:ap-northeast-2}")
     private String region;
+    
+    @Value("${aws.cloudfront.domain:df1xl13ui5mlo.cloudfront.net}")
+    private String cloudFrontDomain;
+    
+    @Value("${aws.cloudfront.enabled:true}")
+    private boolean cloudFrontEnabled;
     
     /**
      * S3 클라이언트 초기화
@@ -81,10 +91,11 @@ public class ImageUploadService {
     
     /**
      * 이미지 파일들을 S3에 업로드하고 URL 리스트를 반환합니다.
+     * 이미지 리사이징, WebP 변환, 썸네일 생성을 수행합니다.
      * 
      * @param files 업로드할 이미지 파일 리스트
      * @param email 현재 로그인한 사용자 이메일 (디렉토리 구조에 사용)
-     * @return 업로드된 이미지 S3 URL 리스트
+     * @return 업로드된 이미지 CloudFront URL 리스트 (원본 이미지만 반환, 썸네일은 별도 저장)
      * @throws IllegalArgumentException 파일 유효성 검증 실패 시, 사용자를 찾을 수 없을 때
      * @throws IOException 파일 저장 실패 시
      */
@@ -134,43 +145,91 @@ public class ImageUploadService {
         String datePath = now.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String userDir = "user/" + userId + "/" + datePath;
         
-        // 파일 업로드 및 S3 URL 생성
+        // 파일 업로드 및 URL 생성
         List<String> imageUrls = new ArrayList<>();
         for (MultipartFile file : files) {
-            // 고유 파일명 생성: UUID + 원본 파일 확장자
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String uniqueFilename = UUID.randomUUID().toString() + extension;
+            // 고유 파일명 생성: UUID
+            String uniqueFilename = UUID.randomUUID().toString();
+            String fileExtension = imageResizeService.getFileExtension();
+            String contentType = imageResizeService.getContentType();
             
-            // S3 키(파일 경로) 생성: user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.{ext}
-            String s3Key = userDir + "/" + uniqueFilename;
+            // 원본 이미지 리사이징 및 WebP 변환
+            byte[] resizedImageBytes = imageResizeService.resizeAndConvertToWebp(file);
+            
+            // 썸네일 생성
+            byte[] thumbnailBytes = imageResizeService.createThumbnail(file);
+            
+            // 원본 이미지 S3 키: user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.webp
+            String originalS3Key = userDir + "/" + uniqueFilename + fileExtension;
+            
+            // 썸네일 이미지 S3 키: user/{userId}/{yyyy}/{MM}/{dd}/{uuid}_thumb.webp
+            String thumbnailS3Key = userDir + "/" + uniqueFilename + "_thumb" + fileExtension;
             
             try {
-                // S3에 파일 업로드
-                PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                // 원본 이미지 업로드
+                PutObjectRequest originalPutRequest = PutObjectRequest.builder()
                         .bucket(bucketName)
-                        .key(s3Key)
-                        .contentType(file.getContentType())
+                        .key(originalS3Key)
+                        .contentType(contentType)
+                        .cacheControl("public, max-age=31536000") // 1년 캐시
                         .build();
                 
-                RequestBody requestBody = RequestBody.fromInputStream(file.getInputStream(), file.getSize());
-                s3Client.putObject(putObjectRequest, requestBody);
+                RequestBody originalRequestBody = RequestBody.fromInputStream(
+                        new ByteArrayInputStream(resizedImageBytes), 
+                        resizedImageBytes.length
+                );
+                s3Client.putObject(originalPutRequest, originalRequestBody);
                 
-                // S3 URL 생성: https://{bucket-name}.s3.{region}.amazonaws.com/{key}
-                String s3Url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3Key);
-                imageUrls.add(s3Url);
+                // 썸네일 이미지 업로드
+                PutObjectRequest thumbnailPutRequest = PutObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(thumbnailS3Key)
+                        .contentType(contentType)
+                        .cacheControl("public, max-age=31536000") // 1년 캐시
+                        .build();
                 
-                log.debug("Image uploaded to S3: {}", s3Url);
+                RequestBody thumbnailRequestBody = RequestBody.fromInputStream(
+                        new ByteArrayInputStream(thumbnailBytes), 
+                        thumbnailBytes.length
+                );
+                s3Client.putObject(thumbnailPutRequest, thumbnailRequestBody);
+                
+                // URL 생성 (CloudFront 또는 S3)
+                String imageUrl = generateImageUrl(originalS3Key);
+                imageUrls.add(imageUrl);
+                
+                log.debug("Image uploaded to S3 - Original: {}, Thumbnail: {}, URL: {}", 
+                        originalS3Key, thumbnailS3Key, imageUrl);
             } catch (S3Exception e) {
-                log.error("Failed to upload image to S3: {}", s3Key, e);
+                log.error("Failed to upload image to S3: {}", originalS3Key, e);
                 throw new IOException("이미지 업로드에 실패했습니다: " + e.getMessage(), e);
             }
         }
         
         return imageUrls;
     }
+    
+    /**
+     * 이미지 URL을 생성합니다.
+     * CloudFront가 활성화되어 있으면 CloudFront URL을, 아니면 S3 URL을 반환합니다.
+     * 
+     * @param s3Key S3 객체 키
+     * @return 이미지 URL
+     */
+    private String generateImageUrl(String s3Key) {
+        if (cloudFrontEnabled && cloudFrontDomain != null && !cloudFrontDomain.isEmpty()) {
+            // CloudFront URL: https://{cloudfront-domain}/{s3-key}
+            String cloudFrontUrl = String.format("https://%s/%s", cloudFrontDomain, s3Key);
+            log.debug("Generated CloudFront URL: {}", cloudFrontUrl);
+            return cloudFrontUrl;
+        } else {
+            // S3 URL: https://{bucket-name}.s3.{region}.amazonaws.com/{key}
+            String s3Url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3Key);
+            log.warn("CloudFront is disabled or domain is empty. Using S3 URL. enabled={}, domain={}", 
+                    cloudFrontEnabled, cloudFrontDomain);
+            return s3Url;
+        }
+    }
+
 }
 

@@ -1,7 +1,6 @@
 package org.cmarket.cmarket.domain.profile.app.dto;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -12,6 +11,8 @@ import java.time.LocalDate;
  */
 @Getter
 @Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // 기본 생성자 추가 (JPA/Jackson용)
+@AllArgsConstructor
 public class ProfileUpdateCommand {
     private String email;
     private String nickname;
