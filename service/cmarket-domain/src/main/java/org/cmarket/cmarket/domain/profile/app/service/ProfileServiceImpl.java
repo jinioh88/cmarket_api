@@ -80,6 +80,7 @@ public class ProfileServiceImpl implements ProfileService {
         // 3. 프로필 정보 업데이트
         user.updateProfile(
                 command.getNickname(),
+                command.getBirthDate(),
                 command.getAddressSido(),
                 command.getAddressGugun(),
                 command.getProfileImageUrl(),

@@ -214,6 +214,7 @@ public class ProfileController {
                 org.cmarket.cmarket.domain.profile.app.dto.ProfileUpdateCommand.builder()
                         .email(email)
                         .nickname(request.getNickname())
+                        .birthDate(request.getBirthDate())
                         .addressSido(request.getAddressSido())
                         .addressGugun(request.getAddressGugun())
                         .profileImageUrl(request.getProfileImageUrl())

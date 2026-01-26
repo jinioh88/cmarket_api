@@ -3,6 +3,8 @@ package org.cmarket.cmarket.domain.profile.app.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
+
 /**
  * 프로필 수정 명령 DTO
  * 
@@ -13,6 +15,7 @@ import lombok.Getter;
 public class ProfileUpdateCommand {
     private String email;
     private String nickname;
+    private LocalDate birthDate;
     private String addressSido;
     private String addressGugun;
     private String profileImageUrl;

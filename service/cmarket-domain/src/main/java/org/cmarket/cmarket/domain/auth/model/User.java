@@ -192,6 +192,7 @@ public class User {
      * 프로필 정보 업데이트
      * 
      * @param nickname 닉네임
+     * @param birthDate 생년월일
      * @param addressSido 시/도
      * @param addressGugun 구/군
      * @param profileImageUrl 프로필 이미지 URL
@@ -199,12 +200,14 @@ public class User {
      */
     public void updateProfile(
             String nickname,
+            LocalDate birthDate,
             String addressSido,
             String addressGugun,
             String profileImageUrl,
             String introduction
     ) {
         this.nickname = nickname;
+        this.birthDate = birthDate;
         this.addressSido = addressSido;
         this.addressGugun = addressGugun;
         this.profileImageUrl = profileImageUrl;

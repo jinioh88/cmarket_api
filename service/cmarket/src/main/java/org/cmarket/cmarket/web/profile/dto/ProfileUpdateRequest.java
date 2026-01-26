@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
+import java.time.LocalDate;
+
 /**
  * 프로필 수정 요청 DTO
  * 
@@ -15,6 +17,8 @@ public class ProfileUpdateRequest {
     @NotBlank(message = "닉네임은 필수입니다.")
     @Size(min = 1, max = 10, message = "닉네임은 1자 이상 10자 이하여야 합니다.")
     private String nickname;
+    
+    private LocalDate birthDate;
     
     private String addressSido;
     
