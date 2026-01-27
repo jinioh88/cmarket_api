@@ -11,6 +11,7 @@
 
 - [공통 사항](#공통-사항)
 - [이미지 업로드](#1-이미지-업로드)
+- [프론트엔드: 이미지 URL 규칙 (150/400/800 WebP)](#프론트엔드-이미지-url-규칙-150400800-webp) ← 리사이즈 WebP 사용 시 필수 참고
 - [이미지 조회](#2-이미지-조회)
 
 ---
@@ -95,7 +96,8 @@ POST /api/images
 - 한 장당 최대 5MB, 전체 최대 25MB까지 업로드 가능합니다.
 - 이미지 형식만 업로드 가능합니다 (jpg, jpeg, png, gif, webp).
 - 파일명 중복 방지를 위해 UUID 기반 고유 파일명을 사용합니다.
-- 저장 경로: `user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.{ext}`
+- **저장 방식**: 업로드 시 **원본만** S3에 저장합니다. 150px/400px/800px 리사이즈 및 WebP 변환은 **AWS Lambda**가 S3 이벤트 기반으로 비동기 생성합니다.
+- 저장 경로(원본): `user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.{원본확장자}` (예: .jpg, .png, .webp)
 - 첫 번째 이미지는 대표 이미지로, 나머지는 서브 이미지로 구분됩니다.
 
 ### Request
@@ -209,9 +211,13 @@ const handleImageUpload = async (files) => {
 | code | String | 응답 코드 (예: "CREATED", "SUCCESS") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 이미지 업로드 결과 |
-| data.imageUrls | String[] | 업로드된 이미지 URL 리스트 (전체) |
-| data.mainImageUrl | String | 첫 번째 이미지 URL (대표 이미지) |
-| data.subImageUrls | String[] | 나머지 이미지 URL 리스트 (서브 이미지, 최대 4장) |
+| data.imageUrls | String[] | 업로드된 이미지 URL 리스트 (전체, **원본 기준 URL**) |
+| data.mainImageUrl | String | 첫 번째 이미지 URL (대표 이미지, **원본 기준 URL**) |
+| data.subImageUrls | String[] | 나머지 이미지 URL 리스트 (서브 이미지, 최대 4장, **원본 기준 URL**) |
+
+> **150/400/800 리사이즈 URL**: 응답에 담기는 것은 원본 객체 기준 URL 하나뿐입니다. 클라이언트는 이 URL에서 파일명의 `.{확장자}`를 `_150.webp`, `_400.webp`, `_800.webp`로 바꿔 리사이즈 버전을 요청할 수 있습니다.  
+> 예) 원본 `.../uuid.jpg` → 150px `.../uuid_150.webp`, 400px `.../uuid_400.webp`, 800px `.../uuid_800.webp`  
+> 리사이즈 파일은 Lambda가 비동기 생성하므로, 업로드 직후에는 아직 생성 중일 수 있습니다. `srcset` 등으로 활용 시 Lighthouse 점수에 유리합니다.
 
 #### Response Body 예시
 
@@ -320,16 +326,92 @@ const handleImageUpload = async (files) => {
 
 1. **파일명 중복 방지**: 서버에서 자동으로 UUID 기반 고유 파일명을 생성하므로, 클라이언트에서 파일명을 변경할 필요가 없습니다.
 
-2. **저장 경로 구조**: 업로드된 이미지는 `user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.{ext}` 형식으로 저장됩니다.
-   - 예: `user/1/2024/01/15/a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg`
+2. **저장 경로 구조**: 업로드된 이미지(원본)는 `user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.{원본확장자}` 형식으로 S3에 저장됩니다. 150/400/800 WebP는 Lambda가 같은 경로에 `{uuid}_150.webp`, `{uuid}_400.webp`, `{uuid}_800.webp`로 비동기 생성합니다.
+   - 원본 예: `user/1/2024/01/15/a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg`
+   - 리사이즈 예: `.../a1b2c3d4-e5f6-7890-abcd-ef1234567890_150.webp` 등
 
-3. **이미지 URL 사용**: 응답으로 받은 이미지 URL은 상품 등록, 프로필 수정 등에서 바로 사용할 수 있습니다.
+3. **이미지 URL 사용**: 응답의 `imageUrls`/`mainImageUrl`/`subImageUrls`는 원본 기준 URL입니다. 상품 등록·프로필 수정 등에는 그대로 사용하고, 리사이즈가 필요하면 위 규칙(`_150.webp` 등)으로 URL을 조합해 사용하면 됩니다.
    - 대표 이미지: `data.mainImageUrl` 사용
    - 서브 이미지: `data.subImageUrls` 배열 사용
 
 4. **파일 검증**: 클라이언트에서도 파일 형식과 크기를 미리 검증하는 것을 권장합니다.
 
 5. **에러 처리**: 파일 업로드 실패 시 `traceId`를 포함하여 에러를 로깅하면 디버깅에 도움이 됩니다.
+
+### 이미지 URL 규칙 (150/400/800)
+
+업로드 응답의 `imageUrls`/`mainImageUrl`/`subImageUrls`는 **원본 객체 기준 URL**입니다. 150/400/800 리사이즈 WebP는 Lambda가 비동기 생성하며, 아래 규칙으로 URL을 조합해 사용할 수 있습니다.
+
+| 용도 | URL 규칙 |
+|------|-----------|
+| 원본(API 반환) | `.../user/{userId}/{yyyy/MM/dd}/{uuid}.{원본확장자}` (예: .jpg, .png) |
+| 150px | `.../user/{userId}/{yyyy/MM/dd}/{uuid}_150.webp` |
+| 400px | `.../user/{userId}/{yyyy/MM/dd}/{uuid}_400.webp` |
+| 800px | `.../user/{userId}/{yyyy/MM/dd}/{uuid}_800.webp` |
+
+- **조합 방법**: 원본 URL에서 `.{확장자}`를 `_150.webp` / `_400.webp` / `_800.webp`로 바꾸면 됩니다.
+- 업로드 직후에는 리사이즈 파일이 아직 생성 중일 수 있으므로, 필요 시 약간의 지연 후 요청하거나 폴백(원본)을 사용하면 됩니다.
+- `srcset`으로 150/400/800을 지정하면 Lighthouse 등 성능 점수에 유리합니다.
+
+---
+
+## 프론트엔드: 이미지 URL 규칙 (150/400/800 WebP)
+
+**프론트엔드 개발자는 화면에 이미지를 노출할 때 아래 규칙을 따라 150/400/800 WebP URL을 사용하세요.**  
+API가 반환하는 URL은 **원본**만 포함하며, 리사이즈 WebP는 **URL 문자열 변환**으로 조합합니다.
+
+### 1. 규칙 요약
+
+| 용도 | 사용할 URL | 비고 |
+|------|------------|------|
+| 원본(업로드 응답 그대로) | `https://{cloudfront}/user/.../{uuid}.jpg` (또는 .png 등) | 상품/프로필 등에 저장·조회용으로 그대로 사용 |
+| 150px WebP | `https://{cloudfront}/user/.../{uuid}_150.webp` | 썸네일, 목록 카드, 소형 뷰 |
+| 400px WebP | `https://{cloudfront}/user/.../{uuid}_400.webp` | 중형 뷰, 그리드 |
+| 800px WebP | `https://{cloudfront}/user/.../{uuid}_800.webp` | 상세/라이트박스, 대형 뷰 |
+
+- **원본 URL**은 **확장자만 바꾸고**, 파일명 끝에 **`_150` / `_400` / `_800`** 를 붙이면 됩니다.
+- 확장자는 항상 **`.webp`** 입니다.
+
+### 2. 조합 방법 (구현 시 참고)
+
+- **입력**: API 응답의 `data.imageUrls[i]` 또는 `data.mainImageUrl` (예: `https://df1xl13ui5mlo.cloudfront.net/user/1/2026/01/27/aff67e9a-e968-4c26-bd1c-5b8af72a3989.jpg`)
+- **출력**: 같은 경로·파일명에서 확장자 부분을 `_{size}.webp` 로 변경한 URL
+
+**예시**
+
+- 원본: `https://df1xl13ui5mlo.cloudfront.net/user/1/2026/01/27/aff67e9a-e968-4c26-bd1c-5b8af72a3989.jpg`
+- 150px: `https://df1xl13ui5mlo.cloudfront.net/user/1/2026/01/27/aff67e9a-e968-4c26-bd1c-5b8af72a3989_150.webp`
+- 400px: `https://df1xl13ui5mlo.cloudfront.net/user/1/2026/01/27/aff67e9a-e968-4c26-bd1c-5b8af72a3989_400.webp`
+- 800px: `https://df1xl13ui5mlo.cloudfront.net/user/1/2026/01/27/aff67e9a-e968-4c26-bd1c-5b8af72a3989_800.webp`
+
+**조합 로직 (의사코드)**
+
+```
+toResizedWebpUrl(originalUrl, size) {
+  // originalUrl: "https://.../uuid.jpg" 형태
+  // size: 150 | 400 | 800
+  // 반환: "https://.../uuid_150.webp" 형태
+  return originalUrl.replace(/\.[^.]+$/, `_${size}.webp`);
+}
+```
+
+- 정규식 `/\.[^.]+$/` 는 **마지막 `.{확장자}`** 만 매칭합니다.  
+  예: `.../uuid.jpg` → `_150.webp` 로 치환 → `.../uuid_150.webp`
+
+### 3. HTML/React 사용 예
+
+- **단일 크기** (예: 썸네일 150px만 사용)
+  - `src={toResizedWebpUrl(mainImageUrl, 150)}`
+- **반응형 / srcset** (Lighthouse·성능 목적)
+  - `srcSet={`${toResizedWebpUrl(url, 150)} 150w, ${toResizedWebpUrl(url, 400)} 400w, ${toResizedWebpUrl(url, 800)} 800w`}`  
+  - `sizes`는 뷰포트에 맞게 지정 (예: `(max-width: 600px) 100vw, 400px` 등)
+
+### 4. 주의사항
+
+- **업로드 직후**: 리사이즈 WebP는 Lambda가 비동기 생성하므로, 직후 일시적으로 404가 나올 수 있습니다.  
+  - 필요 시 원본 URL로 폴백하거나, 재시도/지연 후 `_150.webp` 등을 요청하세요.
+- **저장/API 연동**: 상품 등록·프로필 수정 등 **서버에 넘기는 값**은 **원본 URL** (`imageUrls` / `mainImageUrl` / `subImageUrls`) 그대로 사용합니다.  
+  - 150/400/800 WebP URL은 **화면 표시용**으로만 위 규칙으로 조합해 사용하면 됩니다.
 
 ---
 

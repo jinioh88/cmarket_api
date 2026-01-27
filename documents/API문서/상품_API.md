@@ -314,6 +314,7 @@ Request Body는 [판매 상품 등록](#3-1-판매-상품-등록-post-apiproduct
 
 3. **이미지 업로드**  
    - 이미지는 `/api/images` (별도 문서: `이미지_API.md`)를 통해 업로드한 뒤 반환받은 URL을 본 API 요청의 `mainImageUrl`, `subImageUrls`로 전달하십시오.
+   - 반환 URL은 **원본 기준**이며, 150/400/800 리사이즈 WebP는 Lambda가 비동기 생성합니다. 리사이즈 URL 규칙은 `이미지_API.md`의 "이미지 URL 규칙 (150/400/800)"을 참고하세요.
 
 4. **소프트 삭제**  
    - DELETE API는 실제 행을 삭제하지 않고 `deletedAt`을 설정합니다. 삭제 후 조회 시 `ProductNotFoundException`이 발생합니다.

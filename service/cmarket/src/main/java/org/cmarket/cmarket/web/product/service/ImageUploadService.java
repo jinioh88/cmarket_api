@@ -23,22 +23,20 @@ import java.util.UUID;
 
 /**
  * 이미지 업로드 서비스
- * 
- * AWS S3에 이미지를 저장하고 CloudFront URL을 반환합니다.
- * 이미지 리사이징, WebP 변환, 썸네일 생성을 수행합니다.
+ *
+ * AWS S3에 원본 이미지를 저장하고 CloudFront URL을 반환합니다.
+ * 리사이즈(150/400/800) 및 WebP 변환은 AWS Lambda가 S3 이벤트 기반으로 비동기 처리합니다.
  * 외부 인프라(S3, CloudFront)를 다루는 웹 계층 서비스입니다.
  */
 @Slf4j
 @Service
 public class ImageUploadService {
-    
+
     private final UserRepository userRepository;
-    private final ImageResizeService imageResizeService;
     private S3Client s3Client;
-    
-    public ImageUploadService(UserRepository userRepository, ImageResizeService imageResizeService) {
+
+    public ImageUploadService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.imageResizeService = imageResizeService;
     }
     
     private static final List<String> ALLOWED_IMAGE_TYPES = List.of(
@@ -90,12 +88,12 @@ public class ImageUploadService {
     }
     
     /**
-     * 이미지 파일들을 S3에 업로드하고 URL 리스트를 반환합니다.
-     * 이미지 리사이징, WebP 변환, 썸네일 생성을 수행합니다.
-     * 
+     * 이미지 파일들을 S3에 원본만 업로드하고 URL 리스트를 반환합니다.
+     * 리사이즈(150/400/800) 및 WebP 변환은 Lambda가 S3 이벤트로 비동기 처리합니다.
+     *
      * @param files 업로드할 이미지 파일 리스트
      * @param email 현재 로그인한 사용자 이메일 (디렉토리 구조에 사용)
-     * @return 업로드된 이미지 CloudFront URL 리스트 (원본 이미지만 반환, 썸네일은 별도 저장)
+     * @return 업로드된 이미지 CloudFront URL 리스트 (원본 객체 기준 URL, 클라이언트는 150/400/800 규칙으로 srcset 사용 가능)
      * @throws IllegalArgumentException 파일 유효성 검증 실패 시, 사용자를 찾을 수 없을 때
      * @throws IOException 파일 저장 실패 시
      */
@@ -104,109 +102,107 @@ public class ImageUploadService {
         Long userId = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."))
                 .getId();
-        
+
         // 파일 개수 검증
         if (files == null || files.isEmpty()) {
             throw new IllegalArgumentException("업로드할 이미지 파일이 없습니다.");
         }
-        
+
         if (files.size() > MAX_FILE_COUNT) {
             throw new IllegalArgumentException("이미지는 최대 " + MAX_FILE_COUNT + "장까지 업로드 가능합니다.");
         }
-        
+
         // 전체 파일 크기 검증
         long totalSize = 0;
         for (MultipartFile file : files) {
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
             }
-            
+
             // 파일 형식 검증
             String contentType = file.getContentType();
             if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
                 throw new IllegalArgumentException("이미지 파일만 업로드 가능합니다. (jpg, jpeg, png, gif, webp)");
             }
-            
+
             // 파일 크기 검증
             long fileSize = file.getSize();
             if (fileSize > MAX_FILE_SIZE) {
                 throw new IllegalArgumentException("파일 크기는 한 장당 최대 5MB까지 가능합니다.");
             }
-            
+
             totalSize += fileSize;
         }
-        
+
         if (totalSize > MAX_TOTAL_SIZE) {
             throw new IllegalArgumentException("전체 파일 크기는 최대 25MB까지 가능합니다.");
         }
-        
-        // 날짜 기반 디렉토리 구조 생성: user/{userId}/{yyyy}/{MM}/{dd}/
+
+        // 날짜 기반 디렉토리 구조: user/{userId}/{yyyy}/{MM}/{dd}/
         LocalDate now = LocalDate.now();
         String datePath = now.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String userDir = "user/" + userId + "/" + datePath;
-        
-        // 파일 업로드 및 URL 생성
+
+        // 원본만 S3 업로드 및 URL 생성
         List<String> imageUrls = new ArrayList<>();
         for (MultipartFile file : files) {
-            // 고유 파일명 생성: UUID
             String uniqueFilename = UUID.randomUUID().toString();
-            String fileExtension = imageResizeService.getFileExtension();
-            String contentType = imageResizeService.getContentType();
-            
-            // 원본 이미지 리사이징 및 WebP 변환
-            byte[] resizedImageBytes = imageResizeService.resizeAndConvertToWebp(file);
-            
-            // 썸네일 생성
-            byte[] thumbnailBytes = imageResizeService.createThumbnail(file);
-            
-            // 원본 이미지 S3 키: user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.webp
-            String originalS3Key = userDir + "/" + uniqueFilename + fileExtension;
-            
-            // 썸네일 이미지 S3 키: user/{userId}/{yyyy}/{MM}/{dd}/{uuid}_thumb.webp
-            String thumbnailS3Key = userDir + "/" + uniqueFilename + "_thumb" + fileExtension;
-            
+            String fileExtension = getFileExtensionFromFile(file);
+            String contentType = file.getContentType();
+
+            // S3 키: user/{userId}/{yyyy}/{MM}/{dd}/{uuid}.{원본확장자}
+            String s3Key = userDir + "/" + uniqueFilename + fileExtension;
+
             try {
-                // 원본 이미지 업로드
-                PutObjectRequest originalPutRequest = PutObjectRequest.builder()
+                byte[] fileBytes = file.getBytes();
+                PutObjectRequest putRequest = PutObjectRequest.builder()
                         .bucket(bucketName)
-                        .key(originalS3Key)
+                        .key(s3Key)
                         .contentType(contentType)
-                        .cacheControl("public, max-age=31536000") // 1년 캐시
+                        .cacheControl("public, max-age=31536000")
                         .build();
-                
-                RequestBody originalRequestBody = RequestBody.fromInputStream(
-                        new ByteArrayInputStream(resizedImageBytes), 
-                        resizedImageBytes.length
+
+                RequestBody requestBody = RequestBody.fromInputStream(
+                        new ByteArrayInputStream(fileBytes),
+                        fileBytes.length
                 );
-                s3Client.putObject(originalPutRequest, originalRequestBody);
-                
-                // 썸네일 이미지 업로드
-                PutObjectRequest thumbnailPutRequest = PutObjectRequest.builder()
-                        .bucket(bucketName)
-                        .key(thumbnailS3Key)
-                        .contentType(contentType)
-                        .cacheControl("public, max-age=31536000") // 1년 캐시
-                        .build();
-                
-                RequestBody thumbnailRequestBody = RequestBody.fromInputStream(
-                        new ByteArrayInputStream(thumbnailBytes), 
-                        thumbnailBytes.length
-                );
-                s3Client.putObject(thumbnailPutRequest, thumbnailRequestBody);
-                
-                // URL 생성 (CloudFront 또는 S3)
-                String imageUrl = generateImageUrl(originalS3Key);
+                s3Client.putObject(putRequest, requestBody);
+
+                String imageUrl = generateImageUrl(s3Key);
                 imageUrls.add(imageUrl);
-                
-                log.debug("Image uploaded to S3 - Original: {}, Thumbnail: {}, URL: {}", 
-                        originalS3Key, thumbnailS3Key, imageUrl);
+
+                log.debug("Image uploaded to S3 (original only): {}, URL: {}", s3Key, imageUrl);
             } catch (S3Exception e) {
-                log.error("Failed to upload image to S3: {}", originalS3Key, e);
+                log.error("Failed to upload image to S3: {}", s3Key, e);
                 throw new IOException("이미지 업로드에 실패했습니다: " + e.getMessage(), e);
             }
         }
-        
+
         return imageUrls;
+    }
+
+    /**
+     * MultipartFile에서 원본 확장자를 추출합니다.
+     * 파일명에 확장자가 없으면 Content-Type을 기준으로 반환합니다.
+     */
+    private String getFileExtensionFromFile(MultipartFile file) {
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename != null && originalFilename.contains(".")) {
+            int lastDot = originalFilename.lastIndexOf('.');
+            return "." + originalFilename.substring(lastDot + 1).toLowerCase();
+        }
+        // Content-Type 기반 fallback
+        String contentType = file.getContentType();
+        if (contentType != null) {
+            return switch (contentType.toLowerCase()) {
+                case "image/jpeg", "image/jpg" -> ".jpg";
+                case "image/png" -> ".png";
+                case "image/gif" -> ".gif";
+                case "image/webp" -> ".webp";
+                default -> ".jpg";
+            };
+        }
+        return ".jpg";
     }
     
     /**

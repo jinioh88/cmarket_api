@@ -60,11 +60,6 @@ dependencies {
     // AWS SDK S3 (v2)
     implementation 'software.amazon.awssdk:s3:2.20.26'
     implementation 'software.amazon.awssdk:auth:2.20.26'
-    
-    // 이미지 처리 라이브러리 (Scrimage - WebP 지원)
-    implementation 'com.sksamuel.scrimage:scrimage-core:4.1.0'
-    implementation 'com.sksamuel.scrimage:scrimage-formats-extra:4.1.0'
-    implementation 'com.sksamuel.scrimage:scrimage-webp:4.3.5' // WebP 지원 (최신 버전)
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
