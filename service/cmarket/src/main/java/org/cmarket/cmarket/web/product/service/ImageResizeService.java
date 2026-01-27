@@ -22,10 +22,10 @@ public class ImageResizeService {
     @Value("${image.resize.enabled:true}")
     private boolean resizeEnabled;
     
-    @Value("${image.resize.original.max-width:1920}")
+    @Value("${image.resize.original.max-width:1200}")
     private int originalMaxWidth;
     
-    @Value("${image.resize.original.max-height:1920}")
+    @Value("${image.resize.original.max-height:800}")
     private int originalMaxHeight;
     
     @Value("${image.resize.thumbnail.width:300}")
