@@ -252,7 +252,7 @@ public class SecurityConfig {
                     String frontendUrl = System.getenv("FRONTEND_URL");
                     if (frontendUrl == null || frontendUrl.isBlank()) {
                         // Vercel 배포 후 실제 프론트엔드 도메인으로 변경
-                        frontendUrl = "https://cuddle-market-fe.vercel.app";
+                        frontendUrl = "https://cuddle-market.vercel.app";
                     }
                     // 프론트엔드의 실제 로그인 경로로 변경 (/auth/login)
                     String redirectUrl = frontendUrl + "/auth/login?error=oauth2_failed&message="
