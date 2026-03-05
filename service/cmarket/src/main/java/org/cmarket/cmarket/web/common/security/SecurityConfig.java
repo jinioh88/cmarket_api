@@ -45,7 +45,7 @@ import java.util.UUID;
 public class SecurityConfig {
     
     private final JwtTokenProvider jwtTokenProvider;
-    private final org.cmarket.cmarket.domain.auth.repository.TokenBlacklistRepository tokenBlacklistRepository;
+    private final org.cmarket.cmarket.domain.auth.app.service.TokenBlacklistCache tokenBlacklistCache;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
@@ -54,7 +54,7 @@ public class SecurityConfig {
     
     public SecurityConfig(
             JwtTokenProvider jwtTokenProvider,
-            org.cmarket.cmarket.domain.auth.repository.TokenBlacklistRepository tokenBlacklistRepository,
+            org.cmarket.cmarket.domain.auth.app.service.TokenBlacklistCache tokenBlacklistCache,
             AuthenticationConfiguration authenticationConfiguration,
             CustomOAuth2UserService customOAuth2UserService,
             OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
@@ -62,7 +62,7 @@ public class SecurityConfig {
             CustomOAuth2AuthorizationCodeTokenResponseClient customOAuth2AuthorizationCodeTokenResponseClient
     ) {
         this.jwtTokenProvider = jwtTokenProvider;
-        this.tokenBlacklistRepository = tokenBlacklistRepository;
+        this.tokenBlacklistCache = tokenBlacklistCache;
         this.authenticationConfiguration = authenticationConfiguration;
         this.customOAuth2UserService = customOAuth2UserService;
         this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
@@ -308,7 +308,7 @@ public class SecurityConfig {
         // JWT 인증 필터 등록
         JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(
                 jwtTokenProvider,
-                tokenBlacklistRepository
+                tokenBlacklistCache
         );
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         

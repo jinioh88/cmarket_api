@@ -26,10 +26,15 @@ import java.util.Optional;
  * 구글/카카오로부터 사용자 정보를 받아온 직후 호출됩니다.
  * 받아온 정보로 User를 조회하거나 생성하여 PrincipalDetails를 반환합니다.
  */
+/**
+ * 트랜잭션: 클래스 레벨 @Transactional 제거.
+ * loadUser() 내부의 super.loadUser()가 Google/Kakao 사용자 정보 API(HTTP)를 호출하므로,
+ * 트랜잭션을 걸면 DB 커넥션을 HTTP 대기 시간만큼 붙잡아 풀 고갈·504 유발.
+ * DB 접근만 하는 saveOrUpdateUser()에만 @Transactional 적용.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     
     private final UserRepository userRepository;
@@ -75,30 +80,33 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
         }
         
-        // 6. 기존 사용자 조회 (소셜 ID로 조회 - 삭제된 사용자도 포함)
+        // 6~7. DB 작업만 별도 트랜잭션으로 수행 (외부 HTTP 호출 없음 → 커넥션 짧게 유지)
+        User user = saveOrUpdateUser(provider, email, socialId, name, nickname);
+        
+        // 8. PrincipalDetails 생성 및 반환
+        return new PrincipalDetails(user, attributes);
+    }
+    
+    /**
+     * 소셜 사용자 조회/갱신/생성 (DB만 사용, 트랜잭션 범위 최소화)
+     */
+    @Transactional
+    public User saveOrUpdateUser(AuthProvider provider, String email, String socialId, String name, String nickname) {
         Optional<User> existingUser = userRepository.findByProviderAndSocialId(provider, socialId);
         
-        User user;
         if (existingUser.isPresent()) {
-            user = existingUser.get();
-            
-            // 7-1. 삭제된 사용자인 경우 재가입 처리
+            User user = existingUser.get();
             if (user.isDeleted()) {
                 user.restore();
                 updateUserInfo(user, name, nickname);
                 log.info("OAuth2 삭제된 계정 재가입: email={}, provider={}", email, provider);
             } else {
-                // 7-2. 활성 사용자: 정보 업데이트 (이름, 닉네임 등)
                 updateUserInfo(user, name, nickname);
                 log.info("OAuth2 기존 사용자 로그인: email={}, provider={}", email, provider);
             }
-        } else {
-            // 7-3. 신규 사용자: 자동 회원가입
-            user = createNewUser(email, socialId, name, nickname, provider);
+            return user;
         }
-        
-        // 8. PrincipalDetails 생성 및 반환
-        return new PrincipalDetails(user, attributes);
+        return createNewUser(email, socialId, name, nickname, provider);
     }
     
     /**

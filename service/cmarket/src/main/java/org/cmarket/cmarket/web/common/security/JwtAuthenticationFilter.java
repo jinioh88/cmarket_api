@@ -5,7 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.cmarket.cmarket.domain.auth.repository.TokenBlacklistRepository;
+import org.cmarket.cmarket.domain.auth.app.service.TokenBlacklistCache;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
@@ -22,7 +22,7 @@ import java.io.IOException;
  * 동작:
  * 1. Authorization 헤더에서 JWT 토큰 추출
  * 2. 토큰 유효성 검증 (JwtTokenProvider 사용)
- * 3. 블랙리스트 토큰 검증 (TokenBlacklistRepository 사용)
+ * 3. 블랙리스트 토큰 검증 (TokenBlacklistCache - Redis 사용)
  * 4. 토큰이 유효하면 SecurityContextHolder에 인증 정보(Authentication) 저장
  * 5. 토큰이 없거나 유효하지 않으면 필터 통과 (인증 실패는 SecurityConfig에서 처리)
  */
@@ -32,14 +32,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
     
     private final JwtTokenProvider jwtTokenProvider;
-    private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final TokenBlacklistCache tokenBlacklistCache;
     
     public JwtAuthenticationFilter(
             JwtTokenProvider jwtTokenProvider,
-            TokenBlacklistRepository tokenBlacklistRepository
+            TokenBlacklistCache tokenBlacklistCache
     ) {
         this.jwtTokenProvider = jwtTokenProvider;
-        this.tokenBlacklistRepository = tokenBlacklistRepository;
+        this.tokenBlacklistCache = tokenBlacklistCache;
     }
     
     @Override
@@ -54,8 +54,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         // 2. 토큰이 있고 유효한 경우에만 인증 처리
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-            // 3. 블랙리스트 토큰 검증
-            if (!tokenBlacklistRepository.existsByToken(token)) {
+            // 3. 블랙리스트 토큰 검증 (Redis 캐시 사용 → 매 요청 DB 조회 제거)
+            if (!tokenBlacklistCache.isBlacklisted(token)) {
                 // 4. 토큰에서 인증 정보 추출
                 Authentication authentication = jwtTokenProvider.getAuthentication(token);
                 

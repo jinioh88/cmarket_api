@@ -18,11 +18,13 @@ import java.util.Optional;
  * 
  * 프론트엔드에서 Google Sign-In SDK를 통해 받은 ID Token을 검증하고,
  * 사용자를 조회하거나 신규 가입 처리를 합니다.
+ * 
+ * 트랜잭션: verify()가 Google JWKS 등 HTTP 호출을 할 수 있으므로,
+ * 검증은 트랜잭션 밖에서 수행하고, DB 접근만 saveOrLoadUser()에서 @Transactional로 수행.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class GoogleAuthService {
     
     private final GoogleIdTokenVerifierService googleIdTokenVerifierService;
@@ -37,28 +39,29 @@ public class GoogleAuthService {
      * @throws IllegalArgumentException ID Token이 유효하지 않은 경우
      */
     public User authenticateWithIdToken(String idToken) {
-        // 1. ID Token 검증
+        // 1. ID Token 검증 (트랜잭션 없음 - HTTP 호출 가능)
         GoogleUserInfo userInfo = googleIdTokenVerifierService.verify(idToken);
         
         if (userInfo == null) {
             throw new IllegalArgumentException("유효하지 않은 Google ID Token입니다.");
         }
         
-        // 2. 기존 사용자 조회 (소셜 ID로)
+        // 2. DB 조회/저장만 트랜잭션으로 수행
+        return saveOrLoadUser(userInfo);
+    }
+    
+    @Transactional
+    public User saveOrLoadUser(GoogleUserInfo userInfo) {
         Optional<User> existingUser = userRepository.findByProviderAndSocialId(
-                AuthProvider.GOOGLE, 
+                AuthProvider.GOOGLE,
                 userInfo.socialId()
         );
-        
         if (existingUser.isPresent()) {
-            // 3-1. 기존 사용자: 정보 업데이트 후 반환
             User user = existingUser.get();
             updateUserInfo(user, userInfo);
             return user;
-        } else {
-            // 3-2. 신규 사용자: 자동 회원가입
-            return createNewUser(userInfo);
         }
+        return createNewUser(userInfo);
     }
     
     /**

@@ -88,7 +88,7 @@ OAuth2(Open Authorization 2.0)는 **제3자 서비스(구글, 카카오 등)의 
 ```
 http://localhost:3000
 http://localhost:8080
-https://cuddle-market-fe.vercel.app
+https://cuddle-market.vercel.app
 ```
 
 **⚠️ 중요 사항**:
@@ -109,7 +109,7 @@ https://cmarket-api.duckdns.org/login/oauth2/code/google
 ```
 
 **⚠️ 중요 사항**:
-- 프론트엔드 도메인(`cuddle-market-fe.vercel.app`)은 **등록하지 않습니다**
+- 프론트엔드 도메인(`cuddle-market.vercel.app`)은 **등록하지 않습니다**
 - 리디렉션 URI는 백엔드 도메인만 등록합니다
 - 프로덕션 환경에서는 HTTPS를 사용합니다
 - 경로는 정확히 `/login/oauth2/code/google`이어야 합니다
@@ -128,7 +128,7 @@ https://cmarket-api.duckdns.org/login/oauth2/code/google
 ```
 ✅ http://localhost:3000
 ✅ http://localhost:8080
-✅ https://cuddle-market-fe.vercel.app
+✅ https://cuddle-market.vercel.app
 ❌ http://cmarket-api.duckdns.org (등록하지 않음)
 ```
 
@@ -136,7 +136,7 @@ https://cmarket-api.duckdns.org/login/oauth2/code/google
 ```
 ✅ http://localhost:8080/login/oauth2/code/google
 ✅ https://cmarket-api.duckdns.org/login/oauth2/code/google
-❌ https://cuddle-market-fe.vercel.app/login/oauth2/code/google (등록하지 않음)
+❌ https://cuddle-market.vercel.app/login/oauth2/code/google (등록하지 않음)
 ```
 
 ### 프론트엔드 구현 (React) - 패키지 설치 불필요!
@@ -295,7 +295,7 @@ spring.security.oauth2.client.registration.google.scope=profile,email
 spring.security.oauth2.client.registration.google.redirect-uri={baseUrl}/login/oauth2/code/{registrationId}
 
 # OAuth2 리다이렉트 URL (프론트엔드)
-oauth2.redirect-uri=${OAUTH2_REDIRECT_URI:https://cuddle-market-fe.vercel.app/oauth-redirect}
+oauth2.redirect-uri=${OAUTH2_REDIRECT_URI:https://cuddle-market.vercel.app/oauth-redirect}
 ```
 
 **설정 항목 설명**:
@@ -306,7 +306,7 @@ oauth2.redirect-uri=${OAUTH2_REDIRECT_URI:https://cuddle-market-fe.vercel.app/oa
 | `client-secret` | 구글 클라우드 콘솔에서 발급받은 클라이언트 보안 비밀번호 | `GOCSPX-xxxxx` |
 | `scope` | 요청할 사용자 정보 범위 | `profile,email` |
 | `redirect-uri` | 구글이 인가 코드를 전달할 백엔드 콜백 URL | `{baseUrl}/login/oauth2/code/google` |
-| `oauth2.redirect-uri` | 백엔드가 최종적으로 프론트엔드로 리다이렉트할 URL | `https://cuddle-market-fe.vercel.app/oauth-redirect` |
+| `oauth2.redirect-uri` | 백엔드가 최종적으로 프론트엔드로 리다이렉트할 URL | `https://cuddle-market.vercel.app/oauth-redirect` |
 
 **⚠️ 중요 사항**:
 - `client-id`와 `client-secret`은 환경 변수로 관리해야 합니다 (보안)
@@ -320,7 +320,7 @@ EC2 또는 Docker 배포 시 환경 변수 설정:
 ```bash
 export GOOGLE_CLIENT_ID="13269763480-xxxxx.apps.googleusercontent.com"
 export GOOGLE_CLIENT_SECRET="GOCSPX-xxxxx"
-export OAUTH2_REDIRECT_URI="https://cuddle-market-fe.vercel.app/oauth-redirect"
+export OAUTH2_REDIRECT_URI="https://cuddle-market.vercel.app/oauth-redirect"
 ```
 
 ---
@@ -813,7 +813,7 @@ public void onAuthenticationSuccess(
 
 ```http
 HTTP/1.1 302 Found
-Location: https://cuddle-market-fe.vercel.app/oauth-redirect?accessToken=eyJhbGci...&refreshToken=eyJhbGci...
+Location: https://cuddle-market.vercel.app/oauth-redirect?accessToken=eyJhbGci...&refreshToken=eyJhbGci...
 ```
 
 ### 단계별 상세 설명
@@ -1022,7 +1022,7 @@ oauth2.redirect-uri=http://localhost:3000/oauth-redirect
 
 **증상**: 
 ```
-GET https://cuddle-market-fe.vercel.app/oauth-redirect?accessToken=... 404 Not Found
+GET https://cuddle-market.vercel.app/oauth-redirect?accessToken=... 404 Not Found
 ```
 
 **원인**: 프론트엔드에 `/oauth-redirect` 라우트가 없음
@@ -1130,7 +1130,7 @@ GET https://cuddle-market-fe.vercel.app/oauth-redirect?accessToken=... 404 Not F
 ### Q4. 구글 클라우드 콘솔에 프론트엔드 도메인을 등록해야 하나요?
 
 **A**: 
-- **승인된 JavaScript 원본**: 프론트엔드 도메인 등록 필요 (`https://cuddle-market-fe.vercel.app`)
+- **승인된 JavaScript 원본**: 프론트엔드 도메인 등록 필요 (`https://cuddle-market.vercel.app`)
 - **승인된 리디렉션 URI**: 프론트엔드 도메인 등록 불필요 (백엔드 도메인만 등록: `https://cmarket-api.duckdns.org/login/oauth2/code/google`)
 
 ### Q5. 왜 프론트엔드 도메인으로 리다이렉트하나요?

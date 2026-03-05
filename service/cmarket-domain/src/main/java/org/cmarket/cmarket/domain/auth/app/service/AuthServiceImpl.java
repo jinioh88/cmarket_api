@@ -37,6 +37,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final TokenBlacklistCache tokenBlacklistCache;
     private final EmailVerificationService emailVerificationService;
     private final EmailVerificationRepository emailVerificationRepository;
     private final EmailService emailService;
@@ -45,6 +46,7 @@ public class AuthServiceImpl implements AuthService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             TokenBlacklistRepository tokenBlacklistRepository,
+            TokenBlacklistCache tokenBlacklistCache,
             EmailVerificationService emailVerificationService,
             EmailVerificationRepository emailVerificationRepository,
             EmailService emailService
@@ -52,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenBlacklistRepository = tokenBlacklistRepository;
+        this.tokenBlacklistCache = tokenBlacklistCache;
         this.emailVerificationService = emailVerificationService;
         this.emailVerificationRepository = emailVerificationRepository;
         this.emailService = emailService;
@@ -140,13 +143,16 @@ public class AuthServiceImpl implements AuthService {
             return;
         }
         
-        // 2. TokenBlacklist 엔티티 생성 및 저장
+        // 2. TokenBlacklist 엔티티 생성 및 DB 저장 (감사/복구용)
         TokenBlacklist tokenBlacklist = TokenBlacklist.builder()
                 .token(token)
                 .expiresAt(expiresAt)
                 .build();
         
         tokenBlacklistRepository.save(tokenBlacklist);
+        
+        // 3. Redis 블랙리스트 등록 (매 요청 DB 조회 방지 → 커넥션 풀 고갈 완화)
+        tokenBlacklistCache.addToBlacklist(token, expiresAt);
     }
     
     @Override
