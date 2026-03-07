@@ -6,6 +6,7 @@ import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.model.Post;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,7 +50,7 @@ public class PostDetailDto {
                 .authorProfileImageUrl(authorProfileImageUrl)
                 .title(post.getTitle())
                 .content(post.getContent())
-                .imageUrls(post.getImageUrls())
+                .imageUrls(post.getImageUrls() != null ? new ArrayList<>(post.getImageUrls()) : new ArrayList<>())
                 .boardType(post.getBoardType())
                 .viewCount(post.getViewCount())
                 .commentCount(post.getCommentCount())
