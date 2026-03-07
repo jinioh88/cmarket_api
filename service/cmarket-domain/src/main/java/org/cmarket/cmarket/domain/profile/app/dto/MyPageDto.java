@@ -2,6 +2,7 @@ package org.cmarket.cmarket.domain.profile.app.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.cmarket.cmarket.domain.auth.model.UserRole;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.List;
 public class MyPageDto {
     private Long id;
     private String profileImageUrl;
+    private UserRole userRole;
     private String nickname;
     private String name;
     private String introduction;

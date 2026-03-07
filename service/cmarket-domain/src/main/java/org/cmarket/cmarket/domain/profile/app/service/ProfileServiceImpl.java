@@ -49,6 +49,7 @@ public class ProfileServiceImpl implements ProfileService {
         return MyPageDto.builder()
                 .id(user.getId())
                 .profileImageUrl(user.getProfileImageUrl())
+                .userRole(user.getRole())
                 .nickname(user.getNickname())
                 .name(user.getName())
                 .introduction(user.getIntroduction())

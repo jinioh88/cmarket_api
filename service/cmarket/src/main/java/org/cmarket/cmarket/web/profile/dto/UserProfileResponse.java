@@ -68,6 +68,7 @@ public class UserProfileResponse {
         return UserProfileResponse.builder()
                 .id(myPageDto.getId())
                 .profileImageUrl(myPageDto.getProfileImageUrl())
+                .userRole(myPageDto.getUserRole())
                 .nickname(myPageDto.getNickname())
                 .name(myPageDto.getName())
                 .introduction(myPageDto.getIntroduction())
