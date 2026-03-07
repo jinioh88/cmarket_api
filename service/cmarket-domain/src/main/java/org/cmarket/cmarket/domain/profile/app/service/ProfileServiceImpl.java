@@ -124,6 +124,7 @@ public class ProfileServiceImpl implements ProfileService {
         return UserProfileDto.builder()
                 .id(user.getId())
                 .profileImageUrl(user.getProfileImageUrl())
+                .userRole(user.getRole())
                 .addressSido(user.getAddressSido())
                 .addressGugun(user.getAddressGugun())
                 .nickname(user.getNickname())
