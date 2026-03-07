@@ -11,6 +11,7 @@ import org.cmarket.cmarket.domain.product.model.ProductType;
 import org.cmarket.cmarket.domain.product.model.TradeStatus;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -63,7 +64,7 @@ public class ProductDto {
                 .productStatus(product.getProductStatus())
                 .tradeStatus(product.getTradeStatus())
                 .mainImageUrl(product.getMainImageUrl())
-                .subImageUrls(product.getSubImageUrls())
+                .subImageUrls(product.getSubImageUrls() != null ? new ArrayList<>(product.getSubImageUrls()) : new ArrayList<>())
                 .addressSido(product.getAddressSido())
                 .addressGugun(product.getAddressGugun())
                 .viewCount(product.getViewCount())

@@ -34,6 +34,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -145,7 +146,7 @@ public class ProductServiceImpl implements ProductService {
                 .description(product.getDescription())
                 .price(product.getPrice())
                 .mainImageUrl(product.getMainImageUrl())
-                .subImageUrls(product.getSubImageUrls())
+                .subImageUrls(product.getSubImageUrls() != null ? new ArrayList<>(product.getSubImageUrls()) : new ArrayList<>())
                 .addressSido(product.getAddressSido())
                 .addressGugun(product.getAddressGugun())
                 .createdAt(product.getCreatedAt())
@@ -501,7 +502,7 @@ public class ProductServiceImpl implements ProductService {
                 .description(product.getDescription())
                 .desiredPrice(product.getPrice())  // 희망 가격
                 .mainImageUrl(product.getMainImageUrl())
-                .subImageUrls(product.getSubImageUrls())
+                .subImageUrls(product.getSubImageUrls() != null ? new ArrayList<>(product.getSubImageUrls()) : new ArrayList<>())
                 .addressSido(product.getAddressSido())
                 .addressGugun(product.getAddressGugun())
                 .createdAt(product.getCreatedAt())
