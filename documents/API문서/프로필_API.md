@@ -698,6 +698,7 @@ GET /api/profile/{userId}
 | data | Object | 유저 프로필 정보 |
 | data.id | Long | 사용자 ID |
 | data.profileImageUrl | String | 프로필 이미지 URL (nullable) |
+| data.userRole | String | 사용자 권한 (USER, ADMIN) |
 | data.nickname | String | 닉네임 |
 | data.name | String | 이름 |
 | data.introduction | String | 소개글 (nullable, 최대 1000자) |
@@ -735,6 +736,7 @@ Content-Type: application/json
   "data": {
     "id": 5,
     "profileImageUrl": "https://s3.amazonaws.com/profile/user5.jpg",
+    "userRole": "USER",
     "nickname": "다른유저",
     "name": "김철수",
     "introduction": "반려동물 용품을 판매하고 있습니다.",
