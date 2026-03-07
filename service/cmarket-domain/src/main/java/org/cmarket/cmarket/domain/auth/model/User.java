@@ -240,5 +240,15 @@ public class User {
     public boolean hasSocialAccount() {
         return this.provider != AuthProvider.LOCAL && this.socialId != null;
     }
+
+    /**
+     * 역할 변경
+     *
+     * @param role 변경할 역할 (USER, ADMIN)
+     */
+    public void changeRole(UserRole role) {
+        this.role = role;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
 

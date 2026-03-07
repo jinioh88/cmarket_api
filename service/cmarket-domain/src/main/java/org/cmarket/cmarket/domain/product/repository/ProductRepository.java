@@ -68,5 +68,10 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
      * @return 상품 (없으면 Optional.empty())
      */
     Optional<Product> findByIdAndDeletedAtIsNull(Long id);
+
+    /**
+     * 삭제되지 않은 상품 수
+     */
+    long countByDeletedAtIsNull();
 }
 

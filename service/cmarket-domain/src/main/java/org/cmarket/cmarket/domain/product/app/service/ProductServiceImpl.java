@@ -318,9 +318,10 @@ public class ProductServiceImpl implements ProductService {
         
         Long userId = user.getId();
         
-        // 권한 확인: 판매자 본인만 삭제 가능
-        // TODO: 향후 Admin 도메인 연동 시 어드민 계정도 삭제 가능하도록 권한 확인 로직 추가
-        if (!product.getSellerId().equals(userId)) {
+        // 권한 확인: 판매자 본인 또는 관리자만 삭제 가능
+        boolean isOwner = product.getSellerId().equals(userId);
+        boolean isAdmin = user.getRole() == org.cmarket.cmarket.domain.auth.model.UserRole.ADMIN;
+        if (!isOwner && !isAdmin) {
             throw new org.cmarket.cmarket.domain.auth.app.exception.AuthenticationFailedException("상품을 삭제할 권한이 없습니다.");
         }
         

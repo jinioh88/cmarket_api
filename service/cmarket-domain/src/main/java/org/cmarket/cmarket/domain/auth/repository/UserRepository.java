@@ -3,7 +3,10 @@ package org.cmarket.cmarket.domain.auth.repository;
 import org.cmarket.cmarket.domain.auth.model.AuthProvider;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,7 +20,7 @@ import java.util.Optional;
  * - 닉네임/이메일 중복 확인
  * - 소셜 로그인용 사용자 조회
  */
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
     
     /**
      * 이메일로 사용자 조회 (소프트 삭제된 사용자 제외)
@@ -51,5 +54,34 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return 사용자 (없으면 Optional.empty())
      */
     Optional<User> findByProviderAndSocialId(AuthProvider provider, String socialId);
+
+    /**
+     * ID로 사용자 조회 (소프트 삭제된 사용자 제외)
+     *
+     * @param id 사용자 ID
+     * @return 사용자 (없으면 Optional.empty())
+     */
+    Optional<User> findByIdAndDeletedAtIsNull(Long id);
+
+    /**
+     * 특정 기간 내 가입한 회원 수
+     */
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    /**
+     * 특정 기간 내 탈퇴한 회원 수
+     */
+    long countByDeletedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    /**
+     * deletedAt이 null인 회원 수 (활성 회원)
+     */
+    long countByDeletedAtIsNull();
+
+    /**
+     * 탈퇴 사유별 건수
+     */
+    @Query("SELECT u.withdrawalReason, COUNT(u) FROM User u WHERE u.deletedAt IS NOT NULL AND u.withdrawalReason IS NOT NULL GROUP BY u.withdrawalReason")
+    List<Object[]> countByWithdrawalReason();
 }
 

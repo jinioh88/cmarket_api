@@ -155,9 +155,10 @@ public class CommunityServiceImpl implements CommunityService {
         
         Long userId = user.getId();
         
-        // 권한 확인: 작성자 본인만 삭제 가능
-        // TODO: 향후 Admin 도메인 연동 시 어드민 계정도 삭제 가능하도록 권한 확인 로직 추가
-        if (!post.getAuthorId().equals(userId)) {
+        // 권한 확인: 작성자 본인 또는 관리자만 삭제 가능
+        boolean isAuthor = post.getAuthorId().equals(userId);
+        boolean isAdmin = user.getRole() == org.cmarket.cmarket.domain.auth.model.UserRole.ADMIN;
+        if (!isAuthor && !isAdmin) {
             throw new PostAccessDeniedException();
         }
         
