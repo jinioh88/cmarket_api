@@ -13,7 +13,7 @@
 - [회원 관리 API](#회원-관리-api)
   - [1. 전체 유저 목록 조회](#1-전체-유저-목록-조회-get-apiadminusers)
   - [2. 어드민 역할 부여](#2-어드민-역할-부여-patch-apiadminusersuseridrole)
-- [탈퇴 관리 API](#탈퇴-관리-api)
+- [탈퇴 관리 API](#탈퇴-관리-api)ReportListResponse
   - [3. 탈퇴 회원 목록 조회](#3-탈퇴-회원-목록-조회-get-apiadminwithdrawals)
   - [4. 탈퇴 회원 상세 조회](#4-탈퇴-회원-상세-조회-get-apiadminwithdrawalsuserid)
   - [5. 탈퇴 회원 복구](#5-탈퇴-회원-복구-post-apiadminwithdrawalsuseridrestore)

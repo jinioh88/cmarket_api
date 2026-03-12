@@ -19,6 +19,7 @@ public class AdminReportResponse {
     private ReportTargetType targetType;
     private Long targetId;
     private String targetNickname;   // 신고 대상자 닉네임
+    private String title;             // PRODUCT: 상품명, COMMUNITY_POST: 제목, USER: null
     private BoardType boardType;     // COMMUNITY_POST일 때만 값 있음 (nullable)
     private List<String> reasonCodes;
     private String detailReason;
@@ -36,12 +37,15 @@ public class AdminReportResponse {
                 .targetType(dto.getTargetType())
                 .targetId(dto.getTargetId())
                 .targetNickname(dto.getTargetNickname())
+                .title(dto.getTitle())
                 .boardType(dto.getBoardType())
                 .reasonCodes(dto.getReasonCodes())
                 .detailReason(dto.getDetailReason())
                 .imageUrls(dto.getImageUrls())
                 .status(dto.getStatus())
                 .createdAt(dto.getCreatedAt())
+                .reviewedAt(dto.getReviewedAt())
+                .rejectedReason(dto.getRejectedReason())
                 .build();
     }
 }

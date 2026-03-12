@@ -27,11 +27,14 @@ public class ReportDto {
     private ReportTargetType targetType;
     private Long targetId;
     private String targetNickname;    // 신고 대상자 닉네임 (USER: 피신고자, PRODUCT: 판매자, COMMUNITY_POST: 게시글 작성자)
+    private String title;             // PRODUCT: 상품명, COMMUNITY_POST: 제목, USER: null
     private List<String> reasonCodes;
     private String detailReason;
     private List<String> imageUrls;
     private ReportStatus status;
     private LocalDateTime createdAt;
+    private LocalDateTime reviewedAt;
+    private String rejectedReason;
     private BoardType boardType;  // COMMUNITY_POST일 때만 값 있음 (nullable)
 
     /**
@@ -55,6 +58,7 @@ public class ReportDto {
         BoardType boardType = null;
         String reporterNickname = null;
         String targetNickname = null;
+        String title = null;
 
         if (enrichment != null) {
             if (report.getTargetType() == ReportTargetType.COMMUNITY_POST && enrichment.postBoardTypes() != null) {
@@ -64,6 +68,7 @@ public class ReportDto {
                 reporterNickname = enrichment.userIdToNickname().get(report.getReporterId());
             }
             targetNickname = enrichment.getTargetNickname(report.getTargetType(), report.getTargetId());
+            title = enrichment.getTitle(report.getTargetType(), report.getTargetId());
         }
 
         return ReportDto.builder()
@@ -73,11 +78,14 @@ public class ReportDto {
                 .targetType(report.getTargetType())
                 .targetId(report.getTargetId())
                 .targetNickname(targetNickname)
+                .title(title)
                 .reasonCodes(report.getReasonCodes() != null ? new ArrayList<>(report.getReasonCodes()) : new ArrayList<>())
                 .detailReason(report.getDetailReason())
                 .imageUrls(report.getImageUrls() != null ? new ArrayList<>(report.getImageUrls()) : new ArrayList<>())
                 .status(report.getStatus())
                 .createdAt(report.getCreatedAt())
+                .reviewedAt(report.getReviewedAt())
+                .rejectedReason(report.getRejectedReason())
                 .boardType(boardType)
                 .build();
     }
@@ -89,7 +97,9 @@ public class ReportDto {
             Map<Long, BoardType> postBoardTypes,
             Map<Long, String> userIdToNickname,
             Map<Long, Long> productIdToSellerId,
-            Map<Long, String> postIdToAuthorNickname
+            Map<Long, String> postIdToAuthorNickname,
+            Map<Long, String> productIdToTitle,
+            Map<Long, String> postIdToTitle
     ) {
         public String getTargetNickname(ReportTargetType targetType, Long targetId) {
             if (targetType == null || targetId == null) return null;
@@ -101,6 +111,15 @@ public class ReportDto {
                     yield sellerId != null ? userIdToNickname.get(sellerId) : null;
                 }
                 case COMMUNITY_POST -> postIdToAuthorNickname != null ? postIdToAuthorNickname.get(targetId) : null;
+            };
+        }
+
+        public String getTitle(ReportTargetType targetType, Long targetId) {
+            if (targetType == null || targetId == null) return null;
+            return switch (targetType) {
+                case USER -> null;
+                case PRODUCT -> productIdToTitle != null ? productIdToTitle.get(targetId) : null;
+                case COMMUNITY_POST -> postIdToTitle != null ? postIdToTitle.get(targetId) : null;
             };
         }
     }

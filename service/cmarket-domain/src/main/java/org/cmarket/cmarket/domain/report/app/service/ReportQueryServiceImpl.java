@@ -73,18 +73,21 @@ public class ReportQueryServiceImpl implements ReportQueryService {
                 .distinct()
                 .toList();
 
-        // 2. PRODUCT targetIds -> sellerIds
+        // 2. PRODUCT targetIds -> sellerIds, productIdToTitle (상품명)
         List<Long> productTargetIds = reports.stream()
                 .filter(r -> r.getTargetType() == ReportTargetType.PRODUCT)
                 .map(Report::getTargetId)
                 .distinct()
                 .toList();
         Map<Long, Long> productIdToSellerId = Map.of();
+        Map<Long, String> productIdToTitle = Map.of();
         List<Long> sellerIds = List.of();
         if (!productTargetIds.isEmpty()) {
             List<Product> products = productRepository.findAllById(productTargetIds);
             productIdToSellerId = products.stream()
                     .collect(Collectors.toMap(Product::getId, Product::getSellerId));
+            productIdToTitle = products.stream()
+                    .collect(Collectors.toMap(Product::getId, p -> p.getTitle() != null ? p.getTitle() : ""));
             sellerIds = products.stream().map(Product::getSellerId).distinct().toList();
         }
 
@@ -106,17 +109,20 @@ public class ReportQueryServiceImpl implements ReportQueryService {
                     .collect(Collectors.toMap(User::getId, User::getNickname, (a, b) -> a));
         }
 
-        // 5. Post 일괄 조회 (boardType + authorNickname)
+        // 5. Post 일괄 조회 (boardType + authorNickname + title)
         Map<Long, BoardType> postBoardTypes = Map.of();
         Map<Long, String> postIdToAuthorNickname = Map.of();
+        Map<Long, String> postIdToTitle = Map.of();
         if (!postIds.isEmpty()) {
             List<Post> posts = postRepository.findAllById(postIds);
             postBoardTypes = posts.stream().collect(Collectors.toMap(Post::getId, Post::getBoardType));
             postIdToAuthorNickname = posts.stream()
                     .collect(Collectors.toMap(Post::getId, p -> p.getAuthorNickname() != null ? p.getAuthorNickname() : ""));
+            postIdToTitle = posts.stream()
+                    .collect(Collectors.toMap(Post::getId, p -> p.getTitle() != null ? p.getTitle() : ""));
         }
 
-        return new ReportDto.ReportEnrichment(postBoardTypes, userIdToNickname, productIdToSellerId, postIdToAuthorNickname);
+        return new ReportDto.ReportEnrichment(postBoardTypes, userIdToNickname, productIdToSellerId, postIdToAuthorNickname, productIdToTitle, postIdToTitle);
     }
 }
 

@@ -14,6 +14,8 @@ public class ReportListResponse {
     private int size;
     private long totalElements;
     private int totalPages;
+    private boolean hasNext;
+    private boolean hasPrevious;
 
     public static ReportListResponse fromPage(Page<AdminReportResponse> pageData) {
         return ReportListResponse.builder()
@@ -22,6 +24,8 @@ public class ReportListResponse {
                 .size(pageData.getSize())
                 .totalElements(pageData.getTotalElements())
                 .totalPages(pageData.getTotalPages())
+                .hasNext(pageData.hasNext())
+                .hasPrevious(pageData.hasPrevious())
                 .build();
     }
 }

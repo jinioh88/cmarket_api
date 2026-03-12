@@ -814,26 +814,28 @@ GET /api/admin/reports
 | code | String | 응답 코드 ("SUCCESS") |
 | message | String | 응답 메시지 ("성공") |
 | data | Object | 신고 목록 결과 |
-| data.content | Array | 신고 목록 |
-| data.content[].id | Long | 신고 ID |
-| data.content[].reporterId | Long | 신고자 ID |
-| data.content[].reporterNickname | String | 신고자 닉네임 |
-| data.content[].targetType | String | 신고 대상 타입 |
-| data.content[].targetId | Long | 신고 대상 ID |
-| data.content[].targetNickname | String | 신고 대상자 닉네임 (USER: 피신고자, PRODUCT: 판매자, COMMUNITY_POST: 게시글 작성자) |
-| data.content[].boardType | BoardType | 게시판 유형 (COMMUNITY_POST일 때만 값 있음, nullable) |
-| data.content[].reasonCodes | String[] | 신고 사유 코드 리스트 |
-| data.content[].detailReason | String | 상세 사유 (nullable) |
-| data.content[].imageUrls | String[] | 이미지 URL 리스트 (nullable) |
-| data.content[].status | String | 신고 상태 |
-| data.content[].createdAt | String | 신고 일시 (ISO 8601 형식) |
-| data.content[].reviewedAt | String | 검토 일시 (ISO 8601 형식, nullable) |
-| data.content[].rejectedReason | String | 거절 사유 (nullable) |
+| data.reports | Array | 신고 목록 |
+| data.reports[].id | Long | 신고 ID |
+| data.reports[].reporterId | Long | 신고자 ID |
+| data.reports[].reporterNickname | String | 신고자 닉네임 |
+| data.reports[].targetType | String | 신고 대상 타입 |
+| data.reports[].targetId | Long | 신고 대상 ID |
+| data.reports[].targetNickname | String | 신고 대상자 닉네임 (USER: 피신고자, PRODUCT: 판매자, COMMUNITY_POST: 게시글 작성자) |
+| data.reports[].title | String | PRODUCT: 상품명, COMMUNITY_POST: 제목, USER: null |
+| data.reports[].boardType | BoardType | 게시판 유형 (COMMUNITY_POST일 때만 값 있음, nullable) |
+| data.reports[].reasonCodes | String[] | 신고 사유 코드 리스트 |
+| data.reports[].detailReason | String | 상세 사유 (nullable) |
+| data.reports[].imageUrls | String[] | 이미지 URL 리스트 (nullable) |
+| data.reports[].status | String | 신고 상태 |
+| data.reports[].createdAt | String | 신고 일시 (ISO 8601 형식) |
+| data.reports[].reviewedAt | String | 검토 일시 (ISO 8601 형식, nullable) |
+| data.reports[].rejectedReason | String | 거절 사유 (nullable) |
 | data.page | Integer | 현재 페이지 번호 (0부터 시작) |
 | data.size | Integer | 페이지 크기 |
-| data.total | Long | 전체 신고 개수 |
+| data.totalElements | Long | 전체 신고 개수 |
 | data.totalPages | Integer | 전체 페이지 수 |
 | data.hasNext | Boolean | 다음 페이지 존재 여부 |
+| data.hasPrevious | Boolean | 이전 페이지 존재 여부 |
 
 ##### 에러 응답
 
@@ -859,7 +861,7 @@ Content-Type: application/json
   "code": "SUCCESS",
   "message": "성공",
   "data": {
-    "content": [
+    "reports": [
       {
         "id": 1,
         "reporterId": 1,
@@ -867,6 +869,7 @@ Content-Type: application/json
         "targetType": "USER",
         "targetId": 123,
         "targetNickname": "피신고자닉네임",
+        "title": null,
         "boardType": null,
         "reasonCodes": ["HARASSMENT"],
         "detailReason": "부적절한 행위를 반복적으로 하고 있습니다.",
@@ -883,6 +886,7 @@ Content-Type: application/json
         "targetType": "COMMUNITY_POST",
         "targetId": 789,
         "targetNickname": "게시글작성자닉네임",
+        "title": "게시글 제목 예시",
         "boardType": "QUESTION",
         "reasonCodes": ["ABUSE_OR_HATE"],
         "detailReason": "혐오 표현이 포함된 게시글입니다.",
@@ -895,9 +899,10 @@ Content-Type: application/json
     ],
     "page": 0,
     "size": 20,
-    "total": 2,
+    "totalElements": 2,
     "totalPages": 1,
-    "hasNext": false
+    "hasNext": false,
+    "hasPrevious": false
   }
 }
 ```
