@@ -147,6 +147,15 @@ http://localhost:8080
 | `SELF_HARM_OR_SUICIDE` | 자해 또는 자살 의도를 포함 |
 | `ETC` | 기타 (직접 입력) |
 
+### BoardType (커뮤니티 게시판 유형)
+
+| Enum 값 | 설명 |
+|---------|------|
+| `QUESTION` | 질문있어요 |
+| `INFO` | 정보공유 |
+
+> `boardType`은 신고 목록 조회 시 `targetType`이 `COMMUNITY_POST`일 때만 응답에 포함됩니다. (USER, PRODUCT 신고 시 null)
+
 ---
 
 ## 사용자 차단 API
@@ -810,6 +819,7 @@ GET /api/admin/reports
 | data.content[].reporterId | Long | 신고자 ID |
 | data.content[].targetType | String | 신고 대상 타입 |
 | data.content[].targetId | Long | 신고 대상 ID |
+| data.content[].boardType | BoardType | 게시판 유형 (COMMUNITY_POST일 때만 값 있음, nullable) |
 | data.content[].reasonCodes | String[] | 신고 사유 코드 리스트 |
 | data.content[].detailReason | String | 상세 사유 (nullable) |
 | data.content[].imageUrls | String[] | 이미지 URL 리스트 (nullable) |
@@ -853,6 +863,7 @@ Content-Type: application/json
         "reporterId": 1,
         "targetType": "USER",
         "targetId": 123,
+        "boardType": null,
         "reasonCodes": ["HARASSMENT"],
         "detailReason": "부적절한 행위를 반복적으로 하고 있습니다.",
         "imageUrls": ["/api/images/user/1/2025/01/15/uuid-screenshot1.png"],
@@ -860,11 +871,25 @@ Content-Type: application/json
         "createdAt": "2025-01-15T10:30:00",
         "reviewedAt": null,
         "rejectedReason": null
+      },
+      {
+        "id": 2,
+        "reporterId": 2,
+        "targetType": "COMMUNITY_POST",
+        "targetId": 789,
+        "boardType": "QUESTION",
+        "reasonCodes": ["ABUSE_OR_HATE"],
+        "detailReason": "혐오 표현이 포함된 게시글입니다.",
+        "imageUrls": [],
+        "status": "PENDING",
+        "createdAt": "2025-01-15T10:40:00",
+        "reviewedAt": null,
+        "rejectedReason": null
       }
     ],
     "page": 0,
     "size": 20,
-    "total": 1,
+    "total": 2,
     "totalPages": 1,
     "hasNext": false
   }

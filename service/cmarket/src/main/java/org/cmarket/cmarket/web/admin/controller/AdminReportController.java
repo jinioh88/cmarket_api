@@ -1,4 +1,4 @@
-package org.cmarket.cmarket.web.report.controller;
+package org.cmarket.cmarket.web.admin.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

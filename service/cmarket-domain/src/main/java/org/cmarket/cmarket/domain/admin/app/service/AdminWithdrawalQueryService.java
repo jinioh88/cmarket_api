@@ -73,6 +73,8 @@ public class AdminWithdrawalQueryService {
                 .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
+                .authorNickname(user.getNickname())
+                .title(user.getWithdrawalDetailReason() != null ? user.getWithdrawalDetailReason() : "")
                 .name(user.getName())
                 .role(user.getRole())
                 .addressSido(user.getAddressSido())

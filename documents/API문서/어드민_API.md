@@ -254,6 +254,8 @@ GET /api/admin/withdrawals
 | data.content[].id | Long | 회원 ID |
 | data.content[].email | String | 이메일 |
 | data.content[].nickname | String | 닉네임 |
+| data.content[].authorNickname | String | 작성자 닉네임 |
+| data.content[].title | String | 제목 (탈퇴 상세 사유 요약) |
 | data.content[].name | String | 이름 |
 | data.content[].role | UserRole | 권한 |
 | data.content[].addressSido | String | 시/도 (nullable) |

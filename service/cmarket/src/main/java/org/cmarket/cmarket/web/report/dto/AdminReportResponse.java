@@ -2,6 +2,7 @@ package org.cmarket.cmarket.web.report.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.report.app.dto.ReportDto;
 import org.cmarket.cmarket.domain.report.model.ReportStatus;
 import org.cmarket.cmarket.domain.report.model.ReportTargetType;
@@ -16,6 +17,7 @@ public class AdminReportResponse {
     private Long reporterId;
     private ReportTargetType targetType;
     private Long targetId;
+    private BoardType boardType;  // COMMUNITY_POST일 때만 값 있음 (nullable)
     private List<String> reasonCodes;
     private String detailReason;
     private List<String> imageUrls;
@@ -30,6 +32,7 @@ public class AdminReportResponse {
                 .reporterId(dto.getReporterId())
                 .targetType(dto.getTargetType())
                 .targetId(dto.getTargetId())
+                .boardType(dto.getBoardType())
                 .reasonCodes(dto.getReasonCodes())
                 .detailReason(dto.getDetailReason())
                 .imageUrls(dto.getImageUrls())
