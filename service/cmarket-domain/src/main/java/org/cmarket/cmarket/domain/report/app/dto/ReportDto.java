@@ -23,8 +23,10 @@ import java.util.Map;
 public class ReportDto {
     private Long id;
     private Long reporterId;
+    private String reporterNickname;  // 신고자 닉네임
     private ReportTargetType targetType;
     private Long targetId;
+    private String targetNickname;    // 신고 대상자 닉네임 (USER: 피신고자, PRODUCT: 판매자, COMMUNITY_POST: 게시글 작성자)
     private List<String> reasonCodes;
     private String detailReason;
     private List<String> imageUrls;
@@ -43,24 +45,34 @@ public class ReportDto {
     }
 
     /**
-     * Report 엔티티에서 DTO로 변환 (boardType 보강)
-     * targetType이 COMMUNITY_POST일 때 postBoardTypes에서 boardType을 조회하여 설정합니다.
+     * Report 엔티티에서 DTO로 변환 (boardType, 닉네임 보강)
      *
      * @param report Report 엔티티
-     * @param postBoardTypes targetId -> BoardType 매핑 (COMMUNITY_POST 신고용)
+     * @param enrichment 보강 데이터 (boardType, reporterNickname, targetNickname)
      * @return ReportDto
      */
-    public static ReportDto fromEntity(Report report, Map<Long, BoardType> postBoardTypes) {
+    public static ReportDto fromEntity(Report report, ReportEnrichment enrichment) {
         BoardType boardType = null;
-        if (report.getTargetType() == ReportTargetType.COMMUNITY_POST && postBoardTypes != null) {
-            boardType = postBoardTypes.get(report.getTargetId());
+        String reporterNickname = null;
+        String targetNickname = null;
+
+        if (enrichment != null) {
+            if (report.getTargetType() == ReportTargetType.COMMUNITY_POST && enrichment.postBoardTypes() != null) {
+                boardType = enrichment.postBoardTypes().get(report.getTargetId());
+            }
+            if (enrichment.userIdToNickname() != null) {
+                reporterNickname = enrichment.userIdToNickname().get(report.getReporterId());
+            }
+            targetNickname = enrichment.getTargetNickname(report.getTargetType(), report.getTargetId());
         }
 
         return ReportDto.builder()
                 .id(report.getId())
                 .reporterId(report.getReporterId())
+                .reporterNickname(reporterNickname)
                 .targetType(report.getTargetType())
                 .targetId(report.getTargetId())
+                .targetNickname(targetNickname)
                 .reasonCodes(report.getReasonCodes() != null ? new ArrayList<>(report.getReasonCodes()) : new ArrayList<>())
                 .detailReason(report.getDetailReason())
                 .imageUrls(report.getImageUrls() != null ? new ArrayList<>(report.getImageUrls()) : new ArrayList<>())
@@ -68,6 +80,29 @@ public class ReportDto {
                 .createdAt(report.getCreatedAt())
                 .boardType(boardType)
                 .build();
+    }
+
+    /**
+     * 신고 목록 조회 시 사용하는 보강 데이터
+     */
+    public record ReportEnrichment(
+            Map<Long, BoardType> postBoardTypes,
+            Map<Long, String> userIdToNickname,
+            Map<Long, Long> productIdToSellerId,
+            Map<Long, String> postIdToAuthorNickname
+    ) {
+        public String getTargetNickname(ReportTargetType targetType, Long targetId) {
+            if (targetType == null || targetId == null) return null;
+            return switch (targetType) {
+                case USER -> userIdToNickname != null ? userIdToNickname.get(targetId) : null;
+                case PRODUCT -> {
+                    if (productIdToSellerId == null || userIdToNickname == null) yield null;
+                    Long sellerId = productIdToSellerId.get(targetId);
+                    yield sellerId != null ? userIdToNickname.get(sellerId) : null;
+                }
+                case COMMUNITY_POST -> postIdToAuthorNickname != null ? postIdToAuthorNickname.get(targetId) : null;
+            };
+        }
     }
 }
 

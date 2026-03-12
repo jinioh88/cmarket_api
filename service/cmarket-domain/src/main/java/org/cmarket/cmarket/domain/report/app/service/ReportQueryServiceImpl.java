@@ -1,9 +1,13 @@
 package org.cmarket.cmarket.domain.report.app.service;
 
 import lombok.RequiredArgsConstructor;
+import org.cmarket.cmarket.domain.auth.model.User;
+import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.model.Post;
 import org.cmarket.cmarket.domain.community.repository.PostRepository;
+import org.cmarket.cmarket.domain.product.model.Product;
+import org.cmarket.cmarket.domain.product.repository.ProductRepository;
 import org.cmarket.cmarket.domain.report.app.dto.ReportDto;
 import org.cmarket.cmarket.domain.report.model.Report;
 import org.cmarket.cmarket.domain.report.model.ReportStatus;
@@ -27,13 +31,16 @@ public class ReportQueryServiceImpl implements ReportQueryService {
 
     private final ReportRepository reportRepository;
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final ProductRepository productRepository;
 
     @Override
     public Page<ReportDto> getReports(ReportTargetType targetType, ReportStatus status, Pageable pageable) {
         // 우선 순위: targetType + status 조합은 레포지토리 메서드 사용
         if (targetType != null && status != null) {
             Page<Report> page = reportRepository.findByTargetTypeAndStatusOrderByCreatedAtDesc(targetType, status, pageable);
-            return page.map(report -> ReportDto.fromEntity(report, buildPostBoardTypeMap(page.getContent())));
+            ReportDto.ReportEnrichment enrichment = buildEnrichment(page.getContent());
+            return page.map(report -> ReportDto.fromEntity(report, enrichment));
         }
 
         // 나머지 조합은 전체 조회 후 필터링 (정렬: createdAt DESC)
@@ -46,30 +53,70 @@ public class ReportQueryServiceImpl implements ReportQueryService {
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), filtered.size());
         List<Report> pageContent = filtered.subList(Math.min(start, filtered.size()), end);
-        Map<Long, BoardType> postBoardTypes = buildPostBoardTypeMap(pageContent);
+        ReportDto.ReportEnrichment enrichment = buildEnrichment(pageContent);
         List<ReportDto> content = pageContent.stream()
-                .map(report -> ReportDto.fromEntity(report, postBoardTypes))
+                .map(report -> ReportDto.fromEntity(report, enrichment))
                 .toList();
 
         return new PageImpl<>(content, pageable, filtered.size());
     }
 
     /**
-     * COMMUNITY_POST 신고의 targetId에 해당하는 Post를 한 번에 조회하여 boardType 매핑 생성 (N+1 방지)
+     * 신고 목록 조회 시 닉네임, boardType 등 보강 데이터 생성 (N+1 방지)
      */
-    private Map<Long, BoardType> buildPostBoardTypeMap(List<Report> reports) {
+    private ReportDto.ReportEnrichment buildEnrichment(List<Report> reports) {
+        // 1. reporterIds, USER targetIds 수집
+        List<Long> reporterIds = reports.stream().map(Report::getReporterId).distinct().toList();
+        List<Long> userTargetIds = reports.stream()
+                .filter(r -> r.getTargetType() == ReportTargetType.USER)
+                .map(Report::getTargetId)
+                .distinct()
+                .toList();
+
+        // 2. PRODUCT targetIds -> sellerIds
+        List<Long> productTargetIds = reports.stream()
+                .filter(r -> r.getTargetType() == ReportTargetType.PRODUCT)
+                .map(Report::getTargetId)
+                .distinct()
+                .toList();
+        Map<Long, Long> productIdToSellerId = Map.of();
+        List<Long> sellerIds = List.of();
+        if (!productTargetIds.isEmpty()) {
+            List<Product> products = productRepository.findAllById(productTargetIds);
+            productIdToSellerId = products.stream()
+                    .collect(Collectors.toMap(Product::getId, Product::getSellerId));
+            sellerIds = products.stream().map(Product::getSellerId).distinct().toList();
+        }
+
+        // 3. COMMUNITY_POST targetIds
         List<Long> postIds = reports.stream()
                 .filter(r -> r.getTargetType() == ReportTargetType.COMMUNITY_POST)
                 .map(Report::getTargetId)
                 .distinct()
                 .toList();
 
-        if (postIds.isEmpty()) {
-            return Map.of();
+        // 4. User 일괄 조회 (reporter + USER target + PRODUCT seller)
+        List<Long> allUserIds = java.util.stream.Stream.concat(
+                java.util.stream.Stream.concat(reporterIds.stream(), userTargetIds.stream()),
+                sellerIds.stream()
+        ).distinct().toList();
+        Map<Long, String> userIdToNickname = Map.of();
+        if (!allUserIds.isEmpty()) {
+            userIdToNickname = userRepository.findAllById(allUserIds).stream()
+                    .collect(Collectors.toMap(User::getId, User::getNickname, (a, b) -> a));
         }
 
-        return postRepository.findAllById(postIds).stream()
-                .collect(Collectors.toMap(Post::getId, Post::getBoardType));
+        // 5. Post 일괄 조회 (boardType + authorNickname)
+        Map<Long, BoardType> postBoardTypes = Map.of();
+        Map<Long, String> postIdToAuthorNickname = Map.of();
+        if (!postIds.isEmpty()) {
+            List<Post> posts = postRepository.findAllById(postIds);
+            postBoardTypes = posts.stream().collect(Collectors.toMap(Post::getId, Post::getBoardType));
+            postIdToAuthorNickname = posts.stream()
+                    .collect(Collectors.toMap(Post::getId, p -> p.getAuthorNickname() != null ? p.getAuthorNickname() : ""));
+        }
+
+        return new ReportDto.ReportEnrichment(postBoardTypes, userIdToNickname, productIdToSellerId, postIdToAuthorNickname);
     }
 }
 

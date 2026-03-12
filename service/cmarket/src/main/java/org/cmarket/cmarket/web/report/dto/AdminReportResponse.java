@@ -15,9 +15,11 @@ import java.util.List;
 public class AdminReportResponse {
     private Long id;
     private Long reporterId;
+    private String reporterNickname;  // 신고자 닉네임
     private ReportTargetType targetType;
     private Long targetId;
-    private BoardType boardType;  // COMMUNITY_POST일 때만 값 있음 (nullable)
+    private String targetNickname;   // 신고 대상자 닉네임
+    private BoardType boardType;     // COMMUNITY_POST일 때만 값 있음 (nullable)
     private List<String> reasonCodes;
     private String detailReason;
     private List<String> imageUrls;
@@ -30,8 +32,10 @@ public class AdminReportResponse {
         return AdminReportResponse.builder()
                 .id(dto.getId())
                 .reporterId(dto.getReporterId())
+                .reporterNickname(dto.getReporterNickname())
                 .targetType(dto.getTargetType())
                 .targetId(dto.getTargetId())
+                .targetNickname(dto.getTargetNickname())
                 .boardType(dto.getBoardType())
                 .reasonCodes(dto.getReasonCodes())
                 .detailReason(dto.getDetailReason())

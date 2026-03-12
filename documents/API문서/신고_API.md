@@ -147,7 +147,7 @@ http://localhost:8080
 | `SELF_HARM_OR_SUICIDE` | 자해 또는 자살 의도를 포함 |
 | `ETC` | 기타 (직접 입력) |
 
-### BoardType (커뮤니티 게시판 유형)
+햣 ### BoardType (커뮤니티 게시판 유형)
 
 | Enum 값 | 설명 |
 |---------|------|
@@ -817,8 +817,10 @@ GET /api/admin/reports
 | data.content | Array | 신고 목록 |
 | data.content[].id | Long | 신고 ID |
 | data.content[].reporterId | Long | 신고자 ID |
+| data.content[].reporterNickname | String | 신고자 닉네임 |
 | data.content[].targetType | String | 신고 대상 타입 |
 | data.content[].targetId | Long | 신고 대상 ID |
+| data.content[].targetNickname | String | 신고 대상자 닉네임 (USER: 피신고자, PRODUCT: 판매자, COMMUNITY_POST: 게시글 작성자) |
 | data.content[].boardType | BoardType | 게시판 유형 (COMMUNITY_POST일 때만 값 있음, nullable) |
 | data.content[].reasonCodes | String[] | 신고 사유 코드 리스트 |
 | data.content[].detailReason | String | 상세 사유 (nullable) |
@@ -861,8 +863,10 @@ Content-Type: application/json
       {
         "id": 1,
         "reporterId": 1,
+        "reporterNickname": "신고자닉네임",
         "targetType": "USER",
         "targetId": 123,
+        "targetNickname": "피신고자닉네임",
         "boardType": null,
         "reasonCodes": ["HARASSMENT"],
         "detailReason": "부적절한 행위를 반복적으로 하고 있습니다.",
@@ -875,8 +879,10 @@ Content-Type: application/json
       {
         "id": 2,
         "reporterId": 2,
+        "reporterNickname": "신고자닉네임2",
         "targetType": "COMMUNITY_POST",
         "targetId": 789,
+        "targetNickname": "게시글작성자닉네임",
         "boardType": "QUESTION",
         "reasonCodes": ["ABUSE_OR_HATE"],
         "detailReason": "혐오 표현이 포함된 게시글입니다.",
