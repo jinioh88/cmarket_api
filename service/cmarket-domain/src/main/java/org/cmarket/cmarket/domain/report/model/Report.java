@@ -3,6 +3,7 @@ package org.cmarket.cmarket.domain.report.model;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -57,7 +58,7 @@ public class Report {
     @Column(nullable = false, name = "target_id")
     private Long targetId;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "report_reasons",
         joinColumns = @JoinColumn(name = "report_id")
@@ -68,7 +69,7 @@ public class Report {
     @Column(name = "detail_reason", length = 300)
     private String detailReason;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "report_images",
         joinColumns = @JoinColumn(name = "report_id")

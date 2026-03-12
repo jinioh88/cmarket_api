@@ -7,6 +7,7 @@ import org.cmarket.cmarket.domain.report.model.ReportStatus;
 import org.cmarket.cmarket.domain.report.model.ReportTargetType;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,9 +40,9 @@ public class ReportDto {
                 .reporterId(report.getReporterId())
                 .targetType(report.getTargetType())
                 .targetId(report.getTargetId())
-                .reasonCodes(report.getReasonCodes())
+                .reasonCodes(report.getReasonCodes() != null ? new ArrayList<>(report.getReasonCodes()) : new ArrayList<>())
                 .detailReason(report.getDetailReason())
-                .imageUrls(report.getImageUrls())
+                .imageUrls(report.getImageUrls() != null ? new ArrayList<>(report.getImageUrls()) : new ArrayList<>())
                 .status(report.getStatus())
                 .createdAt(report.getCreatedAt())
                 .build();

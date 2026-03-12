@@ -3,6 +3,7 @@ package org.cmarket.cmarket.domain.product.model;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -79,7 +80,7 @@ public class Product {
     @Column(name = "main_image_url", length = 500)
     private String mainImageUrl;  // 대표 이미지 URL
     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "product_sub_images",
         joinColumns = @JoinColumn(name = "product_id")
