@@ -49,11 +49,11 @@ public class Product {
     private ProductType productType;  // 판매중/판매요청
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name = "pet_type", length = 20)
+    @Column(nullable = false, name = "pet_type", length = 50)
     private PetType petType;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name = "pet_detail_type", length = 30)
+    @Column(nullable = false, name = "pet_detail_type", length = 50)
     private PetDetailType petDetailType;
     
     @Enumerated(EnumType.STRING)
