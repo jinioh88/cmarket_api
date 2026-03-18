@@ -8,6 +8,10 @@ package org.cmarket.cmarket.domain.product.model;
  * 파충류: 도마뱀, 뱀, 거북이, 게코
  * 수생동물: 금붕어, 열대어, 체리새우, 달팽이
  * 곤충/절지동물: 귀뚜라미, 사마귀, 딱정벌레, 거미
+ * 양서류: 개구리, 도롱뇽, 우파루파, 영원
+ * 설치류: 다람쥐, 마우스, 랫, 저빌
+ * 갑각류: 가재, 소라게, 크랩, 대게
+ * 식물/수초: 수초, 이끼, 다육이, 반려식물
  */
 public enum PetDetailType {
     // 포유류
@@ -42,6 +46,30 @@ public enum PetDetailType {
     CRICKET,
     MANTIS,
     BEETLE,
-    SPIDER
+    SPIDER,
+    
+    // 양서류
+    FROG,
+    SALAMANDER,
+    AXOLOTL,
+    NEWT,
+    
+    // 설치류
+    SQUIRREL,
+    MOUSE,
+    RAT,
+    GERBIL,
+    
+    // 갑각류
+    CRAYFISH,
+    HERMIT_CRAB,
+    CRAB,
+    GIANT_CRAB,
+    
+    // 식물/수초
+    AQUATIC_PLANT,
+    MOSS,
+    SUCCULENT,
+    PET_PLANT
 }
 

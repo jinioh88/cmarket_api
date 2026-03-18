@@ -8,6 +8,10 @@ package org.cmarket.cmarket.domain.product.model;
  * REPTILE: 파충류
  * FISH: 수생동물
  * AMPHIBIAN: 곤충/절지동물
+ * AMPHIBIAN_REAL: 양서류
+ * RODENT: 설치류
+ * CRUSTACEAN: 갑각류
+ * PLANT: 식물/수초
  */
 public enum PetType {
     MAMMAL,
@@ -15,6 +19,10 @@ public enum PetType {
     REPTILE,
     FISH,
     AMPHIBIAN,
+    AMPHIBIAN_REAL,
+    RODENT,
+    CRUSTACEAN,
+    PLANT,
     ETC
 }
 

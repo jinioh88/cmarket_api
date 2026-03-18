@@ -68,8 +68,8 @@ http://localhost:8080
 
 | Enum | 값 | 설명 |
 |------|----|----|
-| `PetType` | `REPTILE`, `MAMMAL`, `BIRD`, `FISH`, `AMPHIBIAN`, `ETC` | 반려동물 대분류 |
-| `PetDetailType` | `SNAKE`, `LIZARD`, `TURTLE`, `REPTILE_ETC`, `DOG`, `CAT`, `HAMSTER`, `RABBIT`, `GUINEA_PIG`, `MAMMAL_ETC`, `PARROT`, `CANARY`, `BIRD_ETC`, `GOLDFISH`, `TROPICAL_FISH`, `FISH_ETC`, `FROG`, `SALAMANDER`, `AMPHIBIAN_ETC`, `ETC` | 반려동물 상세 종류 |
+| `PetType` | `REPTILE`, `MAMMAL`, `BIRD`, `FISH`, `AMPHIBIAN`, `AMPHIBIAN_REAL`, `RODENT`, `CRUSTACEAN`, `PLANT`, `ETC` | 반려동물 대분류 |
+| `PetDetailType` | `DOG`, `CAT`, `RABBIT`, `HAMSTER`, `GUINEA_PIG`, `FERRET`, `CHINCHILLA`, `HEDGEHOG`, `BUDGERIGAR`, `PARROT`, `CANARY`, `LOVEBIRD`, `LIZARD`, `SNAKE`, `TURTLE`, `GECKO`, `GOLDFISH`, `TROPICAL_FISH`, `CHERRY_SHRIMP`, `SNAIL`, `CRICKET`, `MANTIS`, `BEETLE`, `SPIDER`, `FROG`, `SALAMANDER`, `AXOLOTL`, `NEWT`, `SQUIRREL`, `MOUSE`, `RAT`, `GERBIL`, `CRAYFISH`, `HERMIT_CRAB`, `CRAB`, `GIANT_CRAB`, `AQUATIC_PLANT`, `MOSS`, `SUCCULENT`, `PET_PLANT` | 반려동물 상세 종류 |
 | `Category` | `FOOD`, `TOY`, `HOUSE`, `CLOTHING`, `HEALTH`, `GROOMING`, `WALKING`, `ETC` | 상품 카테고리 |
 | `ProductStatus` | `NEW`, `LIKE_NEW`, `USED`, `NEED_REPAIR` | 상품 상태 (새 상품, 거의 새것, 사용감 있음, 수리 필요) |
 | `ProductType` | `SELL`, `REQUEST` | 상품 타입 (판매, 판매요청) |
