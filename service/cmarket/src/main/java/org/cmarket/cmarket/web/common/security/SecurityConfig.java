@@ -368,7 +368,8 @@ public class SecurityConfig {
                 "http://localhost:5173",  // 외부 개발자 환경
                 "https://localhost:5173",
                 "https://*.vercel.app",  // Vercel 모든 서브도메인 (프리뷰 + 프로덕션)
-                "https://cuddle-market.vercel.app"  // 프론트엔드 프로덕션 환경 (명시적)
+                "https://cuddle-market.vercel.app",  // 프론트엔드 프로덕션 환경 (명시적),
+                "http://192.168.*.*:3000"
         ));
         
         // 허용할 HTTP 메서드
