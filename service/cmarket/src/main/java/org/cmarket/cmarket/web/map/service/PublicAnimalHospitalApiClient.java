@@ -16,9 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,20 +93,7 @@ public class PublicAnimalHospitalApiClient {
     }
 
     private PublicAnimalHospitalFetchResult fetchSinglePage(HospitalImportRequest request, int pageNo, int numOfRows) {
-        URI uri = UriComponentsBuilder.fromHttpUrl(baseUrl)
-                .path("/info")
-                .queryParam("serviceKey", serviceKey)
-                .queryParam("pageNo", pageNo)
-                .queryParam("numOfRows", numOfRows)
-                .queryParam("returnType", "json")
-                .queryParamIfPresent("cond[OPN_ATMY_GRP_CD::EQ]", optional(request.getOpnAtmyGrpCd()))
-                .queryParamIfPresent("cond[SALS_STTS_CD::EQ]", optional(request.getSalesStatusCode()))
-                .queryParamIfPresent("cond[ROAD_NM_ADDR::LIKE]", optional(request.getRoadNmAddrKeyword()))
-                .queryParamIfPresent("cond[BPLC_NM::LIKE]", optional(request.getBusinessNameKeyword()))
-                .queryParamIfPresent("cond[DAT_UPDT_PNT::GTE]", optional(request.getUpdatedFrom()))
-                .queryParamIfPresent("cond[DAT_UPDT_PNT::LT]", optional(request.getUpdatedTo()))
-                .build(true)
-                .toUri();
+        URI uri = URI.create(buildRequestUrl(request, pageNo, numOfRows));
 
         try {
             String responseBody = restTemplate.getForObject(uri, String.class);
@@ -148,6 +136,33 @@ public class PublicAnimalHospitalApiClient {
         } catch (Exception e) {
             throw new IllegalStateException("동물병원 Open API 응답 처리 중 오류가 발생했습니다.", e);
         }
+    }
+
+    private String buildRequestUrl(HospitalImportRequest request, int pageNo, int numOfRows) {
+        List<String> queryParams = new ArrayList<>();
+        queryParams.add(queryParam("serviceKey", serviceKey));
+        queryParams.add(queryParam("pageNo", String.valueOf(pageNo)));
+        queryParams.add(queryParam("numOfRows", String.valueOf(numOfRows)));
+        queryParams.add(queryParam("returnType", "json"));
+        addOptionalQueryParam(queryParams, "cond[OPN_ATMY_GRP_CD::EQ]", request.getOpnAtmyGrpCd());
+        addOptionalQueryParam(queryParams, "cond[SALS_STTS_CD::EQ]", request.getSalesStatusCode());
+        addOptionalQueryParam(queryParams, "cond[ROAD_NM_ADDR::LIKE]", request.getRoadNmAddrKeyword());
+        addOptionalQueryParam(queryParams, "cond[BPLC_NM::LIKE]", request.getBusinessNameKeyword());
+        addOptionalQueryParam(queryParams, "cond[DAT_UPDT_PNT::GTE]", request.getUpdatedFrom());
+        addOptionalQueryParam(queryParams, "cond[DAT_UPDT_PNT::LT]", request.getUpdatedTo());
+        return baseUrl + "/info?" + String.join("&", queryParams);
+    }
+
+    private void addOptionalQueryParam(List<String> queryParams, String name, String value) {
+        if (StringUtils.hasText(value)) {
+            queryParams.add(queryParam(name, value));
+        }
+    }
+
+    private String queryParam(String name, String value) {
+        return UriUtils.encodeQueryParam(name, StandardCharsets.UTF_8)
+                + "="
+                + UriUtils.encodeQueryParam(value, StandardCharsets.UTF_8);
     }
 
     private HospitalImportCommand toCommand(JsonNode item) {
@@ -203,10 +218,6 @@ public class PublicAnimalHospitalApiClient {
 
     private List<AnimalType> defaultAnimalTypes() {
         return List.of(AnimalType.REPTILE, AnimalType.BIRD);
-    }
-
-    private java.util.Optional<String> optional(String value) {
-        return StringUtils.hasText(value) ? java.util.Optional.of(value) : java.util.Optional.empty();
     }
 
     private String nullIfBlank(String value) {
