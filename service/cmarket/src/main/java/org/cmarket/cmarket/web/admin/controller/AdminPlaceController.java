@@ -4,13 +4,18 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.cmarket.cmarket.domain.map.app.service.MapAdminQueryService;
 import org.cmarket.cmarket.domain.map.app.service.MapAdminService;
+import org.cmarket.cmarket.domain.map.app.service.MapImportService;
 import org.cmarket.cmarket.domain.map.model.PlaceCategory;
 import org.cmarket.cmarket.web.admin.dto.AdminPlaceListResponse;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.map.dto.AdminPlaceRequest;
 import org.cmarket.cmarket.web.map.dto.AdminPlaceResponse;
+import org.cmarket.cmarket.web.map.dto.HospitalImportRequest;
+import org.cmarket.cmarket.web.map.dto.HospitalImportResponse;
 import org.cmarket.cmarket.web.map.dto.PlaceRecommendationUpdateRequest;
+import org.cmarket.cmarket.web.map.dto.PublicAnimalHospitalFetchResult;
+import org.cmarket.cmarket.web.map.service.PublicAnimalHospitalApiClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,6 +35,8 @@ public class AdminPlaceController {
 
     private final MapAdminService mapAdminService;
     private final MapAdminQueryService mapAdminQueryService;
+    private final MapImportService mapImportService;
+    private final PublicAnimalHospitalApiClient publicAnimalHospitalApiClient;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
@@ -83,6 +90,29 @@ public class AdminPlaceController {
     ) {
         AdminPlaceResponse response = AdminPlaceResponse.fromDto(
                 mapAdminService.updateRecommendation(placeId, request.toCommand())
+        );
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import/hospitals")
+    public ResponseEntity<SuccessResponse<HospitalImportResponse>> importHospitals(
+            @RequestBody(required = false) HospitalImportRequest request
+    ) {
+        HospitalImportRequest importRequest = request != null ? request : new HospitalImportRequest();
+        PublicAnimalHospitalFetchResult fetchResult = publicAnimalHospitalApiClient.fetchHospitals(importRequest);
+        org.cmarket.cmarket.domain.map.app.dto.HospitalImportResultDto importResult =
+                mapImportService.importHospitals(fetchResult.hospitals());
+
+        HospitalImportResponse response = HospitalImportResponse.of(
+                fetchResult.hospitals().size(),
+                importRequest.getPageNo() != null ? importRequest.getPageNo() : 1,
+                importRequest.getNumOfRows() != null ? importRequest.getNumOfRows() : 100,
+                Boolean.TRUE.equals(importRequest.getImportAllPages()),
+                fetchResult.totalCount(),
+                importResult
         );
 
         return ResponseEntity.status(HttpStatus.OK)

@@ -56,6 +56,9 @@ dependencies {
     
     // Caffeine Cache
     implementation 'com.github.ben-manes.caffeine:caffeine'
+
+    // Coordinate transform (EPSG:5174 -> WGS84)
+    implementation 'org.locationtech.proj4j:proj4j:1.2.3'
     
     // AWS SDK S3 (v2)
     implementation 'software.amazon.awssdk:s3:2.20.26'
@@ -76,4 +79,3 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
-

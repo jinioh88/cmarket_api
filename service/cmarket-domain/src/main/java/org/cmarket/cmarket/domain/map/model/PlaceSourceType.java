@@ -5,5 +5,6 @@ package org.cmarket.cmarket.domain.map.model;
  */
 public enum PlaceSourceType {
     NAVER,
+    PUBLIC_DATA,
     ADMIN
 }

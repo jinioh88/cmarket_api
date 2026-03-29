@@ -1,0 +1,138 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1774771158168,
+  "projectRoot": "/Users/osejin/Desktop/cmarket_api",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Java/Kotlin",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "build.gradle"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "gradle",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "build": {
+      "path": "build",
+      "purpose": "Build output",
+      "fileCount": 1,
+      "lastAccessed": 1774771158139,
+      "keyFiles": []
+    },
+    "data": {
+      "path": "data",
+      "purpose": "Data files",
+      "fileCount": 2,
+      "lastAccessed": 1774771158140,
+      "keyFiles": [
+        "cmarket.mv.db",
+        "cmarket.trace.db"
+      ]
+    },
+    "documents": {
+      "path": "documents",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1774771158140,
+      "keyFiles": [
+        "cuddle-market-map-api-data-requirements-v1.md",
+        "cuddle-market-map-backend-sprint-1-v1.md",
+        "cuddle-market-map-feature-prd-v1.md"
+      ]
+    },
+    "gradle": {
+      "path": "gradle",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1774771158140,
+      "keyFiles": []
+    },
+    "h2data": {
+      "path": "h2data",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1774771158140,
+      "keyFiles": [
+        "cmarket.mv.db"
+      ]
+    },
+    "proxy": {
+      "path": "proxy",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1774771158141,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 4,
+      "lastAccessed": 1774771158141,
+      "keyFiles": [
+        "README-migration.md",
+        "alter-pet-type-columns.sql",
+        "migrate-image-extensions-to-webp.sql",
+        "migrate-s3-to-cloudfront-urls.sql"
+      ]
+    },
+    "service": {
+      "path": "service",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1774771158141,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "proxy/data": {
+      "path": "proxy/data",
+      "purpose": "Data files",
+      "fileCount": 2,
+      "lastAccessed": 1774771158144,
+      "keyFiles": [
+        "database.sqlite",
+        "keys.json"
+      ]
+    },
+    "service/build": {
+      "path": "service/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1774771158144,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

@@ -22,6 +22,7 @@
    - [5-2. 어드민 장소 등록](#5-2-어드민-장소-등록-post-apiadminplaces)
    - [5-3. 어드민 장소 수정](#5-3-어드민-장소-수정-patch-apiadminplacesplaceid)
    - [5-4. 추천 여부 수정](#5-4-추천-여부-수정-patch-apiadminplacesplaceidrecommendation)
+   - [5-5. 공공데이터 동물병원 import](#5-5-공공데이터-동물병원-import-post-apiadminplacesimporthospitals)
 6. [FAQ 및 참고](#faq-및-참고)
 
 ---
@@ -617,6 +618,69 @@ GET /api/places/101/reviews?sort=latest&page=0&size=10
 
 ---
 
+### 5-5. 공공데이터 동물병원 import (POST /api/admin/places/import/hospitals)
+
+- **인증 필요**: 예 (`ADMIN`)
+- **설명**: 공공데이터포털의 동물병원 Open API를 호출해 병원 데이터를 가져오고, 내부 `Place/HospitalDetail` 구조로 저장 또는 갱신합니다.
+- **동작 방식**:
+  - 외부 병원 데이터 조회
+  - 좌표계(EPSG:5174) -> WGS84 위경도 변환
+  - `externalPlaceId` 기준 upsert
+  - 좌표가 없는 데이터는 skip
+
+#### Request Body (`HospitalImportRequest`)
+
+| 필드 | 타입 | 필수 | 기본값 | 설명 |
+|------|------|------|--------|------|
+| `pageNo` | Integer | 아니오 | `1` | 조회 시작 페이지 |
+| `numOfRows` | Integer | 아니오 | `100` | 페이지당 건수 |
+| `importAllPages` | Boolean | 아니오 | `false` | `true`면 여러 페이지를 순차 import |
+| `opnAtmyGrpCd` | String | 아니오 | - | 개방자치단체코드 |
+| `salesStatusCode` | String | 아니오 | - | 영업상태코드 필터 |
+| `roadNmAddrKeyword` | String | 아니오 | - | 도로명주소 LIKE 검색 |
+| `businessNameKeyword` | String | 아니오 | - | 사업장명 LIKE 검색 |
+| `updatedFrom` | String | 아니오 | - | 데이터갱신시점 시작값 (YYYYMMDDHHMMSS) |
+| `updatedTo` | String | 아니오 | - | 데이터갱신시점 종료값 (YYYYMMDDHHMMSS) |
+
+#### 요청 예시
+
+```json
+{
+  "pageNo": 1,
+  "numOfRows": 100,
+  "importAllPages": false,
+  "roadNmAddrKeyword": "서울특별시",
+  "businessNameKeyword": "동물병원"
+}
+```
+
+#### 응답 예시
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "성공",
+  "data": {
+    "fetchedCount": 100,
+    "requestedPageNo": 1,
+    "requestedNumOfRows": 100,
+    "importAllPages": false,
+    "apiTotalCount": 12543,
+    "importedCount": 93,
+    "skippedCount": 7
+  }
+}
+```
+
+#### 운영 참고
+
+- 서비스 키는 코드에 직접 넣지 않고 환경 변수로 주입합니다.
+- 환경 변수:
+  - `ANIMAL_HOSPITAL_API_SERVICE_KEY`
+  - `ANIMAL_HOSPITAL_API_BASE_URL` (선택)
+
+---
+
 ## FAQ 및 참고
 
 ### 1. 병원 전용 필터를 카페/식당/숙소에 보내면 어떻게 되나요?
@@ -637,4 +701,4 @@ GET /api/places/101/reviews?sort=latest&page=0&size=10
 ### 4. 장소 데이터는 어디서 들어오나요?
 
 - 현재 구현 기준으로는 관리자 수기 등록(`ADMIN`) 데이터가 우선 사용 가능합니다.
-- 외부 Open API 자동 연동/동기화는 추후 결정 예정입니다.
+- 공공데이터 동물병원 Open API는 어드민 import API로 연동 가능합니다.
