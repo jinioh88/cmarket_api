@@ -12,6 +12,7 @@ import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.map.dto.AdminPlaceRequest;
 import org.cmarket.cmarket.web.map.dto.AdminPlaceResponse;
 import org.cmarket.cmarket.web.map.dto.HospitalImportRequest;
+import org.cmarket.cmarket.web.map.dto.HospitalImportRangeRequest;
 import org.cmarket.cmarket.web.map.dto.HospitalImportResponse;
 import org.cmarket.cmarket.web.map.dto.PlaceRecommendationUpdateRequest;
 import org.cmarket.cmarket.web.map.dto.PublicAnimalHospitalFetchResult;
@@ -143,6 +144,41 @@ public class AdminPlaceController {
                 HOSPITAL_FULL_IMPORT_START_PAGE,
                 HOSPITAL_FULL_IMPORT_END_PAGE,
                 HOSPITAL_FULL_IMPORT_PAGE_SIZE,
+                fetchResult.totalCount(),
+                importResult
+        );
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import/hospitals/range")
+    public ResponseEntity<SuccessResponse<HospitalImportResponse>> importHospitalsByRange(
+            @RequestBody(required = false) HospitalImportRangeRequest request
+    ) {
+        HospitalImportRangeRequest importRangeRequest = request != null ? request : new HospitalImportRangeRequest();
+        int startPage = importRangeRequest.getStartPage() != null ? importRangeRequest.getStartPage() : 1;
+        int endPage = importRangeRequest.getEndPage() != null ? importRangeRequest.getEndPage() : startPage;
+        int numOfRows = importRangeRequest.getNumOfRows() != null ? importRangeRequest.getNumOfRows() : 100;
+
+        HospitalImportRequest importRequest = new HospitalImportRequest();
+        importRequest.setNumOfRows(numOfRows);
+        importRequest.setImportAllPages(true);
+
+        PublicAnimalHospitalFetchResult fetchResult = publicAnimalHospitalApiClient.fetchHospitalsByPageRange(
+                importRequest,
+                startPage,
+                endPage
+        );
+        org.cmarket.cmarket.domain.map.app.dto.HospitalImportResultDto importResult =
+                mapImportService.importHospitals(fetchResult.hospitals());
+
+        HospitalImportResponse response = HospitalImportResponse.ofPageRange(
+                fetchResult.hospitals().size(),
+                startPage,
+                endPage,
+                numOfRows,
                 fetchResult.totalCount(),
                 importResult
         );

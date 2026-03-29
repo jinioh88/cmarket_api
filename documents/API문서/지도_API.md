@@ -719,6 +719,71 @@ curl -X POST "https://cmarket-api.duckdns.org/api/admin/places/import/hospitals/
 }
 ```
 
+---
+
+### 5-7. 공공데이터 동물병원 범위 적재 (POST /api/admin/places/import/hospitals/range)
+
+- **인증 필요**: 예 (`ADMIN`)
+- **설명**: 타임아웃을 피하기 위해 지정한 페이지 범위만 적재하는 운영용 API입니다.
+- **권장 사용 방식**:
+  - `1~10`
+  - `11~20`
+  - `21~30`
+  - ...
+  - `101~105`
+
+#### Request Body (`HospitalImportRangeRequest`)
+
+| 필드 | 타입 | 필수 | 기본값 | 설명 |
+|------|------|------|--------|------|
+| `startPage` | Integer | 아니오 | `1` | 시작 페이지 |
+| `endPage` | Integer | 아니오 | `10` | 종료 페이지 |
+| `numOfRows` | Integer | 아니오 | `100` | 페이지당 건수 |
+
+#### 요청 예시
+
+```json
+{
+  "startPage": 1,
+  "endPage": 10,
+  "numOfRows": 100
+}
+```
+
+#### 호출 예시
+
+```bash
+curl -X POST "https://cmarket-api.duckdns.org/api/admin/places/import/hospitals/range" \
+  -H "Authorization: Bearer {ADMIN_ACCESS_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startPage": 1,
+    "endPage": 10,
+    "numOfRows": 100
+  }'
+```
+
+#### 응답 예시
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "성공",
+  "data": {
+    "fetchedCount": 1000,
+    "requestedPageNo": 1,
+    "requestedNumOfRows": 100,
+    "importAllPages": true,
+    "requestedStartPage": 1,
+    "requestedEndPage": 10,
+    "processedPages": 10,
+    "apiTotalCount": 10490,
+    "importedCount": 982,
+    "skippedCount": 18
+  }
+}
+```
+
 #### 운영 참고
 
 - 서비스 키는 코드에 직접 넣지 않고 환경 변수로 주입합니다.
