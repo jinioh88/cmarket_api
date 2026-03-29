@@ -55,7 +55,15 @@ public enum ErrorCode {
     INVALID_SEARCH_KEYWORD(400, "검색어가 유효하지 않습니다."),
     INVALID_SORT_CRITERIA(400, "정렬 기준이 유효하지 않습니다."),
     INVALID_FILTER_CRITERIA(400, "필터 기준이 유효하지 않습니다."),
-    
+
+    // 지도 관련 (400)
+    INVALID_PLACE_FILTER(400, "장소 필터 조건이 유효하지 않습니다."),
+    INVALID_LOCATION_RANGE(400, "위치 범위 값이 유효하지 않습니다."),
+    UNSUPPORTED_PLACE_CATEGORY(400, "지원하지 않는 장소 카테고리입니다."),
+
+    // 지도 관련 (404)
+    PLACE_NOT_FOUND(404, "장소를 찾을 수 없습니다."),
+
     // 커뮤니티 관련 (400)
     POST_ALREADY_DELETED(400, "이미 삭제된 게시글입니다."),
     COMMENT_DEPTH_EXCEEDED(400, "댓글은 최대 3단계까지만 작성할 수 있습니다."),
@@ -94,4 +102,3 @@ public enum ErrorCode {
         return statusCode;
     }
 }
-

@@ -1,0 +1,91 @@
+package org.cmarket.cmarket.web.admin.controller;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.cmarket.cmarket.domain.map.app.service.MapAdminQueryService;
+import org.cmarket.cmarket.domain.map.app.service.MapAdminService;
+import org.cmarket.cmarket.domain.map.model.PlaceCategory;
+import org.cmarket.cmarket.web.admin.dto.AdminPlaceListResponse;
+import org.cmarket.cmarket.web.common.response.ResponseCode;
+import org.cmarket.cmarket.web.common.response.SuccessResponse;
+import org.cmarket.cmarket.web.map.dto.AdminPlaceRequest;
+import org.cmarket.cmarket.web.map.dto.AdminPlaceResponse;
+import org.cmarket.cmarket.web.map.dto.PlaceRecommendationUpdateRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/admin/places")
+public class AdminPlaceController {
+
+    private final MapAdminService mapAdminService;
+    private final MapAdminQueryService mapAdminQueryService;
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<SuccessResponse<AdminPlaceListResponse>> getPlaces(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) PlaceCategory category,
+            @RequestParam(required = false) Boolean isRecommended,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size
+    ) {
+        AdminPlaceListResponse response = AdminPlaceListResponse.fromPageResult(
+                mapAdminQueryService.getPlacesForAdmin(keyword, category, isRecommended, page, size).places()
+        );
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public ResponseEntity<SuccessResponse<AdminPlaceResponse>> createPlace(
+            @Valid @RequestBody AdminPlaceRequest request
+    ) {
+        AdminPlaceResponse response = AdminPlaceResponse.fromDto(
+                mapAdminService.createPlace(request.toCommand())
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new SuccessResponse<>(ResponseCode.CREATED, response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{placeId}")
+    public ResponseEntity<SuccessResponse<AdminPlaceResponse>> updatePlace(
+            @PathVariable Long placeId,
+            @Valid @RequestBody AdminPlaceRequest request
+    ) {
+        AdminPlaceResponse response = AdminPlaceResponse.fromDto(
+                mapAdminService.updatePlace(placeId, request.toCommand())
+        );
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{placeId}/recommendation")
+    public ResponseEntity<SuccessResponse<AdminPlaceResponse>> updateRecommendation(
+            @PathVariable Long placeId,
+            @Valid @RequestBody PlaceRecommendationUpdateRequest request
+    ) {
+        AdminPlaceResponse response = AdminPlaceResponse.fromDto(
+                mapAdminService.updateRecommendation(placeId, request.toCommand())
+        );
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+}
