@@ -294,7 +294,8 @@ public class SecurityConfig {
                 // 상품 관련 GET 요청은 인증 불필요 (목록, 상세 조회)
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 
-                // 지도 관련 GET 요청은 인증 불필요 (목록, 상세 조회)
+                // 지도 관련 GET 요청은 인증 불필요 (목록, 상세 조회, 리뷰 조회)
+                .requestMatchers(HttpMethod.GET, "/api/places").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/places/**").permitAll()
 
                 // 이미지 조회는 인증 불필요
