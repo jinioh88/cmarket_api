@@ -2,6 +2,7 @@ package org.cmarket.cmarket.web.common.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.servlet.DispatcherType;
 import org.cmarket.cmarket.web.common.response.ErrorResponse;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
@@ -270,6 +271,13 @@ public class SecurityConfig {
             
             // 접근 권한 설정
             .authorizeHttpRequests(auth -> auth
+                // 에러/포워드/비동기 재디스패치는 보안 검사에서 제외
+                .dispatcherTypeMatchers(
+                    DispatcherType.ERROR,
+                    DispatcherType.FORWARD,
+                    DispatcherType.ASYNC
+                ).permitAll()
+
                 // OPTIONS 요청은 CORS preflight를 위해 항상 허용
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 
