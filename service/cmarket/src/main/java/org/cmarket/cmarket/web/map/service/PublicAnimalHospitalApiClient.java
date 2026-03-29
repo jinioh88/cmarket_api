@@ -28,6 +28,7 @@ import java.util.List;
 public class PublicAnimalHospitalApiClient {
 
     private static final int MAX_IMPORT_PAGES = 50;
+    private static final int DEFAULT_PAGE_SIZE = 100;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -37,7 +38,7 @@ public class PublicAnimalHospitalApiClient {
 
     public PublicAnimalHospitalApiClient(
             ObjectMapper objectMapper,
-            @Value("${public-data.animal-hospital.base-url:https://api.localdata.go.kr/api/animal_hospitals/v1}") String baseUrl,
+            @Value("${public-data.animal-hospital.base-url:https://apis.data.go.kr/1741000/animal_hospitals}") String baseUrl,
             @Value("${public-data.animal-hospital.service-key:}") String serviceKey
     ) {
         this.restTemplate = new RestTemplate();
@@ -87,6 +88,32 @@ public class PublicAnimalHospitalApiClient {
             }
 
             pageNo++;
+        }
+
+        return new PublicAnimalHospitalFetchResult(totalCount, hospitals);
+    }
+
+    public PublicAnimalHospitalFetchResult fetchHospitalsByPageRange(
+            HospitalImportRequest request,
+            int startPage,
+            int endPage
+    ) {
+        if (!StringUtils.hasText(serviceKey)) {
+            throw new IllegalStateException("공공데이터 동물병원 API 서비스 키가 설정되지 않았습니다.");
+        }
+
+        if (startPage <= 0 || endPage < startPage) {
+            throw new IllegalArgumentException("동물병원 Open API 페이지 범위가 올바르지 않습니다.");
+        }
+
+        List<HospitalImportCommand> hospitals = new ArrayList<>();
+        int totalCount = 0;
+        int numOfRows = request.getNumOfRows() != null ? request.getNumOfRows() : DEFAULT_PAGE_SIZE;
+
+        for (int pageNo = startPage; pageNo <= endPage; pageNo++) {
+            PublicAnimalHospitalFetchResult pageResult = fetchSinglePage(request, pageNo, numOfRows);
+            totalCount = pageResult.totalCount();
+            hospitals.addAll(pageResult.hospitals());
         }
 
         return new PublicAnimalHospitalFetchResult(totalCount, hospitals);

@@ -33,6 +33,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin/places")
 public class AdminPlaceController {
 
+    private static final int HOSPITAL_FULL_IMPORT_START_PAGE = 1;
+    private static final int HOSPITAL_FULL_IMPORT_END_PAGE = 105;
+    private static final int HOSPITAL_FULL_IMPORT_PAGE_SIZE = 100;
+
     private final MapAdminService mapAdminService;
     private final MapAdminQueryService mapAdminQueryService;
     private final MapImportService mapImportService;
@@ -111,6 +115,34 @@ public class AdminPlaceController {
                 importRequest.getPageNo() != null ? importRequest.getPageNo() : 1,
                 importRequest.getNumOfRows() != null ? importRequest.getNumOfRows() : 100,
                 Boolean.TRUE.equals(importRequest.getImportAllPages()),
+                fetchResult.totalCount(),
+                importResult
+        );
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import/hospitals/full")
+    public ResponseEntity<SuccessResponse<HospitalImportResponse>> importHospitalsFull() {
+        HospitalImportRequest importRequest = new HospitalImportRequest();
+        importRequest.setNumOfRows(HOSPITAL_FULL_IMPORT_PAGE_SIZE);
+        importRequest.setImportAllPages(true);
+
+        PublicAnimalHospitalFetchResult fetchResult = publicAnimalHospitalApiClient.fetchHospitalsByPageRange(
+                importRequest,
+                HOSPITAL_FULL_IMPORT_START_PAGE,
+                HOSPITAL_FULL_IMPORT_END_PAGE
+        );
+        org.cmarket.cmarket.domain.map.app.dto.HospitalImportResultDto importResult =
+                mapImportService.importHospitals(fetchResult.hospitals());
+
+        HospitalImportResponse response = HospitalImportResponse.ofPageRange(
+                fetchResult.hospitals().size(),
+                HOSPITAL_FULL_IMPORT_START_PAGE,
+                HOSPITAL_FULL_IMPORT_END_PAGE,
+                HOSPITAL_FULL_IMPORT_PAGE_SIZE,
                 fetchResult.totalCount(),
                 importResult
         );

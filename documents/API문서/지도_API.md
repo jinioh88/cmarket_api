@@ -627,6 +627,8 @@ GET /api/places/101/reviews?sort=latest&page=0&size=10
   - 좌표계(EPSG:5174) -> WGS84 위경도 변환
   - `externalPlaceId` 기준 upsert
   - 좌표가 없는 데이터는 skip
+- **기본 연동 URL**:
+  - `https://apis.data.go.kr/1741000/animal_hospitals/info`
 
 #### Request Body (`HospitalImportRequest`)
 
@@ -665,9 +667,54 @@ GET /api/places/101/reviews?sort=latest&page=0&size=10
     "requestedPageNo": 1,
     "requestedNumOfRows": 100,
     "importAllPages": false,
+    "requestedStartPage": 1,
+    "requestedEndPage": 1,
+    "processedPages": 1,
     "apiTotalCount": 12543,
     "importedCount": 93,
     "skippedCount": 7
+  }
+}
+```
+
+---
+
+### 5-6. 공공데이터 동물병원 전체 적재 (POST /api/admin/places/import/hospitals/full)
+
+- **인증 필요**: 예 (`ADMIN`)
+- **설명**: 운영 DB 적재용 전체 import API입니다. 공공데이터 동물병원 API를 `pageNo=1` 부터 `pageNo=105` 까지, `numOfRows=100` 기준으로 순회 호출한 뒤 저장 또는 갱신합니다.
+- **요청 바디**: 없음
+- **고정 동작**:
+  - 시작 페이지: `1`
+  - 종료 페이지: `105`
+  - 페이지 크기: `100`
+  - 총 최대 조회 시도 건수: `10,500`
+  - `externalPlaceId` 기준 upsert
+
+#### 호출 예시
+
+```bash
+curl -X POST "https://cmarket-api.duckdns.org/api/admin/places/import/hospitals/full" \
+  -H "Authorization: Bearer {ADMIN_ACCESS_TOKEN}"
+```
+
+#### 응답 예시
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "성공",
+  "data": {
+    "fetchedCount": 10490,
+    "requestedPageNo": 1,
+    "requestedNumOfRows": 100,
+    "importAllPages": true,
+    "requestedStartPage": 1,
+    "requestedEndPage": 105,
+    "processedPages": 105,
+    "apiTotalCount": 10490,
+    "importedCount": 10312,
+    "skippedCount": 178
   }
 }
 ```
@@ -678,6 +725,8 @@ GET /api/places/101/reviews?sort=latest&page=0&size=10
 - 환경 변수:
   - `ANIMAL_HOSPITAL_API_SERVICE_KEY`
   - `ANIMAL_HOSPITAL_API_BASE_URL` (선택)
+- 기본 `ANIMAL_HOSPITAL_API_BASE_URL` 값:
+  - `https://apis.data.go.kr/1741000/animal_hospitals`
 
 ---
 
