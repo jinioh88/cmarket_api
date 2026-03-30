@@ -750,6 +750,53 @@ curl -X POST "https://cmarket-api.duckdns.org/api/admin/places/import/hospitals/
 }
 ```
 
+---
+
+### 5-8. 반려동물 동반여행 장소 적재 (POST /api/admin/places/import/pet-travel)
+
+- **인증 필요**: 예 (`ADMIN`)
+- **설명**: 한국관광공사 반려동물 동반여행 목록을 조회해 내부 `places` 테이블에 저장 또는 갱신합니다.
+- **현재 지원 카테고리**:
+  - `RESTAURANT`
+  - `ACCOMMODATION`
+- **비고**:
+  - `CAFE` 는 외부 분류가 명확하지 않아 현재 미지원
+  - 저장 기준은 `externalPlaceId` (`kto-pet:{contentId}`) upsert
+
+#### Request Body (`PetFriendlyPlaceImportRequest`)
+
+| 필드 | 타입 | 필수 | 기본값 | 설명 |
+|------|------|------|--------|------|
+| `category` | PlaceCategory | 아니오 | `RESTAURANT` | `RESTAURANT`, `ACCOMMODATION` 만 지원 |
+| `startPage` | Integer | 아니오 | `1` | 시작 페이지 |
+| `endPage` | Integer | 아니오 | `10` | 종료 페이지 |
+| `numOfRows` | Integer | 아니오 | `100` | 페이지당 건수 |
+
+#### 요청 예시
+
+```json
+{
+  "category": "RESTAURANT",
+  "startPage": 1,
+  "endPage": 10,
+  "numOfRows": 100
+}
+```
+
+#### 호출 예시
+
+```bash
+curl -X POST "https://cmarket-api.duckdns.org/api/admin/places/import/pet-travel" \
+  -H "Authorization: Bearer {ADMIN_ACCESS_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": "RESTAURANT",
+    "startPage": 1,
+    "endPage": 10,
+    "numOfRows": 100
+  }'
+```
+
 #### 호출 예시
 
 ```bash

@@ -2,6 +2,7 @@ package org.cmarket.cmarket.domain.map.app.service;
 
 import org.cmarket.cmarket.domain.map.app.dto.HospitalImportCommand;
 import org.cmarket.cmarket.domain.map.app.dto.HospitalImportResultDto;
+import org.cmarket.cmarket.domain.map.app.dto.PetFriendlyPlaceImportCommand;
 import org.cmarket.cmarket.domain.map.model.HospitalDetail;
 import org.cmarket.cmarket.domain.map.model.Place;
 import org.cmarket.cmarket.domain.map.model.PlaceCategory;
@@ -85,6 +86,60 @@ public class MapImportServiceImpl implements MapImportService {
                         hospitalDetail.getIs24Hours(),
                         hospitalDetail.getIsEmergencyAvailable(),
                         command.getAnimalTypes()
+                );
+            }
+
+            importedCount++;
+        }
+
+        return HospitalImportResultDto.builder()
+                .requestedCount(commands.size())
+                .importedCount(importedCount)
+                .skippedCount(skippedCount)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public HospitalImportResultDto importPetFriendlyPlaces(List<PetFriendlyPlaceImportCommand> commands) {
+        int importedCount = 0;
+        int skippedCount = 0;
+
+        for (PetFriendlyPlaceImportCommand command : commands) {
+            if (command.getLatitude() == null || command.getLongitude() == null) {
+                skippedCount++;
+                continue;
+            }
+
+            Place place = placeRepository.findByExternalPlaceId(command.getExternalPlaceId()).orElse(null);
+            if (place == null) {
+                place = Place.builder()
+                        .category(command.getCategory())
+                        .name(command.getName())
+                        .address(command.getAddress())
+                        .phone(command.getPhone())
+                        .operatingHours(null)
+                        .imageUrl(command.getImageUrl())
+                        .latitude(command.getLatitude())
+                        .longitude(command.getLongitude())
+                        .isRecommended(false)
+                        .sourceType(PlaceSourceType.PUBLIC_DATA)
+                        .externalPlaceId(command.getExternalPlaceId())
+                        .build();
+                placeRepository.save(place);
+            } else {
+                place.update(
+                        command.getCategory(),
+                        command.getName(),
+                        command.getAddress(),
+                        command.getPhone(),
+                        null,
+                        command.getImageUrl(),
+                        command.getLatitude(),
+                        command.getLongitude(),
+                        place.getIsRecommended(),
+                        PlaceSourceType.PUBLIC_DATA,
+                        command.getExternalPlaceId()
                 );
             }
 
