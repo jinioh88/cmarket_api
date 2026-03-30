@@ -199,6 +199,7 @@ GET /api/places?category=RESTAURANT&radius=3
 | `id` | Long | 장소 ID |
 | `category` | `PlaceCategory` | 장소 카테고리 |
 | `name` | String | 장소명 |
+| `imageUrl` | String | 대표 이미지 URL |
 | `latitude` | Double | 위도 |
 | `longitude` | Double | 경도 |
 | `isRecommended` | Boolean | 추천 여부 |
@@ -224,6 +225,7 @@ GET /api/places?category=RESTAURANT&radius=3
         "id": 101,
         "category": "HOSPITAL",
         "name": "커들 24시 동물병원",
+        "imageUrl": "https://example.com/place/hospital-101.jpg",
         "latitude": 37.4979,
         "longitude": 127.0276,
         "isRecommended": true,
@@ -241,6 +243,7 @@ GET /api/places?category=RESTAURANT&radius=3
         "id": 205,
         "category": "CAFE",
         "name": "커들 펫 카페",
+        "imageUrl": "https://example.com/place/cafe-205.jpg",
         "latitude": 37.4981,
         "longitude": 127.0281,
         "isRecommended": false,
