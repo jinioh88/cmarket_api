@@ -12,6 +12,7 @@ public class PlaceListItemResponse {
     private Long id;
     private PlaceCategory category;
     private String name;
+    private String address;
     private String imageUrl;
     private Double latitude;
     private Double longitude;
@@ -24,6 +25,7 @@ public class PlaceListItemResponse {
         response.id = dto.getId();
         response.category = dto.getCategory();
         response.name = dto.getName();
+        response.address = dto.getAddress();
         response.imageUrl = dto.getImageUrl();
         response.latitude = dto.getLatitude();
         response.longitude = dto.getLongitude();

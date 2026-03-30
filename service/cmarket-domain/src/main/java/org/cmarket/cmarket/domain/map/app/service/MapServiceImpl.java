@@ -88,6 +88,7 @@ public class MapServiceImpl implements MapService {
                         .id(place.getId())
                         .category(place.getCategory())
                         .name(place.getName())
+                        .address(place.getAddress())
                         .imageUrl(place.getImageUrl())
                         .latitude(place.getLatitude())
                         .longitude(place.getLongitude())
