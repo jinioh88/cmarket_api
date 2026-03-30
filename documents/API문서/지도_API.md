@@ -813,6 +813,48 @@ curl -X POST "https://cmarket-api.duckdns.org/api/admin/places/import/pet-travel
   }'
 ```
 
+---
+
+### 5-9. 카페 후보 장소 적재 (POST /api/admin/places/import/cafes)
+
+- **인증 필요**: 예 (`ADMIN`)
+- **설명**: 공공데이터포털 `행정안전부_동물_동물전시업 조회서비스` 의 `/info` 명세를 사용해 카페 후보 장소를 조회하고 내부 `places` 테이블에 `CAFE` 카테고리로 저장 또는 갱신합니다.
+- **중요 제한**:
+  - 이 데이터셋은 일반 카페 데이터가 아니라 `동물전시업` 데이터입니다.
+  - 태그/설명상 `애견카페` 후보를 포함할 수 있어 카페 소스로 활용하지만, 모든 데이터가 일반 카페를 의미하지는 않습니다.
+  - 기본적으로 사업장명 키워드 `카페` 와 영업상태코드 `01` 기준으로 조회합니다.
+
+#### Request Body (`CafeImportRequest`)
+
+| 필드 | 타입 | 필수 | 기본값 | 설명 |
+|------|------|------|--------|------|
+| `startPage` | Integer | 아니오 | `1` | 시작 페이지 |
+| `endPage` | Integer | 아니오 | `10` | 종료 페이지 |
+| `numOfRows` | Integer | 아니오 | `100` | 페이지당 건수 |
+| `roadNmAddrKeyword` | String | 아니오 | - | 도로명주소 포함 검색 |
+| `businessNameKeyword` | String | 아니오 | `카페` | 사업장명 포함 검색 |
+| `salesStatusCode` | String | 아니오 | `01` | 영업상태코드 |
+
+#### 호출 예시
+
+```bash
+curl -X POST "https://cmarket-api.duckdns.org/api/admin/places/import/cafes" \
+  -H "Authorization: Bearer {ADMIN_ACCESS_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startPage": 1,
+    "endPage": 10,
+    "numOfRows": 100,
+    "businessNameKeyword": "카페",
+    "salesStatusCode": "01"
+  }'
+```
+
+#### 환경 변수
+
+- `ANIMAL_EXHIBITION_API_SERVICE_KEY`
+- 선택: `ANIMAL_EXHIBITION_API_BASE_URL`
+
 #### 호출 예시
 
 ```bash

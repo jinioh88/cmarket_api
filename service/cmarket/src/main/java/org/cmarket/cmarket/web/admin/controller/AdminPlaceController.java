@@ -11,6 +11,7 @@ import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.map.dto.AdminPlaceRequest;
 import org.cmarket.cmarket.web.map.dto.AdminPlaceResponse;
+import org.cmarket.cmarket.web.map.dto.CafeImportRequest;
 import org.cmarket.cmarket.web.map.dto.HospitalImportRequest;
 import org.cmarket.cmarket.web.map.dto.HospitalImportRangeRequest;
 import org.cmarket.cmarket.web.map.dto.HospitalImportResponse;
@@ -18,7 +19,9 @@ import org.cmarket.cmarket.web.map.dto.PetFriendlyPlaceImportRequest;
 import org.cmarket.cmarket.web.map.dto.PetFriendlyPlaceImportResponse;
 import org.cmarket.cmarket.web.map.dto.PlaceRecommendationUpdateRequest;
 import org.cmarket.cmarket.web.map.dto.PublicAnimalHospitalFetchResult;
+import org.cmarket.cmarket.web.map.dto.PublicAnimalExhibitionFetchResult;
 import org.cmarket.cmarket.web.map.dto.PublicPetTravelFetchResult;
+import org.cmarket.cmarket.web.map.service.PublicAnimalExhibitionApiClient;
 import org.cmarket.cmarket.web.map.service.PublicAnimalHospitalApiClient;
 import org.cmarket.cmarket.web.map.service.PublicPetTravelApiClient;
 import org.springframework.http.HttpStatus;
@@ -47,6 +50,7 @@ public class AdminPlaceController {
     private final MapImportService mapImportService;
     private final PublicAnimalHospitalApiClient publicAnimalHospitalApiClient;
     private final PublicPetTravelApiClient publicPetTravelApiClient;
+    private final PublicAnimalExhibitionApiClient publicAnimalExhibitionApiClient;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
@@ -204,6 +208,30 @@ public class AdminPlaceController {
 
         PetFriendlyPlaceImportResponse response = PetFriendlyPlaceImportResponse.of(
                 importRequest.getCategory(),
+                fetchResult.places().size(),
+                importRequest.getStartPage() != null ? importRequest.getStartPage() : 1,
+                importRequest.getEndPage() != null ? importRequest.getEndPage() : 10,
+                importRequest.getNumOfRows() != null ? importRequest.getNumOfRows() : 100,
+                fetchResult.totalCount(),
+                importResult
+        );
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import/cafes")
+    public ResponseEntity<SuccessResponse<PetFriendlyPlaceImportResponse>> importCafes(
+            @RequestBody(required = false) CafeImportRequest request
+    ) {
+        CafeImportRequest importRequest = request != null ? request : new CafeImportRequest();
+        PublicAnimalExhibitionFetchResult fetchResult = publicAnimalExhibitionApiClient.fetchCafesByRange(importRequest);
+        org.cmarket.cmarket.domain.map.app.dto.HospitalImportResultDto importResult =
+                mapImportService.importPetFriendlyPlaces(fetchResult.places());
+
+        PetFriendlyPlaceImportResponse response = PetFriendlyPlaceImportResponse.of(
+                PlaceCategory.CAFE,
                 fetchResult.places().size(),
                 importRequest.getStartPage() != null ? importRequest.getStartPage() : 1,
                 importRequest.getEndPage() != null ? importRequest.getEndPage() : 10,
