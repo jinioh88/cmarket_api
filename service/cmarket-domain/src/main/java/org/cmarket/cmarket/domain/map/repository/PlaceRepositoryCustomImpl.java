@@ -38,6 +38,10 @@ public class PlaceRepositoryCustomImpl implements PlaceRepositoryCustom {
             Double latitude,
             Double longitude,
             Double radius,
+            Double minLatitude,
+            Double maxLatitude,
+            Double minLongitude,
+            Double maxLongitude,
             Boolean isRecommended,
             Boolean is24Hours,
             Boolean isEmergencyAvailable,
@@ -63,21 +67,35 @@ public class PlaceRepositoryCustomImpl implements PlaceRepositoryCustom {
             }
         }
 
-        NumberExpression<Double> distanceExpression = createDistanceExpression(latitude, longitude);
-        builder.and(distanceExpression.loe(radius));
+        boolean hasBounds = minLatitude != null && maxLatitude != null && minLongitude != null && maxLongitude != null;
+        NumberExpression<Double> distanceExpression = null;
+
+        if (hasBounds) {
+            builder.and(place.latitude.between(minLatitude, maxLatitude));
+            builder.and(place.longitude.between(minLongitude, maxLongitude));
+        } else {
+            distanceExpression = createDistanceExpression(latitude, longitude);
+            builder.and(distanceExpression.loe(radius));
+        }
 
         JPAQuery<Place> contentQuery = queryFactory
                 .selectDistinct(place)
                 .from(place)
                 .leftJoin(hospitalDetail).on(hospitalDetail.placeId.eq(place.id))
-                .where(builder)
-                .orderBy(
-                        new OrderSpecifier<>(Order.ASC, distanceExpression),
-                        new OrderSpecifier<>(Order.ASC, place.id)
-                )
+                .where(builder);
+
+        if (hasBounds) {
+            contentQuery.orderBy(new OrderSpecifier<>(Order.ASC, place.id));
+        } else {
+            contentQuery.orderBy(
+                    new OrderSpecifier<>(Order.ASC, distanceExpression),
+                    new OrderSpecifier<>(Order.ASC, place.id)
+            );
+        }
+
+        contentQuery
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize());
-
         JPAQuery<Long> countQuery = queryFactory
                 .select(place.id.countDistinct())
                 .from(place)

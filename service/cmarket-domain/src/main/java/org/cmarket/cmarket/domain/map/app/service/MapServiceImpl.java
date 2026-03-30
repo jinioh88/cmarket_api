@@ -35,6 +35,7 @@ public class MapServiceImpl implements MapService {
     private static final double DEFAULT_MAX_RADIUS_KM = 30.0;
     private static final double DEFAULT_LATITUDE = 37.5666;
     private static final double DEFAULT_LONGITUDE = 126.9784;
+    private static final double DEFAULT_RADIUS_KM = 3.0;
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 20;
     private static final int MAX_SIZE = 100;
@@ -63,7 +64,11 @@ public class MapServiceImpl implements MapService {
                 command.getCategory(),
                 getLatitudeOrDefault(command.getLatitude(), command.getLongitude()),
                 getLongitudeOrDefault(command.getLatitude(), command.getLongitude()),
-                command.getRadius(),
+                getRadiusOrDefault(command.getRadius()),
+                command.getMinLatitude(),
+                command.getMaxLatitude(),
+                command.getMinLongitude(),
+                command.getMaxLongitude(),
                 command.getIsRecommended(),
                 command.getIs24Hours(),
                 command.getIsEmergencyAvailable(),
@@ -128,10 +133,16 @@ public class MapServiceImpl implements MapService {
         if (command.getCategory() == null) {
             throw new InvalidPlaceFilterException("카테고리는 필수입니다.");
         }
-        validateCoordinates(command.getLatitude(), command.getLongitude());
+        boolean hasBounds = hasBounds(command);
 
-        if (command.getRadius() == null || command.getRadius() <= 0 || command.getRadius() > DEFAULT_MAX_RADIUS_KM) {
-            throw new InvalidLocationRangeException("반경은 0보다 크고 " + DEFAULT_MAX_RADIUS_KM + "km 이하여야 합니다.");
+        if (hasBounds) {
+            validateBounds(command);
+        } else {
+            validateCoordinates(command.getLatitude(), command.getLongitude());
+            if (command.getRadius() != null
+                    && (command.getRadius() <= 0 || command.getRadius() > DEFAULT_MAX_RADIUS_KM)) {
+                throw new InvalidLocationRangeException("반경은 0보다 크고 " + DEFAULT_MAX_RADIUS_KM + "km 이하여야 합니다.");
+            }
         }
 
         boolean hasHospitalOnlyFilter = command.getIs24Hours() != null
@@ -155,6 +166,32 @@ public class MapServiceImpl implements MapService {
         }
     }
 
+    private boolean hasBounds(PlaceSearchCommand command) {
+        return command.getMinLatitude() != null
+                || command.getMaxLatitude() != null
+                || command.getMinLongitude() != null
+                || command.getMaxLongitude() != null;
+    }
+
+    private void validateBounds(PlaceSearchCommand command) {
+        if (command.getMinLatitude() == null
+                || command.getMaxLatitude() == null
+                || command.getMinLongitude() == null
+                || command.getMaxLongitude() == null) {
+            throw new InvalidLocationRangeException("지도 영역 조회에는 min/max latitude, longitude가 모두 필요합니다.");
+        }
+
+        validateCoordinates(command.getMinLatitude(), command.getMinLongitude());
+        validateCoordinates(command.getMaxLatitude(), command.getMaxLongitude());
+
+        if (command.getMinLatitude() > command.getMaxLatitude()) {
+            throw new InvalidLocationRangeException("minLatitude는 maxLatitude보다 클 수 없습니다.");
+        }
+        if (command.getMinLongitude() > command.getMaxLongitude()) {
+            throw new InvalidLocationRangeException("minLongitude는 maxLongitude보다 클 수 없습니다.");
+        }
+    }
+
     private Pageable createPageable(Integer page, Integer size) {
         int pageNumber = page != null && page >= 0 ? page : DEFAULT_PAGE;
         int pageSize = size != null && size > 0 ? Math.min(size, MAX_SIZE) : DEFAULT_SIZE;
@@ -167,6 +204,10 @@ public class MapServiceImpl implements MapService {
 
     private Double getLongitudeOrDefault(Double latitude, Double longitude) {
         return latitude != null && longitude != null ? longitude : DEFAULT_LONGITUDE;
+    }
+
+    private Double getRadiusOrDefault(Double radius) {
+        return radius != null ? radius : DEFAULT_RADIUS_KM;
     }
 
     private Map<Long, HospitalDetail> getHospitalDetailMap(List<Long> placeIds) {

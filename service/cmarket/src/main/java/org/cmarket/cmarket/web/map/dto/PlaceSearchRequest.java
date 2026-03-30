@@ -28,9 +28,24 @@ public class PlaceSearchRequest {
     @DecimalMax(value = "180.0", message = "longitude는 180 이하여야 합니다.")
     private Double longitude;
 
-    @NotNull(message = "radius는 필수입니다.")
     @DecimalMin(value = "0.1", message = "radius는 0보다 커야 합니다.")
     private Double radius;
+
+    @DecimalMin(value = "-90.0", message = "minLatitude는 -90 이상이어야 합니다.")
+    @DecimalMax(value = "90.0", message = "minLatitude는 90 이하여야 합니다.")
+    private Double minLatitude;
+
+    @DecimalMin(value = "-90.0", message = "maxLatitude는 -90 이상이어야 합니다.")
+    @DecimalMax(value = "90.0", message = "maxLatitude는 90 이하여야 합니다.")
+    private Double maxLatitude;
+
+    @DecimalMin(value = "-180.0", message = "minLongitude는 -180 이상이어야 합니다.")
+    @DecimalMax(value = "180.0", message = "minLongitude는 180 이하여야 합니다.")
+    private Double minLongitude;
+
+    @DecimalMin(value = "-180.0", message = "maxLongitude는 -180 이상이어야 합니다.")
+    @DecimalMax(value = "180.0", message = "maxLongitude는 180 이하여야 합니다.")
+    private Double maxLongitude;
 
     private Boolean isRecommended;
 

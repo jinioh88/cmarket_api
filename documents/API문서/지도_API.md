@@ -75,7 +75,10 @@ http://localhost:8080
 
 ### 기본 좌표 정책
 
-- `GET /api/places` 호출 시 `latitude`, `longitude`를 보내지 않으면 서버는 서울 시청 좌표를 기본값으로 사용합니다.
+- `GET /api/places` 는 `bounds 기반 조회` 를 우선 지원합니다.
+- `minLatitude`, `maxLatitude`, `minLongitude`, `maxLongitude` 를 모두 보내면 현재 보이는 지도 영역 기준으로 조회합니다.
+- 기존 `latitude`, `longitude`, `radius` 기반 반경 조회도 하위 호환으로 유지됩니다.
+- 반경 조회에서 `latitude`, `longitude`, `radius` 를 보내지 않으면 서버는 서울 시청 좌표와 기본 반경(`3km`)을 사용합니다.
 - 기본 좌표:
   - `latitude = 37.5666`
   - `longitude = 126.9784`
@@ -105,6 +108,7 @@ http://localhost:8080
 | 값 | 설명 |
 |----|------|
 | `NAVER` | 외부 API/외부 데이터 기반 |
+| `PUBLIC_DATA` | 공공데이터 적재 기반 |
 | `ADMIN` | 관리자 수기 등록 |
 
 ---
@@ -114,12 +118,14 @@ http://localhost:8080
 ### 3-1. 장소 목록 조회 (GET /api/places)
 
 - **인증 필요**: 아니오
-- **설명**: 지도 화면에서 반경 기반으로 장소를 조회합니다.
+- **설명**: 지도 화면에서 현재 보이는 영역(bounds) 또는 반경 기준으로 장소를 조회합니다.
 - **특징**:
   - 카테고리별 조회
   - 추천 장소는 `isRecommended=true` 필터로만 조회
   - 병원 카테고리일 때만 병원 전용 필터 사용 가능
-  - `latitude`, `longitude`가 없으면 서버 기본 좌표(서울 시청) 사용
+  - `bounds` 가 오면 영역 기준 조회
+  - `bounds` 가 없으면 반경 기준 조회
+  - 반경 파라미터도 없으면 서버 기본 좌표(서울 시청) + 기본 반경(`3km`) 사용
 
 #### Query Parameters
 
@@ -128,7 +134,11 @@ http://localhost:8080
 | `category` | `PlaceCategory` | 예 | - | 장소 카테고리 |
 | `latitude` | Double | 아니오 | `37.5666` | 지도 중심 위도 |
 | `longitude` | Double | 아니오 | `126.9784` | 지도 중심 경도 |
-| `radius` | Double | 예 | - | 조회 반경(km), 최대 30km |
+| `radius` | Double | 아니오 | `3` | 조회 반경(km), 최대 30km. `bounds` 미사용 시 적용 |
+| `minLatitude` | Double | 아니오 | - | 지도 영역 최소 위도 |
+| `maxLatitude` | Double | 아니오 | - | 지도 영역 최대 위도 |
+| `minLongitude` | Double | 아니오 | - | 지도 영역 최소 경도 |
+| `maxLongitude` | Double | 아니오 | - | 지도 영역 최대 경도 |
 | `isRecommended` | Boolean | 아니오 | - | 추천 장소만 필터링 |
 | `is24Hours` | Boolean | 아니오 | - | 병원 전용 필터 |
 | `isEmergencyAvailable` | Boolean | 아니오 | - | 병원 전용 필터 |
@@ -138,29 +148,35 @@ http://localhost:8080
 
 #### 요청 예시
 
-**1. 병원 목록 조회**
+**1. 현재 지도 영역 기준 병원 목록 조회**
 
 ```text
-GET /api/places?category=HOSPITAL&latitude=37.4979&longitude=127.0276&radius=5&page=0&size=20
+GET /api/places?category=HOSPITAL&minLatitude=37.4900&maxLatitude=37.5050&minLongitude=127.0200&maxLongitude=127.0350&page=0&size=20
 ```
 
-**2. 24시 + 응급 병원 조회**
+**2. 현재 지도 영역 기준 24시 + 응급 병원 조회**
 
 ```text
-GET /api/places?category=HOSPITAL&latitude=37.4979&longitude=127.0276&radius=5&is24Hours=true&isEmergencyAvailable=true
+GET /api/places?category=HOSPITAL&minLatitude=37.4900&maxLatitude=37.5050&minLongitude=127.0200&maxLongitude=127.0350&is24Hours=true&isEmergencyAvailable=true
 ```
 
-**3. 추천 카페만 조회**
+**3. 현재 지도 영역 기준 추천 카페만 조회**
 
 ```text
-GET /api/places?category=CAFE&latitude=37.4979&longitude=127.0276&radius=3&isRecommended=true
+GET /api/places?category=CAFE&minLatitude=37.4900&maxLatitude=37.5050&minLongitude=127.0200&maxLongitude=127.0350&isRecommended=true
 ```
 
-**4. 기본 좌표 기준 식당 조회**
+**4. 하위 호환 반경 기준 식당 조회**
 
 ```text
 GET /api/places?category=RESTAURANT&radius=3
 ```
+
+#### 프론트 권장 호출 방식
+
+- 네이버 지도 SDK에서 현재 보이는 bounds 를 계산해 `min/max latitude`, `min/max longitude` 로 전달합니다.
+- 탭 변경 시에도 현재 bounds 기준으로 재조회합니다.
+- 드래그/줌 이벤트 중간마다 호출하지 말고, 이동이 끝난 뒤 debounce 후 호출하는 방식을 권장합니다.
 
 #### Response Body (`PlaceListResponse`)
 

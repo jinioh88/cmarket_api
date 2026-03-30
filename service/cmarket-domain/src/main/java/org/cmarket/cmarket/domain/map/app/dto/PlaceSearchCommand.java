@@ -15,6 +15,10 @@ public class PlaceSearchCommand {
     private Double latitude;
     private Double longitude;
     private Double radius;
+    private Double minLatitude;
+    private Double maxLatitude;
+    private Double minLongitude;
+    private Double maxLongitude;
     private Boolean isRecommended;
     private Boolean is24Hours;
     private Boolean isEmergencyAvailable;
