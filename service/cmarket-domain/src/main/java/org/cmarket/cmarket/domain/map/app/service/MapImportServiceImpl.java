@@ -54,6 +54,8 @@ public class MapImportServiceImpl implements MapImportService {
                         .isRecommended(false)
                         .sourceType(PlaceSourceType.PUBLIC_DATA)
                         .externalPlaceId(command.getExternalPlaceId())
+                        .salesStatusCode(command.getSalesStatusCode())
+                        .salesStatusName(command.getSalesStatusName())
                         .build();
                 place = placeRepository.save(place);
             } else {
@@ -68,7 +70,9 @@ public class MapImportServiceImpl implements MapImportService {
                         command.getLongitude(),
                         place.getIsRecommended(),
                         PlaceSourceType.PUBLIC_DATA,
-                        command.getExternalPlaceId()
+                        command.getExternalPlaceId(),
+                        command.getSalesStatusCode(),
+                        command.getSalesStatusName()
                 );
             }
 
@@ -125,6 +129,8 @@ public class MapImportServiceImpl implements MapImportService {
                         .isRecommended(false)
                         .sourceType(PlaceSourceType.PUBLIC_DATA)
                         .externalPlaceId(command.getExternalPlaceId())
+                        .salesStatusCode(command.getSalesStatusCode())
+                        .salesStatusName(command.getSalesStatusName())
                         .build();
                 placeRepository.save(place);
             } else {
@@ -139,7 +145,9 @@ public class MapImportServiceImpl implements MapImportService {
                         command.getLongitude(),
                         place.getIsRecommended(),
                         PlaceSourceType.PUBLIC_DATA,
-                        command.getExternalPlaceId()
+                        command.getExternalPlaceId(),
+                        command.getSalesStatusCode(),
+                        command.getSalesStatusName()
                 );
             }
 

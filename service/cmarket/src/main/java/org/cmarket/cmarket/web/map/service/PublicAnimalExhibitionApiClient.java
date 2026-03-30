@@ -172,6 +172,8 @@ public class PublicAnimalExhibitionApiClient {
                 .imageUrl(null)
                 .latitude(latitude)
                 .longitude(longitude)
+                .salesStatusCode(nullIfBlank(item.path("SALS_STTS_CD").asText()))
+                .salesStatusName(nullIfBlank(item.path("SALS_STTS_NM").asText()))
                 .build();
     }
 

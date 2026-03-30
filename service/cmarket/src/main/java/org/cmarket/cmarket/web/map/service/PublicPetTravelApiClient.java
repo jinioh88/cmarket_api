@@ -155,6 +155,8 @@ public class PublicPetTravelApiClient {
                 .imageUrl(nullIfBlank(item.path("firstimage").asText()))
                 .latitude(latitude)
                 .longitude(longitude)
+                .salesStatusCode(null)
+                .salesStatusName(null)
                 .build();
     }
 

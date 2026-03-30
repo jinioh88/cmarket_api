@@ -43,6 +43,8 @@ public class MapAdminServiceImpl implements MapAdminService {
                 .isRecommended(command.getIsRecommended())
                 .sourceType(PlaceSourceType.ADMIN)
                 .externalPlaceId(null)
+                .salesStatusCode(null)
+                .salesStatusName(null)
                 .build();
 
         Place savedPlace = placeRepository.save(place);
@@ -67,6 +69,8 @@ public class MapAdminServiceImpl implements MapAdminService {
                 command.getLongitude(),
                 command.getIsRecommended(),
                 PlaceSourceType.ADMIN,
+                null,
+                null,
                 null
         );
 

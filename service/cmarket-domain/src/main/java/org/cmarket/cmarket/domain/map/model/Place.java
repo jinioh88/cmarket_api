@@ -63,6 +63,12 @@ public class Place {
     @Column(name = "external_place_id", length = 100, unique = true)
     private String externalPlaceId;
 
+    @Column(name = "sales_status_code", length = 10)
+    private String salesStatusCode;
+
+    @Column(name = "sales_status_name", length = 50)
+    private String salesStatusName;
+
     @Column(nullable = false, updatable = false, name = "created_at")
     private LocalDateTime createdAt;
 
@@ -81,7 +87,9 @@ public class Place {
             Double longitude,
             Boolean isRecommended,
             PlaceSourceType sourceType,
-            String externalPlaceId
+            String externalPlaceId,
+            String salesStatusCode,
+            String salesStatusName
     ) {
         this.category = category;
         this.name = name;
@@ -94,6 +102,8 @@ public class Place {
         this.isRecommended = isRecommended != null ? isRecommended : Boolean.FALSE;
         this.sourceType = sourceType != null ? sourceType : PlaceSourceType.ADMIN;
         this.externalPlaceId = externalPlaceId;
+        this.salesStatusCode = salesStatusCode;
+        this.salesStatusName = salesStatusName;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -109,7 +119,9 @@ public class Place {
             Double longitude,
             Boolean isRecommended,
             PlaceSourceType sourceType,
-            String externalPlaceId
+            String externalPlaceId,
+            String salesStatusCode,
+            String salesStatusName
     ) {
         this.category = category;
         this.name = name;
@@ -122,6 +134,8 @@ public class Place {
         this.isRecommended = isRecommended != null ? isRecommended : Boolean.FALSE;
         this.sourceType = sourceType != null ? sourceType : this.sourceType;
         this.externalPlaceId = externalPlaceId;
+        this.salesStatusCode = salesStatusCode;
+        this.salesStatusName = salesStatusName;
         this.updatedAt = LocalDateTime.now();
     }
 

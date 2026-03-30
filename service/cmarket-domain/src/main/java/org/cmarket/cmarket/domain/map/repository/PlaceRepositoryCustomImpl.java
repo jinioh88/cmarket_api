@@ -50,6 +50,7 @@ public class PlaceRepositoryCustomImpl implements PlaceRepositoryCustom {
     ) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(place.category.eq(category));
+        builder.and(place.salesStatusCode.isNull().or(place.salesStatusCode.eq("01")));
 
         if (isRecommended != null) {
             builder.and(place.isRecommended.eq(isRecommended));
