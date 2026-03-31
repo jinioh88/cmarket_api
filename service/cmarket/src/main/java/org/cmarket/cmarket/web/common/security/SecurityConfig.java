@@ -376,6 +376,7 @@ public class SecurityConfig {
         // Vercel 배포: 프리뷰 배포와 프로덕션 배포 모두 지원하기 위해 와일드카드 패턴 사용
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",  // 로컬 개발 환경
+                "http://10.212.102.5:3000",  // 내부망 개발 환경
                 "http://localhost:8080",  // 필요시 추가
                 "http://localhost:5173",  // 외부 개발자 환경
                 "https://localhost:5173",

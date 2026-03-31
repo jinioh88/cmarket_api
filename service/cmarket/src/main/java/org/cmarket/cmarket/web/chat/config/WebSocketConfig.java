@@ -73,6 +73,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws-stomp")
                 .setAllowedOriginPatterns(
                         "http://localhost:*",  // 로컬 개발 환경
+                        "http://10.212.102.5:3000",  // 내부망 개발 환경
                         "https://localhost:*",  // 로컬 개발 환경 (HTTPS)
                         "https://*.vercel.app"  // Vercel 모든 서브도메인 (프리뷰 + 프로덕션)
                 )
