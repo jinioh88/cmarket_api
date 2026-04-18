@@ -35,14 +35,17 @@ public class PublicAnimalHospitalApiClient {
     private final String baseUrl;
     private final String serviceKey;
     private final CoordinateTransform coordinateTransform;
+    private final NaverGeocodingClient geocodingClient;
 
     public PublicAnimalHospitalApiClient(
             ObjectMapper objectMapper,
+            NaverGeocodingClient geocodingClient,
             @Value("${public-data.animal-hospital.base-url:https://apis.data.go.kr/1741000/animal_hospitals}") String baseUrl,
             @Value("${public-data.animal-hospital.service-key:}") String serviceKey
     ) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = objectMapper;
+        this.geocodingClient = geocodingClient;
         this.baseUrl = baseUrl;
         this.serviceKey = serviceKey;
 
@@ -196,20 +199,34 @@ public class PublicAnimalHospitalApiClient {
         Double longitude = null;
         Double latitude = null;
 
-        String x = item.path("CRD_INFO_X").asText();
-        String y = item.path("CRD_INFO_Y").asText();
-        if (StringUtils.hasText(x) && StringUtils.hasText(y)) {
-            double[] coordinates = transformToWgs84(x, y);
-            if (coordinates != null) {
-                longitude = coordinates[0];
-                latitude = coordinates[1];
+        String address = resolveAddress(item);
+
+        // 1순위: 주소 기반 네이버 Geocoding (가장 정확)
+        if (StringUtils.hasText(address)) {
+            double[] geocoded = geocodingClient.geocode(address);
+            if (geocoded != null) {
+                longitude = geocoded[0];
+                latitude = geocoded[1];
+            }
+        }
+
+        // 2순위: 공공데이터 좌표 변환 (Geocoding 실패 시 fallback)
+        if (latitude == null || longitude == null) {
+            String x = item.path("CRD_INFO_X").asText();
+            String y = item.path("CRD_INFO_Y").asText();
+            if (StringUtils.hasText(x) && StringUtils.hasText(y)) {
+                double[] coordinates = transformToWgs84(x, y);
+                if (coordinates != null) {
+                    longitude = coordinates[0];
+                    latitude = coordinates[1];
+                }
             }
         }
 
         return HospitalImportCommand.builder()
                 .externalPlaceId(buildExternalPlaceId(item))
                 .name(nullIfBlank(item.path("BPLC_NM").asText()))
-                .address(resolveAddress(item))
+                .address(address)
                 .phone(nullIfBlank(item.path("TELNO").asText()))
                 .latitude(latitude)
                 .longitude(longitude)
