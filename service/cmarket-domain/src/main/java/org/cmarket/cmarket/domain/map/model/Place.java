@@ -143,4 +143,10 @@ public class Place {
         this.isRecommended = isRecommended != null ? isRecommended : Boolean.FALSE;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void updateCoordinates(Double latitude, Double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

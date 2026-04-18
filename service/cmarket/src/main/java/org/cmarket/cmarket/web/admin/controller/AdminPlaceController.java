@@ -12,6 +12,7 @@ import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.map.dto.AdminPlaceRequest;
 import org.cmarket.cmarket.web.map.dto.AdminPlaceResponse;
 import org.cmarket.cmarket.web.map.dto.CafeImportRequest;
+import org.cmarket.cmarket.web.map.dto.GeocodingSyncResponse;
 import org.cmarket.cmarket.web.map.dto.HospitalImportRequest;
 import org.cmarket.cmarket.web.map.dto.HospitalImportRangeRequest;
 import org.cmarket.cmarket.web.map.dto.HospitalImportResponse;
@@ -21,6 +22,7 @@ import org.cmarket.cmarket.web.map.dto.PlaceRecommendationUpdateRequest;
 import org.cmarket.cmarket.web.map.dto.PublicAnimalHospitalFetchResult;
 import org.cmarket.cmarket.web.map.dto.PublicAnimalExhibitionFetchResult;
 import org.cmarket.cmarket.web.map.dto.PublicPetTravelFetchResult;
+import org.cmarket.cmarket.web.map.service.GeocodingSyncService;
 import org.cmarket.cmarket.web.map.service.PublicAnimalExhibitionApiClient;
 import org.cmarket.cmarket.web.map.service.PublicAnimalHospitalApiClient;
 import org.cmarket.cmarket.web.map.service.PublicPetTravelApiClient;
@@ -51,6 +53,7 @@ public class AdminPlaceController {
     private final PublicAnimalHospitalApiClient publicAnimalHospitalApiClient;
     private final PublicPetTravelApiClient publicPetTravelApiClient;
     private final PublicAnimalExhibitionApiClient publicAnimalExhibitionApiClient;
+    private final GeocodingSyncService geocodingSyncService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
@@ -214,6 +217,22 @@ public class AdminPlaceController {
                 importRequest.getNumOfRows() != null ? importRequest.getNumOfRows() : 100,
                 fetchResult.totalCount(),
                 importResult
+        );
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/sync-geocoding")
+    public ResponseEntity<SuccessResponse<GeocodingSyncResponse>> syncGeocoding(
+            @RequestParam(required = false) PlaceCategory category,
+            @RequestParam(required = false) Double threshold,
+            @RequestParam(required = false, defaultValue = "false") Boolean dryRun,
+            @RequestParam(required = false) Integer limit
+    ) {
+        GeocodingSyncResponse response = GeocodingSyncResponse.fromDto(
+                geocodingSyncService.syncGeocoding(category, threshold, dryRun, limit)
         );
 
         return ResponseEntity.status(HttpStatus.OK)

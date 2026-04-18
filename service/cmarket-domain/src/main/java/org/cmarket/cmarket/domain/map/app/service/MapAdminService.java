@@ -11,4 +11,6 @@ public interface MapAdminService {
     AdminPlaceDto updatePlace(Long placeId, AdminPlaceCommand command);
 
     AdminPlaceDto updateRecommendation(Long placeId, PlaceRecommendationUpdateCommand command);
+
+    void updateCoordinates(Long placeId, Double latitude, Double longitude);
 }

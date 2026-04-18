@@ -89,6 +89,14 @@ public class MapAdminServiceImpl implements MapAdminService {
         return AdminPlaceDto.of(place, HospitalDetailInfoDto.fromEntity(hospitalDetail));
     }
 
+    @Override
+    @Transactional
+    public void updateCoordinates(Long placeId, Double latitude, Double longitude) {
+        Place place = placeRepository.findById(placeId)
+                .orElseThrow(PlaceNotFoundException::new);
+        place.updateCoordinates(latitude, longitude);
+    }
+
     private HospitalDetail upsertHospitalDetail(Long placeId, AdminPlaceCommand command) {
         if (command.getCategory() != PlaceCategory.HOSPITAL) {
             return null;
