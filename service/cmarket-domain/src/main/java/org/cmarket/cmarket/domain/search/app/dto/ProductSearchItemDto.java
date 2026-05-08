@@ -30,10 +30,12 @@ public class ProductSearchItemDto {
     private Long viewCount;
     private Long favoriteCount;
     private Boolean isFavorite;
-    
+    private String addressSido;
+    private String addressGugun;
+
     /**
      * Product 엔티티를 ProductSearchItemDto로 변환
-     * 
+     *
      * @param product Product 엔티티
      * @param isFavorite 찜 여부
      * @return ProductSearchItemDto
@@ -52,6 +54,8 @@ public class ProductSearchItemDto {
                 .viewCount(product.getViewCount())
                 .favoriteCount(product.getFavoriteCount())
                 .isFavorite(isFavorite != null ? isFavorite : false)
+                .addressSido(product.getAddressSido())
+                .addressGugun(product.getAddressGugun())
                 .build();
     }
 }

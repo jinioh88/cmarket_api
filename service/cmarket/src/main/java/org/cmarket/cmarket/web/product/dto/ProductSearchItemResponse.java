@@ -30,10 +30,12 @@ public class ProductSearchItemResponse {
     private Long viewCount;
     private Long favoriteCount;
     private Boolean isFavorite;
-    
+    private String addressSido;
+    private String addressGugun;
+
     /**
      * 앱 DTO를 웹 DTO로 변환
-     * 
+     *
      * @param dto ProductSearchItemDto
      * @return ProductSearchItemResponse
      */
@@ -51,6 +53,8 @@ public class ProductSearchItemResponse {
         response.viewCount = dto.getViewCount();
         response.favoriteCount = dto.getFavoriteCount();
         response.isFavorite = dto.getIsFavorite();
+        response.addressSido = dto.getAddressSido();
+        response.addressGugun = dto.getAddressGugun();
         return response;
     }
 }
