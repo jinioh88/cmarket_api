@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import org.cmarket.cmarket.domain.product.app.dto.ProductListItemDto;
 import org.cmarket.cmarket.domain.product.model.PetDetailType;
 import org.cmarket.cmarket.domain.product.model.ProductStatus;
+import org.cmarket.cmarket.domain.product.model.ProductType;
 import org.cmarket.cmarket.domain.product.model.TradeStatus;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 public class ProductListItemResponse {
     private Long id;
     private String mainImageUrl;
+    private ProductType productType;
     private PetDetailType petDetailType;
     private ProductStatus productStatus;
     private TradeStatus tradeStatus;
@@ -38,6 +40,7 @@ public class ProductListItemResponse {
         ProductListItemResponse response = new ProductListItemResponse();
         response.id = dto.getId();
         response.mainImageUrl = dto.getMainImageUrl();
+        response.productType = dto.getProductType();
         response.petDetailType = dto.getPetDetailType();
         response.productStatus = dto.getProductStatus();
         response.tradeStatus = dto.getTradeStatus();
