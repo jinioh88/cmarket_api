@@ -6,6 +6,7 @@ import org.cmarket.cmarket.domain.community.app.dto.PostListItemDto;
 import org.cmarket.cmarket.domain.community.model.BoardType;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 게시글 목록 항목 응답 DTO
@@ -18,6 +19,7 @@ public class PostListItemResponse {
     private Long id;
     private String title;
     private String contentPreview;  // 내용 미리보기 (최대 100자)
+    private List<String> imageUrls;
     private String authorNickname;
     private BoardType boardType;
     private Long viewCount;
@@ -44,7 +46,8 @@ public class PostListItemResponse {
         } else {
             response.contentPreview = content;
         }
-        
+
+        response.imageUrls = dto.getImageUrls();
         response.authorNickname = dto.getAuthorNickname();
         response.boardType = dto.getBoardType();
         response.viewCount = dto.getViewCount();
@@ -55,4 +58,3 @@ public class PostListItemResponse {
         return response;
     }
 }
-
