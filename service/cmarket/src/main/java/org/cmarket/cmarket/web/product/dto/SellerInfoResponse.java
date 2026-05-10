@@ -6,7 +6,7 @@ import org.cmarket.cmarket.domain.product.app.dto.SellerInfoDto;
 
 /**
  * 판매자 정보 응답 DTO
- * 
+ *
  * 상품 상세 조회에서 사용하는 판매자 정보 웹 DTO입니다.
  */
 @Getter
@@ -15,10 +15,12 @@ public class SellerInfoResponse {
     private Long sellerId;
     private String sellerNickname;
     private String sellerProfileImageUrl;
-    
+    private String addressSido;
+    private String addressGugun;
+
     /**
      * 앱 DTO를 웹 DTO로 변환
-     * 
+     *
      * @param dto SellerInfoDto
      * @return SellerInfoResponse
      */
@@ -27,7 +29,8 @@ public class SellerInfoResponse {
         response.sellerId = dto.getSellerId();
         response.sellerNickname = dto.getSellerNickname();
         response.sellerProfileImageUrl = dto.getSellerProfileImageUrl();
+        response.addressSido = dto.getAddressSido();
+        response.addressGugun = dto.getAddressGugun();
         return response;
     }
 }
-

@@ -99,6 +99,8 @@ public class ProductServiceImpl implements ProductService {
                 .sellerId(seller.getId())
                 .sellerNickname(seller.getNickname())
                 .sellerProfileImageUrl(seller.getProfileImageUrl())
+                .addressSido(seller.getAddressSido())
+                .addressGugun(seller.getAddressGugun())
                 .build();
         
         // 판매자의 다른 상품 목록 조회 (현재 상품 제외, 최대 5개)
@@ -489,6 +491,8 @@ public class ProductServiceImpl implements ProductService {
                 .sellerId(seller.getId())
                 .sellerNickname(seller.getNickname())
                 .sellerProfileImageUrl(seller.getProfileImageUrl())
+                .addressSido(seller.getAddressSido())
+                .addressGugun(seller.getAddressGugun())
                 .build();
         
         // ProductRequestDetailDto 생성 및 반환
