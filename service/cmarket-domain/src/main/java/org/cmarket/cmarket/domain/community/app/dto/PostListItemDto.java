@@ -6,8 +6,6 @@ import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.model.Post;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 게시글 목록 항목 DTO
@@ -20,7 +18,6 @@ public class PostListItemDto {
     private Long id;
     private String title;
     private String content;
-    private List<String> imageUrls;
     private String authorNickname;
     private BoardType boardType;
     private Long viewCount;
@@ -43,7 +40,6 @@ public class PostListItemDto {
                 .id(post.getId())
                 .title(post.getTitle())
                 .content(post.getContent())
-                .imageUrls(post.getImageUrls() != null ? new ArrayList<>(post.getImageUrls()) : new ArrayList<>())
                 .authorNickname(authorNickname)
                 .boardType(post.getBoardType())
                 .viewCount(post.getViewCount())

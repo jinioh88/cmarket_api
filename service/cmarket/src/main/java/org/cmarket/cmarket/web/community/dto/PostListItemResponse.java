@@ -6,7 +6,8 @@ import org.cmarket.cmarket.domain.community.app.dto.PostListItemDto;
 import org.cmarket.cmarket.domain.community.model.BoardType;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 게시글 목록 항목 응답 DTO
@@ -16,10 +17,12 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class PostListItemResponse {
+    private static final Pattern MARKDOWN_IMAGE_PATTERN = Pattern.compile("!\\[[^\\]]*\\]\\((https?://[^\\s)]+)");
+
     private Long id;
     private String title;
     private String contentPreview;  // 내용 미리보기 (최대 100자)
-    private List<String> imageUrls;
+    private String thumbnailImageUrl;
     private String authorNickname;
     private BoardType boardType;
     private Long viewCount;
@@ -46,8 +49,7 @@ public class PostListItemResponse {
         } else {
             response.contentPreview = content;
         }
-
-        response.imageUrls = dto.getImageUrls();
+        response.thumbnailImageUrl = extractThumbnailImageUrl(content);
         response.authorNickname = dto.getAuthorNickname();
         response.boardType = dto.getBoardType();
         response.viewCount = dto.getViewCount();
@@ -56,5 +58,14 @@ public class PostListItemResponse {
         response.updatedAt = dto.getUpdatedAt();
         response.isModified = dto.getIsModified();
         return response;
+    }
+
+    private static String extractThumbnailImageUrl(String content) {
+        if (content == null || content.isBlank()) {
+            return null;
+        }
+
+        Matcher matcher = MARKDOWN_IMAGE_PATTERN.matcher(content);
+        return matcher.find() ? matcher.group(1) : null;
     }
 }
