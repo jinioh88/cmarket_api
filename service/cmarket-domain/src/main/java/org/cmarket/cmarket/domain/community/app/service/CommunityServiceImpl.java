@@ -298,12 +298,12 @@ public class CommunityServiceImpl implements CommunityService {
         // 각 댓글의 하위 댓글 개수 확인 (개수가 0보다 크면 hasChildren = true)
         List<org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto> commentDtos = comments.stream()
                 .map(comment -> {
-                    Integer childrenCount = (int) commentRepository.countByParentIdAndDeletedAtIsNull(comment.getId());
+                    Integer childrenCount = (int) commentRepository.countAllDescendantsByRoot(comment.getId());
                     Boolean hasChildren = childrenCount > 0;
                     return org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto.fromEntity(comment, hasChildren, childrenCount);
                 })
                 .toList();
-        
+
         return new org.cmarket.cmarket.domain.community.app.dto.CommentListDto(commentDtos);
     }
     

@@ -59,6 +59,26 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             ORDER BY c.createdAt ASC
             """)
     List<Comment> findAllDescendantsByRoot(@Param("rootId") Long rootId);
+
+    /**
+     * 루트 댓글의 모든 후손 개수 조회 (depth 2 + depth 3, 소프트 삭제 제외).
+     *
+     * 평탄 표시 패턴에서 "답글 N개" 카운트가 실제 표시 개수와 일치하도록
+     * 직계 자식이 아닌 전체 후손 수를 반환합니다.
+     *
+     * @param rootId 루트 댓글 ID (depth 1)
+     * @return 후손 댓글 개수
+     */
+    @Query("""
+            SELECT COUNT(c) FROM Comment c
+            WHERE c.deletedAt IS NULL
+              AND (c.parentId = :rootId
+                   OR c.parentId IN (
+                     SELECT child.id FROM Comment child
+                     WHERE child.parentId = :rootId AND child.deletedAt IS NULL
+                   ))
+            """)
+    long countAllDescendantsByRoot(@Param("rootId") Long rootId);
     
     /**
      * 게시글별 댓글 개수 조회 (소프트 삭제된 댓글 제외)
