@@ -50,6 +50,23 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
      * @return 상품 목록 (최신순 정렬. 5개씩 조회)
      */
     List<Product> findBySellerIdAndIdNotAndDeletedAtIsNullOrderByCreatedAtDesc(Long sellerId, Long excludeProductId, Pageable pageable);
+
+    /**
+     * 판매자별 같은 타입의 다른 상품 목록 조회 (상세 페이지용, 현재 상품 제외)
+     * 판매 상품 상세에서는 같은 판매자의 판매 상품만, 판매요청 상세에서는 같은 판매자의 판매요청만 조회.
+     *
+     * @param sellerId 판매자 ID
+     * @param productType 상품 타입 (SELL / REQUEST)
+     * @param excludeProductId 제외할 상품 ID (현재 조회 중인 상품)
+     * @param pageable 페이지네이션 정보
+     * @return 상품 목록 (최신순 정렬)
+     */
+    List<Product> findBySellerIdAndProductTypeAndIdNotAndDeletedAtIsNullOrderByCreatedAtDesc(
+            Long sellerId,
+            org.cmarket.cmarket.domain.product.model.ProductType productType,
+            Long excludeProductId,
+            Pageable pageable
+    );
     
     /**
      * 판매자별 상품 타입별 목록 조회 (판매 상품 또는 판매 요청, 페이지네이션, 최신순 정렬)

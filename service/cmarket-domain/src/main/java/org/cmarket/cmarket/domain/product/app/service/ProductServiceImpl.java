@@ -103,10 +103,12 @@ public class ProductServiceImpl implements ProductService {
                 .addressGugun(seller.getAddressGugun())
                 .build();
         
-        // 판매자의 다른 상품 목록 조회 (현재 상품 제외, 최대 5개)
+        // 판매자의 다른 상품 목록 조회 (같은 productType만, 현재 상품 제외, 최대 5개)
+        // 판매 상품 상세 → 판매자의 다른 판매 상품, 판매요청 상세 → 판매자의 다른 판매요청
         Pageable pageable = PageRequest.of(0, 5);
-        List<Product> sellerOtherProducts = productRepository.findBySellerIdAndIdNotAndDeletedAtIsNullOrderByCreatedAtDesc(
+        List<Product> sellerOtherProducts = productRepository.findBySellerIdAndProductTypeAndIdNotAndDeletedAtIsNullOrderByCreatedAtDesc(
                 product.getSellerId(),
+                product.getProductType(),
                 productId,
                 pageable
         );
