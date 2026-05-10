@@ -318,9 +318,9 @@ public class CommunityServiceImpl implements CommunityService {
             throw new PostAlreadyDeletedException("삭제된 댓글의 하위 댓글을 조회할 수 없습니다.");
         }
         
-        // 하위 댓글 목록 조회 (최신순)
+        // 후손 댓글 목록 조회 (depth 2 + depth 3 평탄, 최신순)
         List<Comment> replies = commentRepository
-                .findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(commentId);
+                .findAllDescendantsByRoot(commentId);
         
         // 각 댓글의 하위 댓글 개수 확인 (개수가 0보다 크면 hasChildren = true)
         List<org.cmarket.cmarket.domain.community.app.dto.CommentListItemDto> replyDtos = replies.stream()

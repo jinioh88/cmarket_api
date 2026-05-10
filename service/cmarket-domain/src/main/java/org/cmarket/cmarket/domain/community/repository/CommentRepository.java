@@ -32,11 +32,33 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     
     /**
      * 부모 댓글별 하위 댓글 목록 조회 (최신순 정렬)
-     * 
+     *
      * @param parentId 부모 댓글 ID
      * @return 하위 댓글 목록 (최신순 정렬)
      */
     List<Comment> findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(Long parentId);
+
+    /**
+     * 루트 댓글의 모든 후손(depth 2 + depth 3) 조회.
+     *
+     * 댓글 시스템은 최대 3단계 depth(1=댓글, 2=대댓글, 3=대대댓글)로 제한되므로
+     * 직접 자식(depth 2)과 그 자식(depth 3)만 IN 서브쿼리로 한 번에 조회합니다.
+     * 평탄 표시 + 멘션 prefix 패턴(인스타그램/오늘의집)에서 사용.
+     *
+     * @param rootId 루트 댓글 ID (depth 1)
+     * @return 후손 댓글 목록 (createdAt 오름차순, 소프트 삭제 제외)
+     */
+    @Query("""
+            SELECT c FROM Comment c
+            WHERE c.deletedAt IS NULL
+              AND (c.parentId = :rootId
+                   OR c.parentId IN (
+                     SELECT child.id FROM Comment child
+                     WHERE child.parentId = :rootId AND child.deletedAt IS NULL
+                   ))
+            ORDER BY c.createdAt ASC
+            """)
+    List<Comment> findAllDescendantsByRoot(@Param("rootId") Long rootId);
     
     /**
      * 게시글별 댓글 개수 조회 (소프트 삭제된 댓글 제외)
