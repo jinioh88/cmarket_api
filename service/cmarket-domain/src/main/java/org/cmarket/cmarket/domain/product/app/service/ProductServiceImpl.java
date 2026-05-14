@@ -650,25 +650,35 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public MyProductListDto getUserSellProductList(Long userId, Pageable pageable, String email) {
+        return getUserProductListByType(userId, pageable, email, ProductType.SELL);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MyProductListDto getUserPurchaseRequestList(Long userId, Pageable pageable, String email) {
+        return getUserProductListByType(userId, pageable, email, ProductType.REQUEST);
+    }
+
+    private MyProductListDto getUserProductListByType(Long userId, Pageable pageable, String email, ProductType productType) {
         // 조회할 유저 존재 확인 (소프트 삭제된 사용자 제외)
         userRepository.findById(userId)
                 .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException("사용자를 찾을 수 없습니다."));
-        
-        // 다른 유저가 등록한 판매 상품 목록 조회 (판매 상품만, 최신순 정렬)
+
+        // 다른 유저가 등록한 상품 목록 조회 (지정된 productType, 최신순 정렬)
         Page<Product> productPage = productRepository.findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
                 userId,
-                ProductType.SELL,
+                productType,
                 pageable
         );
-        
+
         // 현재 로그인한 사용자 ID 조회 (비로그인 시 null)
         final Long currentUserId = email != null
                 ? userRepository.findByEmailAndDeletedAtIsNull(email)
                         .map(User::getId)
                         .orElse(null)
                 : null;
-        
+
         // N+1 문제 방지: 한 번의 쿼리로 찜한 상품 ID 목록 조회
         final java.util.Set<Long> favoriteProductIds = currentUserId != null && !productPage.getContent().isEmpty()
                 ? new java.util.HashSet<>(favoriteRepository.findProductIdsByUserIdAndProductIdIn(
@@ -678,7 +688,7 @@ public class ProductServiceImpl implements ProductService {
                                 .toList()
                 ))
                 : new java.util.HashSet<>();
-        
+
         // 각 상품의 찜 여부 확인 및 DTO 변환 후 PageResult로 변환
         PageResult<ProductSearchItemDto> pageResult = PageResult.fromPage(
                 productPage.map(product -> {
@@ -686,7 +696,7 @@ public class ProductServiceImpl implements ProductService {
                     return ProductSearchItemDto.fromEntity(product, isFavorite);
                 })
         );
-        
+
         return new MyProductListDto(pageResult);
     }
 }

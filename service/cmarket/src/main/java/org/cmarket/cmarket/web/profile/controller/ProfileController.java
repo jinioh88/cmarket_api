@@ -262,14 +262,14 @@ public class ProfileController {
     
     /**
      * 다른 유저가 등록한 판매 상품 목록 조회
-     * 
+     *
      * GET /api/profile/{userId}/products
-     * 
+     *
      * 특정 사용자가 등록한 판매 상품 목록을 조회합니다.
      * - 최신순 정렬
      * - 페이지네이션 지원 (기본값: page=0, size=20)
      * - 판매 상품(SELL)만 조회되며, 판매 요청(REQUEST)은 제외됩니다.
-     * 
+     *
      * @param userId 조회할 사용자 ID
      * @param pageable 페이지네이션 정보 (기본값: page=0, size=20)
      * @return 판매 상품 목록 (페이지네이션 포함)
@@ -282,17 +282,51 @@ public class ProfileController {
     ) {
         // 현재 로그인한 사용자의 이메일 추출
         String email = SecurityUtils.getCurrentUserEmail();
-        
+
         // 앱 서비스 호출
-        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto = 
+        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto =
                 productService.getUserSellProductList(userId, pageable, email);
-        
+
         // 앱 DTO → 웹 DTO 변환
         MyProductListResponse response = MyProductListResponse.fromDto(myProductListDto);
-        
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
     }
-    
+
+    /**
+     * 다른 유저가 등록한 판매 요청 목록 조회
+     *
+     * GET /api/profile/{userId}/purchase-requests
+     *
+     * 특정 사용자가 등록한 판매 요청 목록을 조회합니다.
+     * - 최신순 정렬
+     * - 페이지네이션 지원 (기본값: page=0, size=20)
+     * - 판매 요청(REQUEST)만 조회되며, 판매 상품(SELL)은 제외됩니다.
+     *
+     * @param userId 조회할 사용자 ID
+     * @param pageable 페이지네이션 정보 (기본값: page=0, size=20)
+     * @return 판매 요청 목록 (페이지네이션 포함)
+     */
+    @GetMapping("/{userId}/purchase-requests")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<MyProductListResponse>> getUserPurchaseRequestList(
+            @PathVariable Long userId,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        // 현재 로그인한 사용자의 이메일 추출
+        String email = SecurityUtils.getCurrentUserEmail();
+
+        // 앱 서비스 호출
+        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto =
+                productService.getUserPurchaseRequestList(userId, pageable, email);
+
+        // 앱 DTO → 웹 DTO 변환
+        MyProductListResponse response = MyProductListResponse.fromDto(myProductListDto);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
+    }
+
 }
 
