@@ -165,6 +165,7 @@ public class ProfileServiceImpl implements ProfileService {
                             .blockedUserId(blockedUserEntity.getId())
                             .nickname(blockedUserEntity.getNickname())
                             .profileImageUrl(blockedUserEntity.getProfileImageUrl())
+                            .blockedAt(userBlock.getCreatedAt())
                             .build();
                 })
                 .filter(blockedUserDto -> blockedUserDto != null)

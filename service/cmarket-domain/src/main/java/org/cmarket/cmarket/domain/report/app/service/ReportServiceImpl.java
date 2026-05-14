@@ -113,6 +113,7 @@ public class ReportServiceImpl implements ReportService {
                             .blockedUserId(blockedUserEntity.getId())
                             .nickname(blockedUserEntity.getNickname())
                             .profileImageUrl(blockedUserEntity.getProfileImageUrl())
+                            .blockedAt(userBlock.getCreatedAt())
                             .build();
                 })
                 .filter(blockedUserDto -> blockedUserDto != null)

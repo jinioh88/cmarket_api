@@ -28,6 +28,7 @@ public class BlockedUserListResponse {
                                         .blockedUserId(blockedUserDto.getBlockedUserId())
                                         .nickname(blockedUserDto.getNickname())
                                         .profileImageUrl(blockedUserDto.getProfileImageUrl())
+                                        .blockedAt(blockedUserDto.getBlockedAt())
                                         .build()
                         )
                 );
@@ -52,6 +53,7 @@ public class BlockedUserListResponse {
                                         .blockedUserId(blockedUserDto.getBlockedUserId())
                                         .nickname(blockedUserDto.getNickname())
                                         .profileImageUrl(blockedUserDto.getProfileImageUrl())
+                                        .blockedAt(blockedUserDto.getBlockedAt())
                                         .build()
                         )
                 );
