@@ -26,7 +26,7 @@ public class ProfileUpdateRequest {
     
     private String profileImageUrl;
     
-    @Size(max = 1000, message = "소개글은 최대 1000자까지 입력 가능합니다.")
+    @Size(max = 200, message = "소개글은 최대 200자까지 입력 가능합니다.")
     private String introduction;
 }
 
