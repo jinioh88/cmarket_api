@@ -1,6 +1,7 @@
 package org.cmarket.cmarket.domain.notification.repository;
 
 import org.cmarket.cmarket.domain.notification.model.Notification;
+import org.cmarket.cmarket.domain.notification.model.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -83,5 +85,39 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     int markAllAsRead(
             @Param("userId") Long userId,
             @Param("readAt") LocalDateTime readAt
+    );
+
+    /**
+     * 보존 기간이 지난 "읽은" 알림 하드 삭제 (자동 삭제 대상 타입만)
+     *
+     * @param threshold readAt 이 이 값 이전이면 삭제 대상
+     * @param autoDeletableTypes 자동 삭제 대상 타입 목록
+     * @return 삭제된 알림 개수
+     */
+    @Modifying
+    @Query("DELETE FROM Notification n " +
+           "WHERE n.isRead = true " +
+           "AND n.readAt < :threshold " +
+           "AND n.notificationType IN :autoDeletableTypes")
+    int deleteReadOlderThan(
+            @Param("threshold") LocalDateTime threshold,
+            @Param("autoDeletableTypes") Collection<NotificationType> autoDeletableTypes
+    );
+
+    /**
+     * 보존 기간이 지난 "안 읽은" 알림 하드 삭제 (자동 삭제 대상 타입만)
+     *
+     * @param threshold createdAt 이 이 값 이전이면 삭제 대상
+     * @param autoDeletableTypes 자동 삭제 대상 타입 목록
+     * @return 삭제된 알림 개수
+     */
+    @Modifying
+    @Query("DELETE FROM Notification n " +
+           "WHERE n.isRead = false " +
+           "AND n.createdAt < :threshold " +
+           "AND n.notificationType IN :autoDeletableTypes")
+    int deleteUnreadOlderThan(
+            @Param("threshold") LocalDateTime threshold,
+            @Param("autoDeletableTypes") Collection<NotificationType> autoDeletableTypes
     );
 }
