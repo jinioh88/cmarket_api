@@ -2,6 +2,7 @@ package org.cmarket.cmarket.web.profile.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.cmarket.cmarket.domain.auth.model.AuthProvider;
 import org.cmarket.cmarket.domain.auth.model.UserRole;
 
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ public class UserProfileResponse {
     private Long id;
     private String profileImageUrl;
     private UserRole userRole;
+    private AuthProvider provider;
     private String addressSido;
     private String addressGugun;
     private String nickname;
@@ -69,6 +71,7 @@ public class UserProfileResponse {
                 .id(myPageDto.getId())
                 .profileImageUrl(myPageDto.getProfileImageUrl())
                 .userRole(myPageDto.getUserRole())
+                .provider(myPageDto.getProvider())
                 .nickname(myPageDto.getNickname())
                 .name(myPageDto.getName())
                 .introduction(myPageDto.getIntroduction())

@@ -50,6 +50,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .id(user.getId())
                 .profileImageUrl(user.getProfileImageUrl())
                 .userRole(user.getRole())
+                .provider(user.getProvider())
                 .nickname(user.getNickname())
                 .name(user.getName())
                 .introduction(user.getIntroduction())
