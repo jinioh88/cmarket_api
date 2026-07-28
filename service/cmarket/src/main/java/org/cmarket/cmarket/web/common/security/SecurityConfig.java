@@ -286,6 +286,13 @@ public class SecurityConfig {
                     "/api/auth/signup",
                     "/api/auth/login",
                     "/api/auth/logout",
+                    // Access Token 갱신 엔드포인트
+                    // 인증을 요구하면 안 된다: 갱신이 필요한 시점은 곧 Access Token이 만료된
+                    // 시점이고, 만료된 토큰은 JwtAuthenticationFilter의 validateToken()이
+                    // ExpiredJwtException으로 false를 주어 인증되지 않는다. 그러면 갱신 요청
+                    // 자체가 401로 막혀 갱신이 영원히 불가능해진다.
+                    // 요청자 검증은 컨트롤러가 body의 Refresh Token으로 직접 수행한다.
+                    "/api/auth/refresh",
                     "/api/auth/google",  // Google ID Token 로그인 엔드포인트
                     "/api/auth/email/**",
                     "/api/auth/password/reset/**",  // 비밀번호 재설정 엔드포인트
