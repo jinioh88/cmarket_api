@@ -148,26 +148,30 @@ public interface ProductService {
     
     /**
      * 내가 등록한 판매 상품 목록 조회
-     * 
+     *
      * @param pageable 페이지네이션 정보
      * @param email 현재 로그인한 사용자 이메일
+     * @param tradeStatus 거래 상태 필터. null이면 전체
      * @return 내가 등록한 판매 상품 목록 조회 결과
      */
     org.cmarket.cmarket.domain.product.app.dto.MyProductListDto getMySellProductList(
             org.springframework.data.domain.Pageable pageable,
-            String email
+            String email,
+            org.cmarket.cmarket.domain.product.model.TradeStatus tradeStatus
     );
-    
+
     /**
      * 내가 등록한 판매 요청 목록 조회
-     * 
+     *
      * @param pageable 페이지네이션 정보
      * @param email 현재 로그인한 사용자 이메일
+     * @param tradeStatus 거래 상태 필터. null이면 전체
      * @return 내가 등록한 판매 요청 목록 조회 결과
      */
     org.cmarket.cmarket.domain.product.app.dto.MyProductListDto getMyPurchaseRequestList(
             org.springframework.data.domain.Pageable pageable,
-            String email
+            String email,
+            org.cmarket.cmarket.domain.product.model.TradeStatus tradeStatus
     );
     
     /**

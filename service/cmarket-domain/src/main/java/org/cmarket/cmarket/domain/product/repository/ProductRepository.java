@@ -2,6 +2,7 @@ package org.cmarket.cmarket.domain.product.repository;
 
 import org.cmarket.cmarket.domain.product.model.Product;
 import org.cmarket.cmarket.domain.product.model.ProductType;
+import org.cmarket.cmarket.domain.product.model.TradeStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -77,7 +78,16 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
      * @return 상품 목록 (최신순 정렬)
      */
     Page<Product> findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(Long sellerId, ProductType productType, Pageable pageable);
-    
+
+    /**
+     * 판매자 · 상품유형 · 거래상태로 거른 목록 (최신순)
+     *
+     * 마이페이지의 상태 필터가 쓴다. 화면에서 거르면 이미 받아온 페이지에만 적용되어
+     * 뒤쪽 페이지에 있는 항목을 놓치므로, 거르는 일을 서버가 맡는다.
+     */
+    Page<Product> findBySellerIdAndProductTypeAndTradeStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
+            Long sellerId, ProductType productType, TradeStatus tradeStatus, Pageable pageable);
+
     /**
      * 상품 조회 (소프트 삭제된 상품 제외)
      * 

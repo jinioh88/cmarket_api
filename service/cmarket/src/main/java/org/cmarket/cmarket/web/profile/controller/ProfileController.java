@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -112,18 +113,19 @@ public class ProfileController {
     @GetMapping("/me/products")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SuccessResponse<MyProductListResponse>> getMySellProductList(
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) org.cmarket.cmarket.domain.product.model.TradeStatus tradeStatus
     ) {
         // 현재 로그인한 사용자의 이메일 추출
         String email = SecurityUtils.getCurrentUserEmail();
-        
+
         // 앱 서비스 호출
-        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto = 
-                productService.getMySellProductList(pageable, email);
-        
+        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto =
+                productService.getMySellProductList(pageable, email, tradeStatus);
+
         // 앱 DTO → 웹 DTO 변환
         MyProductListResponse response = MyProductListResponse.fromDto(myProductListDto);
-        
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
     }
@@ -143,18 +145,19 @@ public class ProfileController {
     @GetMapping("/me/purchase-requests")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SuccessResponse<MyProductListResponse>> getMyPurchaseRequestList(
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) org.cmarket.cmarket.domain.product.model.TradeStatus tradeStatus
     ) {
         // 현재 로그인한 사용자의 이메일 추출
         String email = SecurityUtils.getCurrentUserEmail();
-        
+
         // 앱 서비스 호출
-        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto = 
-                productService.getMyPurchaseRequestList(pageable, email);
-        
+        org.cmarket.cmarket.domain.product.app.dto.MyProductListDto myProductListDto =
+                productService.getMyPurchaseRequestList(pageable, email, tradeStatus);
+
         // 앱 DTO → 웹 DTO 변환
         MyProductListResponse response = MyProductListResponse.fromDto(myProductListDto);
-        
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
     }

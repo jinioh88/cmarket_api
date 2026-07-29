@@ -601,49 +601,51 @@ public class ProductServiceImpl implements ProductService {
     
     @Override
     @Transactional(readOnly = true)
-    public MyProductListDto getMySellProductList(Pageable pageable, String email) {
+    public MyProductListDto getMySellProductList(Pageable pageable, String email, TradeStatus tradeStatus) {
         // 사용자 조회
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException("사용자를 찾을 수 없습니다."));
-        
+
         Long userId = user.getId();
-        
+
         // 내가 등록한 판매 상품 목록 조회 (판매 상품만, 최신순 정렬)
-        Page<Product> productPage = productRepository.findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
-                userId,
-                ProductType.SELL,
-                pageable
-        );
-        
+        // tradeStatus가 있으면 그 상태만. null이면 전체 — 예전 호출이 그대로 동작한다.
+        Page<Product> productPage = (tradeStatus == null)
+                ? productRepository.findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        userId, ProductType.SELL, pageable)
+                : productRepository.findBySellerIdAndProductTypeAndTradeStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        userId, ProductType.SELL, tradeStatus, pageable);
+
         // 각 상품을 DTO로 변환 후 PageResult로 변환 (본인 상품이므로 찜 여부는 false)
         PageResult<ProductSearchItemDto> pageResult = PageResult.fromPage(
                 productPage.map(product -> ProductSearchItemDto.fromEntity(product, false))
         );
-        
+
         return new MyProductListDto(pageResult);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
-    public MyProductListDto getMyPurchaseRequestList(Pageable pageable, String email) {
+    public MyProductListDto getMyPurchaseRequestList(Pageable pageable, String email, TradeStatus tradeStatus) {
         // 사용자 조회
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException("사용자를 찾을 수 없습니다."));
-        
+
         Long userId = user.getId();
-        
+
         // 내가 등록한 판매 요청 목록 조회 (판매 요청만, 최신순 정렬)
-        Page<Product> productPage = productRepository.findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
-                userId,
-                ProductType.REQUEST,
-                pageable
-        );
-        
+        // tradeStatus가 있으면 그 상태만. null이면 전체 — 예전 호출이 그대로 동작한다.
+        Page<Product> productPage = (tradeStatus == null)
+                ? productRepository.findBySellerIdAndProductTypeAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        userId, ProductType.REQUEST, pageable)
+                : productRepository.findBySellerIdAndProductTypeAndTradeStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        userId, ProductType.REQUEST, tradeStatus, pageable);
+
         // 각 상품을 DTO로 변환 후 PageResult로 변환 (본인 상품이므로 찜 여부는 false)
         PageResult<ProductSearchItemDto> pageResult = PageResult.fromPage(
                 productPage.map(product -> ProductSearchItemDto.fromEntity(product, false))
         );
-        
+
         return new MyProductListDto(pageResult);
     }
     
