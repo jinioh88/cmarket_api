@@ -125,20 +125,44 @@ public class User {
     
     /**
      * 소프트 삭제 처리 (탈퇴 사유 포함)
+     *
+     * 개인정보 보호법 제21조에 따라 탈퇴 시 회원을 알아볼 수 있는 정보를 지운다.
+     * 탈퇴 사유는 남긴다 — UserRepository의 탈퇴 사유 통계가 이 값을 집계하므로
+     * 계정을 통째로 지우면 통계가 깨진다.
+     *
+     * email·nickname은 unique 제약이 걸려 있어 null로 두면 두 번째 탈퇴자가 저장에
+     * 실패한다. id를 섞어 겹치지 않는 값으로 바꾼다.
+     * name은 nullable = false 라서 null을 넣을 수 없으므로 짧은 고정값으로 둔다.
+     * nickname은 length = 10 이므로 "탈퇴" + id 형태로 짧게 유지한다.
      */
     public void softDelete(WithdrawalReasonType withdrawalReason, String withdrawalDetailReason) {
         this.deletedAt = LocalDateTime.now();
         this.withdrawalReason = withdrawalReason;
         this.withdrawalDetailReason = withdrawalDetailReason;
+
+        // 회원을 알아볼 수 있는 정보 제거
+        this.email = "deleted_" + this.id + "@cuddlemarket.invalid";
+        this.nickname = "탈퇴" + this.id;
+        this.name = "탈퇴";
+        this.password = null;
+        this.birthDate = null;
+        this.addressSido = null;
+        this.addressGugun = null;
+        this.profileImageUrl = null;
+        this.introduction = null;
+        this.socialId = null;
+
         this.updatedAt = LocalDateTime.now();
     }
-    
+
     /**
      * 소프트 삭제 처리 (탈퇴 사유 없이)
+     *
+     * 사유만 없을 뿐 개인정보를 지우는 처리는 같아야 하므로 위 메서드에 위임한다.
+     * 따로 두면 이쪽으로 빠져나가 개인정보가 남는다.
      */
     public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        softDelete(null, null);
     }
     
     /**
