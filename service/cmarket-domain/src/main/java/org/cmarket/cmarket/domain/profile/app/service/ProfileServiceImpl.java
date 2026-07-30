@@ -21,6 +21,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,7 +35,10 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
-    
+
+    /** 가입·이용 가능한 최소 나이 (AuthServiceImpl과 같은 값) */
+    private static final int MINIMUM_AGE = 14;
+
     private final UserRepository userRepository;
     private final UserBlockRepository userBlockRepository;
     private final UserBlockQueryService userBlockQueryService;
@@ -79,7 +84,14 @@ public class ProfileServiceImpl implements ProfileService {
             throw new NicknameAlreadyExistsException("이미 사용 중인 닉네임입니다.");
         }
         
-        // 3. 프로필 정보 업데이트
+        // 3. 만 14세 이상 검증
+        //
+        // 소셜 가입 완료(웹 SocialSignUpForm)와 프로필 수정이 둘 다 이 API(PATCH /profile/me)를 쓴다.
+        // 나이 검사는 이메일 가입(AuthServiceImpl.signUp)에만 있어서, 소셜 가입은 나이 확인 없이
+        // 통과했고 이메일 가입자도 나중에 생년월일을 바꾸면 검사를 피할 수 있었다.
+        validateAge(command.getBirthDate());
+
+        // 4. 프로필 정보 업데이트
         user.updateProfile(
                 command.getNickname(),
                 command.getBirthDate(),
@@ -89,7 +101,7 @@ public class ProfileServiceImpl implements ProfileService {
                 command.getIntroduction()
         );
         
-        // 4. UserDto 생성 및 반환
+        // 5. UserDto 생성 및 반환
         return UserDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -188,6 +200,28 @@ public class ProfileServiceImpl implements ProfileService {
                 .blockedUsers(pageResult)
                 .build();
     }
-    
+
+    /**
+     * 만 14세 이상 검증
+     *
+     * 생년월일이 null이면 검사하지 않는다. 프로필 수정에서 생년월일을 건드리지 않는
+     * 경우(소개글만 고치는 등)에 null이 들어오는데, 여기서 막으면 그런 수정까지 막힌다.
+     * 소셜 가입 완료 화면은 생년월일을 반드시 채워 보내므로 그 경로는 검사된다.
+     *
+     * @param birthDate 생년월일 (null이면 검사하지 않음)
+     * @throws IllegalArgumentException 만 14세 미만일 때
+     */
+    private void validateAge(LocalDate birthDate) {
+        if (birthDate == null) {
+            return;
+        }
+
+        int age = Period.between(birthDate, LocalDate.now()).getYears();
+
+        if (age < MINIMUM_AGE) {
+            throw new IllegalArgumentException("만 14세 이상만 이용할 수 있습니다.");
+        }
+    }
+
 }
 
