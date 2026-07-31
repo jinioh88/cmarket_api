@@ -116,13 +116,17 @@ public class AuthController {
             @Valid @RequestBody EmailVerificationSendRequest request
     ) {
         // 앱 서비스 호출 (인증코드 생성 및 이메일 발송)
-        String code = authService.sendEmailVerificationCode(request.getEmail());
+        //
+        // ⚠️ 인증코드를 응답에 담지 않는다. 담으면 메일함에 접근하지 못하는 사람도
+        //    코드를 손에 넣어, 남의 이메일 주소로 가입까지 할 수 있다.
+        //    (메일 발송이 안 되던 동안 테스트하려고 담아 두었던 것이다)
+        authService.sendEmailVerificationCode(request.getEmail());
         
         // 응답 반환
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
-                        code
+                        "인증코드를 발송했습니다."
                 ));
     }
     
@@ -382,13 +386,17 @@ public class AuthController {
             @Valid @RequestBody PasswordResetSendRequest request
     ) {
         // 1. 앱 서비스 호출 (이메일로 사용자 조회 및 인증코드 발송)
-        String verificationCode = authService.sendPasswordResetCode(request.getEmail());
+        //
+        // ⚠️ 인증코드를 응답에 담지 않는다. 이쪽은 계정 탈취로 이어진다 —
+        //    코드를 얻으면 verify를 통과시킬 수 있고, resetPassword는 인증 여부만
+        //    보므로 남의 이메일 주소만 알면 비밀번호를 바꿀 수 있게 된다.
+        authService.sendPasswordResetCode(request.getEmail());
 
         // 2. 응답 반환
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
-                        verificationCode
+                        "인증코드를 발송했습니다."
                 ));
     }
     
