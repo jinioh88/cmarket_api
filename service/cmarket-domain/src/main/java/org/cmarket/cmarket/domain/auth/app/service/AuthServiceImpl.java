@@ -75,11 +75,24 @@ public class AuthServiceImpl implements AuthService {
         // 3. 만 14세 이상 검증
         validateAge(command.getBirthDate());
         
-        // 4. 비밀번호 암호화
-        String encodedPassword = passwordEncoder.encode(command.getPassword());
-        System.out.println(encodedPassword);
+        // 4. 이메일 인증 완료 여부 확인
+        //    화면이 막고 있을 뿐 서버는 안 막고 있었다. 인증 API를 아예 호출하지 않고
+        //    가입만 해도 201이 떨어지는 것을 운영 서버에서 확인했다.
+        //    resetPassword와 같은 방식이다 — 만료(isExpired)는 보지 않는다. 인증만 끝났으면
+        //    폼을 늦게 채워도 가입할 수 있어야 한다(회원가입 폼은 입력 칸이 9개다).
+        java.util.List<EmailVerification> verifications =
+                emailVerificationRepository.findByEmail(command.getEmail());
+        boolean isVerified = verifications.stream()
+                .anyMatch(EmailVerification::isVerified);
         
-        // 5. User 엔티티 생성 및 저장
+        if (!isVerified) {
+            throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다. 인증코드를 먼저 확인해주세요.");
+        }
+        
+        // 5. 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(command.getPassword());
+        
+        // 6. User 엔티티 생성 및 저장
         User user = User.builder()
                 .email(command.getEmail())
                 .password(encodedPassword)
@@ -95,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
         
         User savedUser = userRepository.save(user);
         
-        // 6. UserDto로 변환하여 반환
+        // 7. UserDto로 변환하여 반환
         return UserDto.builder()
                 .id(savedUser.getId())
                 .email(savedUser.getEmail())
