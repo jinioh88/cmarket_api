@@ -101,9 +101,13 @@ public class CommunityController {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size
     ) {
+        // 비회원도 볼 수 있는 주소다. 로그인 안 했으면 null이 온다.
+        // (로그인했으면 그 사람이 차단한 작성자의 글을 목록에서 뺀다)
+        String email = SecurityUtils.isAuthenticated() ? SecurityUtils.getCurrentUserEmail() : null;
+
         // 앱 서비스 호출
-        org.cmarket.cmarket.domain.community.app.dto.PostListDto postListDto = 
-                communityService.getPostList(sortBy, boardType, searchType, keyword, page, size);
+        org.cmarket.cmarket.domain.community.app.dto.PostListDto postListDto =
+                communityService.getPostList(sortBy, boardType, searchType, keyword, page, size, email);
         
         // 앱 DTO → 웹 DTO 변환
         PostListResponse response = PostListResponse.fromDto(postListDto);

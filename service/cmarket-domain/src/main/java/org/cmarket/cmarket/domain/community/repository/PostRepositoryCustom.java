@@ -5,6 +5,8 @@ import org.cmarket.cmarket.domain.community.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 /**
  * Post 엔티티 커스텀 레포지토리 인터페이스
  * 
@@ -20,9 +22,11 @@ public interface PostRepositoryCustom {
      * @param boardType 게시판 유형 (null이면 전체 조회)
      * @param searchType 검색 타입 ("title", "title_content", "writer", null이면 검색 안함)
      * @param keyword 검색어 (null이면 검색 안함)
+     * @param excludedAuthorIds 목록에서 뺄 작성자 ID (차단한 사용자, 비어 있으면 안 뺌)
      * @param pageable 페이지네이션 정보
      * @return 게시글 목록 (페이지네이션)
      */
-    Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, String searchType, String keyword, Pageable pageable);
+    Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, String searchType, String keyword,
+                         List<Long> excludedAuthorIds, Pageable pageable);
 }
 

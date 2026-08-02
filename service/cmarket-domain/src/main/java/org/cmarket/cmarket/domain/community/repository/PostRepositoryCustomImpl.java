@@ -31,10 +31,22 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
     }
     
     @Override
-    public Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, String searchType, String keyword, Pageable pageable) {
+    public Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, String searchType, String keyword,
+                                List<Long> excludedAuthorIds, Pageable pageable) {
         // 기본 조건: 소프트 삭제되지 않은 게시글만
         BooleanExpression whereCondition = post.deletedAt.isNull();
-        
+
+        // 차단한 사용자의 글 제외
+        //
+        // 차단 안내가 「게시글이 숨김 처리됩니다」라고 약속한다. 상품은 #809에서
+        // 걸러지게 했고, 글은 여기서 한다.
+        //
+        // 화면에 다 받아 온 뒤 걸러내면 안 된다 — 한 페이지에 10개를 달라고 했는데
+        // 8개만 남는 식이 되어 페이지 수와 무한스크롤이 어긋난다. 쿼리에서 뺀다.
+        if (excludedAuthorIds != null && !excludedAuthorIds.isEmpty()) {
+            whereCondition = whereCondition.and(post.authorId.notIn(excludedAuthorIds));
+        }
+
         // 게시판 유형 필터링 (boardType이 null이 아니면 해당 유형만 조회)
         if (boardType != null) {
             whereCondition = whereCondition.and(post.boardType.eq(boardType));

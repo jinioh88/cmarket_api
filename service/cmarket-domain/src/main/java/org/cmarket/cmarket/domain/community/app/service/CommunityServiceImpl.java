@@ -24,6 +24,7 @@ import org.cmarket.cmarket.domain.notification.app.dto.NotificationCreateCommand
 import org.cmarket.cmarket.domain.notification.app.event.NotificationCreatedEvent;
 import org.cmarket.cmarket.domain.notification.model.NotificationType;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
+import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +47,7 @@ public class CommunityServiceImpl implements CommunityService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final UserBlockRepository userBlockRepository;
     private final ApplicationEventPublisher eventPublisher;
     
     @Override
@@ -81,7 +83,8 @@ public class CommunityServiceImpl implements CommunityService {
     
     @Override
     @Transactional(readOnly = true)
-    public PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword, Integer page, Integer size) {
+    public PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword,
+                                   Integer page, Integer size, String email) {
         // 정렬 기준 기본값 설정
         if (sortBy == null || sortBy.isEmpty()) {
             sortBy = "latest";
@@ -97,9 +100,19 @@ public class CommunityServiceImpl implements CommunityService {
         int pageNumber = page != null ? page : 0;
         int pageSize = size != null ? size : 20;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        
+
+        // 내가 차단한 사람의 글은 목록에서 뺀다.
+        // 비회원이면 차단이 있을 수 없으므로 빈 목록이다.
+        final Long viewerId = email != null
+                ? userRepository.findByEmailAndDeletedAtIsNull(email).map(User::getId).orElse(null)
+                : null;
+        final List<Long> blockedAuthorIds = viewerId != null
+                ? userBlockRepository.findBlockedUserIdsByBlockerId(viewerId)
+                : List.of();
+
         // 게시글 목록 조회 (QueryDSL 사용)
-        Page<Post> postPage = postRepository.findPosts(sortBy, sortOrder, boardType, searchType, keyword, pageable);
+        Page<Post> postPage = postRepository.findPosts(
+                sortBy, sortOrder, boardType, searchType, keyword, blockedAuthorIds, pageable);
         
         // Post 엔티티를 PostListItemDto로 변환 (엔티티에 저장된 작성자 정보 사용)
         PageResult<PostListItemDto> pageResult = PageResult.fromPage(

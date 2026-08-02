@@ -27,6 +27,7 @@ import org.cmarket.cmarket.domain.product.model.TradeStatus;
 import org.cmarket.cmarket.domain.product.repository.FavoriteRepository;
 import org.cmarket.cmarket.domain.product.repository.ProductRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
+import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,6 +51,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
+    private final UserBlockRepository userBlockRepository;
     private final ApplicationEventPublisher eventPublisher;
     
     @Override
@@ -94,7 +96,26 @@ public class ProductServiceImpl implements ProductService {
         // 판매자 정보 조회
         User seller = userRepository.findById(product.getSellerId())
                 .orElseThrow(() -> new org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException("판매자를 찾을 수 없습니다."));
-        
+
+        // 현재 로그인한 사용자 ID 조회 (비로그인 시 null)
+        final Long userId = email != null
+                ? userRepository.findByEmailAndDeletedAtIsNull(email)
+                        .map(User::getId)
+                        .orElse(null)
+                : null;
+
+        // 차단한 판매자의 상품은 상세도 못 본다.
+        //
+        // 목록에서 빼는 것만으로는 부족하다 — 주소를 직접 열거나, 차단 전에 눌러 둔
+        // 링크로 들어오면 그대로 보였다. 차단 안내가 「상품을 볼 수 없습니다」라고
+        // 약속하므로 여기서도 막는다.
+        //
+        // ProductNotFoundException을 쓰는 이유: 새 예외를 만들면 핸들러·에러코드까지
+        // 늘어난다. 화면에는 「상품을 찾을 수 없습니다」와 같은 자리에 뜨면 된다.
+        if (userId != null && userBlockRepository.existsByBlockerIdAndBlockedUserId(userId, seller.getId())) {
+            throw new org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException("차단한 사용자의 상품입니다.");
+        }
+
         SellerInfoDto sellerInfo = SellerInfoDto.builder()
                 .sellerId(seller.getId())
                 .sellerNickname(seller.getNickname())
@@ -112,13 +133,6 @@ public class ProductServiceImpl implements ProductService {
                 productId,
                 pageable
         );
-        
-        // 현재 로그인한 사용자 ID 조회 (비로그인 시 null)
-        final Long userId = email != null
-                ? userRepository.findByEmailAndDeletedAtIsNull(email)
-                        .map(User::getId)
-                        .orElse(null)
-                : null;
         
         // 찜 여부 확인
         Boolean isFavorite = null;

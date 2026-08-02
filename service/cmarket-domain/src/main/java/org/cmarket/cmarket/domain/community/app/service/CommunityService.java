@@ -31,9 +31,11 @@ public interface CommunityService {
      * @param keyword 검색어 (null이면 검색 안함)
      * @param page 페이지 번호 (0부터 시작)
      * @param size 페이지 크기
+     * @param email 현재 로그인한 사용자 이메일 (비로그인 시 null) — 이 사람이 차단한 작성자의 글은 뺀다
      * @return 게시글 목록
      */
-    PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword, Integer page, Integer size);
+    PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword,
+                            Integer page, Integer size, String email);
 
     /**
      * 게시글 상세 조회
