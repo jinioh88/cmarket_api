@@ -5,6 +5,7 @@ import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.cmarket.cmarket.domain.product.model.Product;
 import org.cmarket.cmarket.domain.product.repository.FavoriteRepository;
 import org.cmarket.cmarket.domain.product.repository.ProductRepository;
+import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
 import org.cmarket.cmarket.domain.search.app.dto.ProductSearchCommand;
 import org.cmarket.cmarket.domain.search.app.dto.ProductSearchItemDto;
@@ -32,6 +33,7 @@ public class SearchServiceImpl implements SearchService {
     private final ProductRepository productRepository;
     private final FavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
+    private final UserBlockRepository userBlockRepository;
     
     // 특수문자 및 이모지 제거를 위한 정규식
     private static final Pattern SPECIAL_CHARS_PATTERN = Pattern.compile("[^\\p{L}\\p{N}\\s]");
@@ -39,11 +41,13 @@ public class SearchServiceImpl implements SearchService {
     public SearchServiceImpl(
             ProductRepository productRepository,
             FavoriteRepository favoriteRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            UserBlockRepository userBlockRepository
     ) {
         this.productRepository = productRepository;
         this.favoriteRepository = favoriteRepository;
         this.userRepository = userRepository;
+        this.userBlockRepository = userBlockRepository;
     }
     
     @Override
@@ -83,6 +87,22 @@ public class SearchServiceImpl implements SearchService {
         String sortBy = validateAndGetSortBy(command.getSortBy());
         String sortOrder = validateAndGetSortOrder(command.getSortOrder());
         
+        // 현재 로그인한 사용자 ID (비로그인 시 null)
+        //
+        // 검색보다 **먼저** 구한다. 예전에는 검색 뒤에 구했는데, 차단 목록을 쿼리에
+        // 넘기려면 그 전에 있어야 한다.
+        final Long userId = email != null
+                ? userRepository.findByEmailAndDeletedAtIsNull(email)
+                        .map(User::getId)
+                        .orElse(null)
+                : null;
+        
+        // 내가 차단한 사람의 상품은 목록에서 뺀다 (#809).
+        // 비로그인이면 차단이 있을 수 없으므로 빈 목록이다.
+        final List<Long> blockedUserIds = userId != null
+                ? userBlockRepository.findBlockedUserIdsByBlockerId(userId)
+                : List.of();
+        
         // Repository를 통한 검색
         Page<Product> productPage = productRepository.searchProducts(
                 keyword,
@@ -98,15 +118,9 @@ public class SearchServiceImpl implements SearchService {
                 command.getAddressGugun(),
                 sortBy,
                 sortOrder,
+                blockedUserIds,
                 pageable
         );
-        
-        // 현재 로그인한 사용자 ID 조회 (비로그인 시 null)
-        final Long userId = email != null
-                ? userRepository.findByEmailAndDeletedAtIsNull(email)
-                        .map(User::getId)
-                        .orElse(null)
-                : null;
         
         // N+1 문제 방지: 한 번의 쿼리로 찜한 상품 ID 목록 조회
         final Set<Long> favoriteProductIds = userId != null && !productPage.getContent().isEmpty()

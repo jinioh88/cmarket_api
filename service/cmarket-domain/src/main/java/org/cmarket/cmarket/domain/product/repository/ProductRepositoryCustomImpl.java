@@ -53,6 +53,7 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
             String addressGugun,
             String sortBy,
             String sortOrder,
+            List<Long> excludedSellerIds,
             Pageable pageable
     ) {
         // 기본 조건: 소프트 삭제되지 않은 상품만
@@ -90,6 +91,17 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         }
         if (maxPrice != null) {
             builder.and(product.price.loe(maxPrice));
+        }
+        
+        // 차단한 사용자의 상품 제외
+        //
+        // 차단 안내 문구가 「해당 사용자의 게시글과 프로필이 숨김 처리됩니다」라고
+        // 약속하는데 목록에 그대로 보였다 (#809).
+        //
+        // 화면에 다 받아 온 뒤 걸러내면 안 된다 — 한 페이지에 20개를 달라고 했는데
+        // 18개만 남는 식이 되어 페이지 수와 「더 보기」가 어긋난다. 쿼리에서 뺀다.
+        if (excludedSellerIds != null && !excludedSellerIds.isEmpty()) {
+            builder.and(product.sellerId.notIn(excludedSellerIds));
         }
         
         // 지역 필터

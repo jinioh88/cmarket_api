@@ -4,7 +4,10 @@ import org.cmarket.cmarket.domain.report.model.UserBlock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -57,5 +60,17 @@ public interface UserBlockRepository extends JpaRepository<UserBlock, Long> {
      * @param blockedUserId 차단당한 사용자 ID
      */
     void deleteByBlockerIdAndBlockedUserId(Long blockerId, Long blockedUserId);
+    
+    /**
+     * 내가 차단한 사용자 ID만 뽑는다 (페이지 없이 전부)
+     * 
+     * 상품 목록에서 차단한 사람의 상품을 빼는 데 쓴다. 목록 한 페이지를 그릴 때마다
+     * 필요하므로 엔티티 전체가 아니라 ID만 가져온다.
+     * 
+     * @param blockerId 차단한 사용자 ID
+     * @return 차단당한 사용자 ID 목록 (없으면 빈 목록)
+     */
+    @Query("SELECT ub.blockedUserId FROM UserBlock ub WHERE ub.blockerId = :blockerId")
+    List<Long> findBlockedUserIdsByBlockerId(@Param("blockerId") Long blockerId);
 }
 

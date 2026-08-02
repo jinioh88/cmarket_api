@@ -51,6 +51,7 @@ public interface ProductRepositoryCustom {
             String addressGugun,
             String sortBy,
             String sortOrder,
+            List<Long> excludedSellerIds,
             Pageable pageable
     );
 }

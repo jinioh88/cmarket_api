@@ -62,6 +62,8 @@ public class AdminProductQueryService {
                 null,
                 "createdAt",
                 "desc",
+                // 관리자는 차단과 무관하게 전부 본다 (#809)
+                null,
                 pageable
         );
 
