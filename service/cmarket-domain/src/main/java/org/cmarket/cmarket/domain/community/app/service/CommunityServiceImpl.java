@@ -285,8 +285,16 @@ public class CommunityServiceImpl implements CommunityService {
                     .notificationType(notificationType)
                     .title(title)
                     .content(content)
-                    .relatedEntityType(command.getParentId() != null ? "COMMENT" : "POST")
-                    .relatedEntityId(command.getParentId() != null ? command.getParentId() : postId)
+                    // 답글 알림도 게시글 번호를 보낸다.
+                    //
+                    // 예전에는 답글이면 "COMMENT" + 댓글 번호를 보냈는데, 댓글 번호만으로는
+                    // 어느 글인지 알 수 없어 웹도 앱도 그 알림을 홈으로 보내고 있었다
+                    // (getNavigationPath / resolveTarget 둘 다 COMMENT를 모른다).
+                    // "COMMENT"를 읽는 곳은 어디에도 없었다.
+                    //
+                    // 이제 글 상세로 간다. 거기에 댓글이 전부 펼쳐져 있어 그 답글이 보인다.
+                    .relatedEntityType("POST")
+                    .relatedEntityId(postId)
                     .build();
             
             eventPublisher.publishEvent(new NotificationCreatedEvent(this, targetUserId, notificationCommand));
