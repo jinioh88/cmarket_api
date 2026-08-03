@@ -10,6 +10,7 @@
 
 - [OAuth2란?](#oauth2란)
 - [Authorization Code Flow (권장)](#authorization-code-flow-권장) - **패키지 설치 불필요!**
+- [앱(React Native)에서 시작하는 흐름](#앱react-native에서-시작하는-흐름)
 - [백엔드 상세 구현](#백엔드-상세-구현-authorization-code-flow)
 - [설정 파일 설명](#설정-파일-설명)
 - [주요 클래스 설명](#주요-클래스-설명)
@@ -322,6 +323,70 @@ export GOOGLE_CLIENT_ID="13269763480-xxxxx.apps.googleusercontent.com"
 export GOOGLE_CLIENT_SECRET="GOCSPX-xxxxx"
 export OAUTH2_REDIRECT_URI="https://cuddle-market.vercel.app/oauth-redirect"
 ```
+
+---
+
+## 앱(React Native)에서 시작하는 흐름
+
+웹과 **같은 서버 흐름**을 쓴다. 다른 것은 **돌아갈 곳** 하나뿐이다.
+
+### 계약
+
+```
+시작   GET /oauth2/authorization/{provider}?client=app
+성공   cuddlemarket://oauth?accessToken=…&refreshToken=…
+실패   cuddlemarket://oauth?error=…
+```
+
+`{provider}`는 웹과 같이 `google` · `kakao`다.
+
+### 왜 파라미터가 `client=app` 하나뿐인가
+
+돌아갈 **주소를 받지 않는다.** 앱은 「내가 앱이다」라는 **깃발**만 보내고, 실제 주소는
+서버 설정(`oauth2.app-redirect-uri`)에 못 박혀 있다.
+
+주소를 받아 그대로 리다이렉트하면 남이 만든 주소로 토큰이 날아간다(오픈 리다이렉트).
+그래서 기존 `redirect_uri` 쿠키(프론트가 준 주소를 그대로 담는다)는 **읽지 않는다.**
+
+### 서버가 하는 일
+
+```
+1. HttpCookieOAuth2AuthorizationRequestRepository.saveAuthorizationRequest()
+   request.getParameter("client") 를 읽어 쿠키 oauth2_client 에 담는다 (180초)
+   → 세션이 STATELESS라 카카오·구글에 다녀오는 동안 기억할 곳이 쿠키뿐이다
+   ↓
+2. (웹과 완전히 같은 인가 코드 교환 · 사용자 조회/생성)
+   ↓
+3. OAuth2LoginSuccessHandler.onAuthenticationSuccess()
+   ⚠️ 쿠키를 **지우기 전에** 읽는다. 먼저 지우면 깃발이 사라져 늘 웹으로 간다
+   oauth2_client == "app" 이면 target = oauth2.app-redirect-uri
+   아니면            target = oauth2.redirect-uri (웹, 예전 그대로)
+   ↓
+4. SecurityConfig 의 failureHandler
+   실패해도 같은 깃발을 보고 cuddlemarket://oauth?error=… 로 돌려보낸다
+   (웹 로그인 페이지로 보내면 브라우저 창 안에 웹 화면이 뜬 채 앱으로 못 돌아온다)
+```
+
+### 관련 설정
+
+```properties
+# 앱에서 시작한 소셜 로그인이 돌아갈 곳
+oauth2.app-redirect-uri=${OAUTH2_APP_REDIRECT_URI:cuddlemarket://oauth}
+```
+
+| 쿠키 이름 | 담는 것 | 사는 시간 |
+|----------|--------|----------|
+| `oauth2_auth_request` | 인가 요청(직렬화) | 180초 |
+| `redirect_uri` | 프론트가 준 주소 — **아무도 읽지 않는다** | 180초 |
+| `oauth2_client` | `app` 깃발 | 180초 |
+
+### 앱 쪽 주의
+
+- 커스텀 스킴(`cuddlemarket://`)은 **Expo Go에서 안 돈다.** 개발 빌드가 있어야 브라우저 창이
+  저절로 닫히고 앱으로 돌아온다.
+- 앱은 `/api`가 **붙지 않은** 주소로 시작한다: `https://cmarket-api.duckdns.org/oauth2/authorization/kakao?client=app`
+- 소셜로 처음 들어온 사람은 `birthDate` · `addressSido`가 `null`이다. 앱은 그 둘을 보고
+  「추가 정보 입력」 화면으로 보낸 뒤 `PATCH /profile/me`로 채운다.
 
 ---
 

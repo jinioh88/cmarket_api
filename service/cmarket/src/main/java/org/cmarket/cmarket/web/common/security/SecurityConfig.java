@@ -248,6 +248,30 @@ public class SecurityConfig {
                         }
                     }
                     
+                    // 앱에서 시작했으면 앱으로 돌려보낸다.
+                    // 안 그러면 브라우저 창 안에 웹 로그인 페이지가 떠서, 사용자는
+                    // 앱으로 돌아갈 길을 잃는다.
+                    boolean fromApp = CookieUtils.getCookie(request,
+                                    HttpCookieOAuth2AuthorizationRequestRepository.CLIENT_PARAM_COOKIE_NAME)
+                            .map(cookie -> "app".equals(cookie.getValue()))
+                            .orElse(false);
+
+                    // 읽었으면 지운다. 실패 경로는 removeAuthorizationRequestCookies()를
+                    // 안 거치므로 여기서 직접 치운다.
+                    CookieUtils.deleteCookie(request, response,
+                            HttpCookieOAuth2AuthorizationRequestRepository.CLIENT_PARAM_COOKIE_NAME);
+
+                    if (fromApp) {
+                        String appUrl = "cuddlemarket://oauth?error="
+                                + java.net.URLEncoder.encode(errorMessage, java.nio.charset.StandardCharsets.UTF_8);
+                        if (response.isCommitted()) {
+                            log.warn("Response already committed, cannot redirect to: {}", appUrl);
+                            return;
+                        }
+                        response.sendRedirect(appUrl);
+                        return;
+                    }
+
                     // 프론트엔드 로그인 페이지로 리다이렉트 (오류 정보 포함)
                     // 환경 변수에서 가져오거나 기본값 사용
                     String frontendUrl = System.getenv("FRONTEND_URL");

@@ -34,7 +34,15 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
      * 리다이렉트 URI를 저장하는 쿠키 이름 (프론트엔드에서 전달한 경우)
      */
     public static final String REDIRECT_URI_PARAM_COOKIE_NAME = "redirect_uri";
-    
+
+    /**
+     * 어느 쪽에서 로그인을 시작했나. "app"이면 앱 스킴으로 돌려보낸다.
+     *
+     * ⚠️ 주소가 아니라 **깃발**이다. 주소를 받아 그대로 쓰면 남이 만든 주소로 토큰이 날아간다
+     *    (오픈 리다이렉트). 실제 주소는 application.properties에 못 박혀 있다.
+     */
+    public static final String CLIENT_PARAM_COOKIE_NAME = "oauth2_client";
+
     /**
      * 쿠키 만료 시간 (3분 = 180초)
      * OAuth2 인증 과정이 이 시간 내에 완료되어야 함
@@ -92,6 +100,24 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
                     COOKIE_EXPIRE_SECONDS
             );
         }
+
+        // 앱에서 시작했으면 깃발을 남겨 둔다. 카카오·구글에 다녀오는 동안 서버는
+        // 아무것도 기억하지 않으므로(STATELESS) 쿠키에 맡긴다.
+        String client = request.getParameter("client");
+        if (StringUtils.hasText(client)) {
+            CookieUtils.addCookie(
+                    response,
+                    CLIENT_PARAM_COOKIE_NAME,
+                    client,
+                    COOKIE_EXPIRE_SECONDS
+            );
+        } else {
+            // ⚠️ 깃발이 없으면 **지운다.** 남겨 두면 앞선 앱 로그인의 깃발이 3분간 살아 있다가
+            //    그 사이에 같은 브라우저로 웹 로그인을 하는 사람을 앱 스킴으로 보내 버린다.
+            //    앱은 크롬 탭을 쓰므로 쿠키를 공유한다 — 실제로 일어날 수 있는 일이다.
+            //    (앱에서 브라우저를 그냥 닫으면 서버는 아무 소식도 못 들어 쿠키만 남는다)
+            CookieUtils.deleteCookie(request, response, CLIENT_PARAM_COOKIE_NAME);
+        }
     }
     
     /**
@@ -124,5 +150,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
     public void removeAuthorizationRequestCookies(HttpServletRequest request, HttpServletResponse response) {
         CookieUtils.deleteCookie(request, response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
         CookieUtils.deleteCookie(request, response, REDIRECT_URI_PARAM_COOKIE_NAME);
+        // ⚠️ 이 쿠키는 성공·실패 핸들러가 **읽은 뒤에** 지워야 한다. 먼저 지우면 늘 웹으로 간다.
+        CookieUtils.deleteCookie(request, response, CLIENT_PARAM_COOKIE_NAME);
     }
 }

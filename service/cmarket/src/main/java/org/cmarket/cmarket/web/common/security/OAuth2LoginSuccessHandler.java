@@ -33,10 +33,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     
     @Value("${oauth2.redirect-uri:http://localhost:5173/oauth-redirect}")
     private String redirectUri;
-    
+
+    /** 앱에서 시작했을 때 돌아갈 곳. 커스텀 스킴이라 웹 주소와 섞이지 않는다 */
+    @Value("${oauth2.app-redirect-uri:cuddlemarket://oauth}")
+    private String appRedirectUri;
+
     @PostConstruct
     public void init() {
-        log.info("OAuth2LoginSuccessHandler 초기화: oauth2.redirect-uri={}", redirectUri);
+        log.info("OAuth2LoginSuccessHandler 초기화: oauth2.redirect-uri={}, oauth2.app-redirect-uri={}",
+                redirectUri, appRedirectUri);
     }
     
     @Override
@@ -59,30 +64,40 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 user.getRole().name()
         );
         
-        // 3. OAuth2 인증 관련 쿠키 삭제
+        // 3. 어디로 돌아갈지 먼저 정한다 — 쿠키를 지우기 **전에** 읽어야 한다.
+        //    (지우고 읽으면 깃발이 사라져 앱에서 시작해도 늘 웹으로 간다)
+        boolean fromApp = CookieUtils.getCookie(
+                        request,
+                        HttpCookieOAuth2AuthorizationRequestRepository.CLIENT_PARAM_COOKIE_NAME
+                )
+                .map(cookie -> "app".equals(cookie.getValue()))
+                .orElse(false);
+        String target = fromApp ? appRedirectUri : redirectUri;
+
+        // 4. OAuth2 인증 관련 쿠키 삭제
         cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
-        
-        // 4. 프론트엔드로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
+
+        // 5. 돌려보낸다 (토큰을 쿼리 파라미터로 전달)
         String redirectUrl = String.format(
                 "%s?accessToken=%s&refreshToken=%s",
-                redirectUri,
+                target,
                 accessToken,
                 refreshToken
         );
-        
-        log.info("OAuth2 로그인 성공: email={}, provider={}, redirectUri={}, redirectUrl={}", 
-                user.getEmail(), user.getProvider(), redirectUri, redirectUrl);
-        
-        // 5. 응답이 이미 커밋되었는지 확인
+
+        log.info("OAuth2 로그인 성공: email={}, provider={}, fromApp={}, target={}, redirectUrl={}",
+                user.getEmail(), user.getProvider(), fromApp, target, redirectUrl);
+
+        // 6. 응답이 이미 커밋되었는지 확인
         if (response.isCommitted()) {
             log.warn("Response already committed, cannot redirect to: {}", redirectUrl);
             return;
         }
-        
-        // 6. 리다이렉트
+
+        // 7. 리다이렉트
         response.sendRedirect(redirectUrl);
-        
-        // 7. 리다이렉트 후 필터 체인 처리를 중단하기 위해 명시적으로 완료
+
+        // 8. 리다이렉트 후 필터 체인 처리를 중단하기 위해 명시적으로 완료
         // 이렇게 하면 필터 체인에서 추가 처리를 시도하지 않음
     }
 }
