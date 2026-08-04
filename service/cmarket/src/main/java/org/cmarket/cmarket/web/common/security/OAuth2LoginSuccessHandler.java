@@ -85,12 +85,17 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 refreshToken
         );
 
-        log.info("OAuth2 로그인 성공: email={}, provider={}, fromApp={}, target={}, redirectUrl={}",
-                user.getEmail(), user.getProvider(), fromApp, target, redirectUrl);
+        // ⚠️ redirectUrl 을 찍지 않는다. 쿼리에 액세스·리프레시 토큰이 실려 있어서,
+        //    로그를 볼 수 있는 사람이 그 토큰으로 그 사용자인 척 할 수 있다
+        //    (리프레시는 7일, 액세스는 6시간짜리다). 문제를 좇는 데 필요한 것은
+        //    「어디로 보냈는가」뿐이라 target 만 남긴다.
+        log.info("OAuth2 로그인 성공: email={}, provider={}, fromApp={}, target={}",
+                user.getEmail(), user.getProvider(), fromApp, target);
 
         // 6. 응답이 이미 커밋되었는지 확인
         if (response.isCommitted()) {
-            log.warn("Response already committed, cannot redirect to: {}", redirectUrl);
+            // 여기도 같은 이유로 target 만 찍는다 — redirectUrl 에는 토큰이 들어 있다
+            log.warn("Response already committed, cannot redirect to: {}", target);
             return;
         }
 

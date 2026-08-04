@@ -34,8 +34,11 @@ public class CustomOAuth2AuthorizationCodeTokenResponseClient
                 maskSecret(authorizationCodeGrantRequest.getClientRegistration().getClientSecret()));
         log.info("Token URI: {}", 
                 authorizationCodeGrantRequest.getClientRegistration().getProviderDetails().getTokenUri());
-        log.info("Authorization Code: {}", 
-                authorizationCodeGrantRequest.getAuthorizationExchange().getAuthorizationResponse().getCode());
+        // 인가 코드도 마스킹한다. 한 번 쓰면 만료되고 유효기간도 짧아 토큰만큼 위험하진
+        // 않지만, 그 자체로 토큰을 받아 올 수 있는 값이라 운영 로그에 통째로 남길 것은 아니다.
+        // 앞뒤 네 자리만 남겨 「어느 요청이었나」는 여전히 맞춰 볼 수 있게 한다.
+        log.info("Authorization Code: {} (마스킹됨)",
+                maskSecret(authorizationCodeGrantRequest.getAuthorizationExchange().getAuthorizationResponse().getCode()));
         log.info("Redirect URI: {}", 
                 authorizationCodeGrantRequest.getAuthorizationExchange().getAuthorizationResponse().getRedirectUri());
         log.info("State: {}", 
@@ -65,7 +68,10 @@ public class CustomOAuth2AuthorizationCodeTokenResponseClient
     }
     
     /**
-     * Client Secret을 마스킹하여 로그에 출력
+     * 비밀 값을 마스킹하여 로그에 출력한다 (Client Secret · 인가 코드).
+     *
+     * 앞 4자 + **** + 뒤 4자. 여덟 자 이하면 통째로 가린다 — 그보다 짧으면
+     * 앞뒤를 남기는 순간 원래 값이 거의 드러난다.
      */
     private String maskSecret(String secret) {
         if (secret == null || secret.length() <= 8) {
