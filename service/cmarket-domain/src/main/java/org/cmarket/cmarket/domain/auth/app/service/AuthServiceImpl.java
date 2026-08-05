@@ -190,8 +190,13 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다."));
         
         // 2. 소셜 로그인 사용자는 비밀번호 재설정 불가
+        //
+        // ⚠️ 어느 소셜인지 문구에 담는다. 「소셜 로그인 사용자는…」으로 뭉뚱그리면 화면이
+        //    「카카오·구글로 가입한 계정이에요」라고밖에 못 쓴다. 기억이 안 나서 여기까지 온
+        //    사람에게 「아, 카카오로 했었지」를 되살려 주는 것이 그 화면의 일이다.
         if (user.getProvider() != AuthProvider.LOCAL) {
-            throw new IllegalArgumentException("소셜 로그인 사용자는 비밀번호 재설정이 불가능합니다.");
+            String provider = user.getProvider().displayName();
+            throw new IllegalArgumentException(provider + "로 가입한 계정입니다. " + provider + " 로그인을 이용해주세요.");
         }
         
         // 3. 이메일 인증코드 생성 및 저장
@@ -214,8 +219,13 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다."));
         
         // 2. 소셜 로그인 사용자는 비밀번호 재설정 불가
+        //
+        // ⚠️ 어느 소셜인지 문구에 담는다. 「소셜 로그인 사용자는…」으로 뭉뚱그리면 화면이
+        //    「카카오·구글로 가입한 계정이에요」라고밖에 못 쓴다. 기억이 안 나서 여기까지 온
+        //    사람에게 「아, 카카오로 했었지」를 되살려 주는 것이 그 화면의 일이다.
         if (user.getProvider() != AuthProvider.LOCAL) {
-            throw new IllegalArgumentException("소셜 로그인 사용자는 비밀번호 재설정이 불가능합니다.");
+            String provider = user.getProvider().displayName();
+            throw new IllegalArgumentException(provider + "로 가입한 계정입니다. " + provider + " 로그인을 이용해주세요.");
         }
         
         // 3. 이메일 인증 완료 여부 확인 (클라이언트에서 이미 인증코드 검증 완료)
@@ -239,9 +249,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmailAndDeletedAtIsNull(command.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
-        // 2. 소셜 로그인 사용자는 비밀번호 변경 불가
+        // 2. 소셜 로그인 사용자는 비밀번호 변경 불가 (위와 같은 이유로 어느 소셜인지 담는다)
         if (user.getProvider() != AuthProvider.LOCAL) {
-            throw new IllegalArgumentException("소셜 로그인 사용자는 비밀번호 변경이 불가능합니다.");
+            String provider = user.getProvider().displayName();
+            throw new IllegalArgumentException(provider + "로 가입한 계정입니다. 비밀번호가 없어 변경할 수 없어요.");
         }
         
         // 3. 현재 비밀번호 확인
