@@ -11,7 +11,8 @@ import org.cmarket.cmarket.web.product.dto.FavoriteListResponse;
 import org.cmarket.cmarket.web.product.dto.MyProductListResponse;
 import org.cmarket.cmarket.web.profile.dto.BlockedUserListResponse;
 import org.cmarket.cmarket.web.profile.dto.ProfileUpdateRequest;
-import org.cmarket.cmarket.web.profile.dto.UserProfileResponse;
+import org.cmarket.cmarket.web.profile.dto.MyProfileResponse;
+import org.cmarket.cmarket.web.profile.dto.PublicProfileResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -53,7 +54,7 @@ public class ProfileController {
      */
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SuccessResponse<UserProfileResponse>> getUserInfo() {
+    public ResponseEntity<SuccessResponse<MyProfileResponse>> getUserInfo() {
         // 현재 로그인한 사용자의 이메일 추출
         String email = SecurityUtils.getCurrentUserEmail();
         
@@ -61,7 +62,7 @@ public class ProfileController {
         org.cmarket.cmarket.domain.profile.app.dto.MyPageDto myPageDto = profileService.getUserInfo(email);
         
         // 앱 DTO → 웹 DTO 변환
-        UserProfileResponse response = UserProfileResponse.fromMyPageDto(myPageDto);
+        MyProfileResponse response = MyProfileResponse.from(myPageDto);
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
@@ -246,7 +247,7 @@ public class ProfileController {
      */
     @GetMapping("/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SuccessResponse<UserProfileResponse>> getUserProfile(
+    public ResponseEntity<SuccessResponse<PublicProfileResponse>> getUserProfile(
             @PathVariable Long userId
     ) {
         // 현재 로그인한 사용자의 이메일 추출
@@ -257,7 +258,7 @@ public class ProfileController {
                 profileService.getUserProfile(userId, email);
         
         // 앱 DTO → 웹 DTO 변환
-        UserProfileResponse response = UserProfileResponse.fromDto(userProfileDto, userProfileDto.getIsBlocked());
+        PublicProfileResponse response = PublicProfileResponse.from(userProfileDto, userProfileDto.getIsBlocked());
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
