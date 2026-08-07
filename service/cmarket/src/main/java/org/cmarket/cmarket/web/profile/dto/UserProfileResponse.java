@@ -34,7 +34,15 @@ public class UserProfileResponse {
     
     /**
      * 앱 DTO에서 웹 DTO로 변환 (다른 사용자 프로필)
-     * 
+     *
+     * ⚠️ 실명(name)·생년월일(birthDate)·이메일(email)을 **담지 않는다.**
+     *    남이 볼 프로필이라 화면에 그릴 일이 없는 값들인데, 예전에는 응답에 실려 나갔다.
+     *    화면에서 안 그려도 응답에는 들어 있어 개발자도구로 그대로 보였다 —
+     *    로그인만 하면 아무나 남의 실명·생년월일·이메일을 받아 갈 수 있었다.
+     *    프론트에서 가리는 것으로는 막을 수 없어 응답 자체에서 뺐다.
+     *
+     * 본인 정보 조회(fromMyPageDto)는 셋을 그대로 담는다 — 프로필 수정 화면이 다 쓴다.
+     *
      * @param userProfileDto 앱 DTO
      * @param isBlocked 차단 여부
      * @return 웹 DTO
@@ -52,9 +60,6 @@ public class UserProfileResponse {
                 .nickname(userProfileDto.getNickname())
                 .createdAt(userProfileDto.getCreatedAt())
                 .introduction(userProfileDto.getIntroduction())
-                .name(userProfileDto.getName())
-                .birthDate(userProfileDto.getBirthDate())
-                .email(userProfileDto.getEmail())
                 .isBlocked(isBlocked)
                 .isReported(userProfileDto.getIsReported())
                 .build();
