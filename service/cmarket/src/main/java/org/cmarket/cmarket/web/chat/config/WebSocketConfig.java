@@ -70,6 +70,32 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // WebSocket 연결 엔드포인트 설정
         // 클라이언트는 /ws-stomp로 연결
+        // ① 순수 WebSocket - 앱(React Native)용
+        //
+        // 앱은 SockJS를 못 쓴다. sockjs-client가 XHR·쿠키 같은 브라우저 API를 전제하기 때문이다.
+        // SockJS 엔드포인트의 /websocket 경로도 SockJS 프레이밍을 기대해서, 순수 STOMP
+        // 프레임을 보내면 서버가 응답하지 않는다(2026-08-10 실측 확인).
+        //
+        // 출처는 SockJS 쪽과 같은 목록을 쓴다. * 로 열지 않는다.
+        //
+        // Spring은 Origin 헤더가 없는 요청(앱 같은 비브라우저)은 검사 대상으로 안 본다.
+        // 앱은 브라우저가 아니라 Origin을 안 보내므로 이 목록 그대로도 붙는다 (2026-08-10 실측):
+        //   Origin 없음          -> 열림  (앱)
+        //   evil.example.com     -> 403   (검사가 실제로 돈다)
+        //   *.vercel.app         -> 열림
+        // * 로 열면 저 403이 통과하게 된다. 토큰이 없어 CONNECT는 어차피 막히지만,
+        // 막을 수 있는 문을 굳이 열어 둘 이유가 없다.
+        registry.addEndpoint("/ws-stomp")
+                .setAllowedOriginPatterns(
+                        "http://localhost:*",
+                        "http://10.212.102.5:3000",
+                        "https://localhost:*",
+                        "https://*.vercel.app"
+                );
+
+        // ② SockJS - 웹용 (기존)
+        //
+        // 같은 경로에 둘을 등록할 수 있다. 웹은 지금처럼 SockJS로 붙고, 앱은 ①로 붙는다.
         registry.addEndpoint("/ws-stomp")
                 .setAllowedOriginPatterns(
                         "http://localhost:*",  // 로컬 개발 환경
