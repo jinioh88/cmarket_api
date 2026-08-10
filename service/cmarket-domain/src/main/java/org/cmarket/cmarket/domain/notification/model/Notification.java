@@ -86,7 +86,8 @@ public class Notification {
             String title,
             String content,
             String relatedEntityType,
-            Long relatedEntityId
+            Long relatedEntityId,
+            Integer groupCount
     ) {
         this.userId = userId;
         this.notificationType = notificationType;
@@ -94,6 +95,7 @@ public class Notification {
         this.content = content;
         this.relatedEntityType = relatedEntityType;
         this.relatedEntityId = relatedEntityId;
+        this.groupCount = groupCount;
         this.isRead = false;
         this.readAt = null;
         this.createdAt = LocalDateTime.now();
