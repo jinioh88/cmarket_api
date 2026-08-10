@@ -88,6 +88,29 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     );
 
     /**
+     * 같은 대상에 대한 "안 읽은" 알림 하드 삭제
+     *
+     * 채팅처럼 한 대상에 알림이 여러 번 생기는 것을 하나로 묶을 때 쓴다.
+     * 새 알림을 만들기 전에 이걸로 옛 것을 지운다.
+     *
+     * @param userId 수신자 ID
+     * @param notificationType 알림 타입
+     * @param relatedEntityId 관련 엔티티 ID (채팅방 ID 등)
+     * @return 삭제된 알림 개수
+     */
+    @Modifying
+    @Query("DELETE FROM Notification n " +
+           "WHERE n.userId = :userId " +
+           "AND n.notificationType = :notificationType " +
+           "AND n.relatedEntityId = :relatedEntityId " +
+           "AND n.isRead = false")
+    int deleteUnreadByUserAndTypeAndEntity(
+            @Param("userId") Long userId,
+            @Param("notificationType") NotificationType notificationType,
+            @Param("relatedEntityId") Long relatedEntityId
+    );
+
+    /**
      * 보존 기간이 지난 "읽은" 알림 하드 삭제 (자동 삭제 대상 타입만)
      *
      * @param threshold readAt 이 이 값 이전이면 삭제 대상

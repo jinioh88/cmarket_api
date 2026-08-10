@@ -9,6 +9,7 @@ import org.cmarket.cmarket.domain.notification.app.dto.NotificationDto;
 import org.cmarket.cmarket.domain.notification.app.exception.NotificationAccessDeniedException;
 import org.cmarket.cmarket.domain.notification.app.exception.NotificationNotFoundException;
 import org.cmarket.cmarket.domain.notification.model.Notification;
+import org.cmarket.cmarket.domain.notification.model.NotificationType;
 import org.cmarket.cmarket.domain.notification.repository.NotificationRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
 import org.springframework.data.domain.Page;
@@ -38,6 +39,27 @@ public class NotificationServiceImpl implements NotificationService {
     @Async
     @Transactional
     public void createNotification(NotificationCreateCommand command) {
+        // 0. 채팅은 한 방에 알림 하나로 묶는다 (#873)
+        //
+        // 자리를 비운 사이 메시지가 여러 개 오면 알림이 그만큼 쌓인다. 사용자에게는
+        // 「그 사람과의 대화 하나」인데 목록이 한 사람으로 도배되고, 안 읽은 알림 수도
+        // 그만큼 부풀어 오른다. 그래서 안 읽은 옛 알림을 지우고 새로 하나 만든다.
+        // 몇 개가 밀렸는지는 문구에 적는다(ChatServiceImpl 에서 만든다).
+        //
+        // ⚠️ **갱신이 아니라 지우고 새로 만드는 이유**: createdAt 이 updatable = false 라
+        //    갱신해도 목록에서 맨 위로 안 올라온다. 그 제약을 풀면 다른 알림도 생성 시각이
+        //    바뀔 수 있는 문이 열린다.
+        //
+        // ⚠️ **읽은 알림은 안 건드린다.** 사용자가 이미 본 기록을 지우면 안 된다.
+        if (command.getNotificationType() == NotificationType.CHAT_NEW_MESSAGE
+                && command.getRelatedEntityId() != null) {
+            notificationRepository.deleteUnreadByUserAndTypeAndEntity(
+                    command.getUserId(),
+                    NotificationType.CHAT_NEW_MESSAGE,
+                    command.getRelatedEntityId()
+            );
+        }
+
         // 1. 알림 엔티티 생성 및 저장
         Notification notification = Notification.builder()
                 .userId(command.getUserId())

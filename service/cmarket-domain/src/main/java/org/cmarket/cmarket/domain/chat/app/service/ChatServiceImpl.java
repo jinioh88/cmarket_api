@@ -335,12 +335,29 @@ public class ChatServiceImpl implements ChatService {
                 ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                         .orElse(null);
                 String productTitle = chatRoom != null ? chatRoom.getProductTitle() : "상품";
-                
+
+                // 한 방은 알림 하나로 묶인다(#873). 그래서 **몇 개가 밀렸는지를 문구에 적어야**
+                // 한 줄만 보고도 알 수 있다. 바로 위에서 올린 안 읽은 메시지 수를 그대로 쓴다.
+                //
+                // 개수를 뱃지로 안 하는 이유: 알림 한 줄은 이미 「안 읽음」을 점과 바탕색으로
+                // 말하고 있어, 뱃지를 더 붙이면 같은 말을 셋이 하게 된다. 그리고 채팅 알림만
+                // 다른 모양이 된다.
+                //
+                // ⚠️ 메시지 **내용은 넣지 않는다.** 개인정보가 든 메시지를 서버가 막는 기능이
+                //    있는데, 내용을 알림에 복사해 두면 그 막음을 우회하게 된다.
+                //    잠금화면 푸시로 나갈 때는 더 그렇다.
+                int unreadCount = chatReadStatusService.getUnreadCount(chatRoomId, opponentId);
+                String notificationContent = unreadCount > 1
+                        ? String.format("%s님이 '%s' 상품 채팅에서 메시지 %d개를 보냈습니다.",
+                                sender.getNickname(), productTitle, unreadCount)
+                        : String.format("%s님이 '%s' 상품 채팅에서 메시지를 보냈습니다.",
+                                sender.getNickname(), productTitle);
+
                 NotificationCreateCommand notificationCommand = NotificationCreateCommand.builder()
                         .userId(opponentId)  // 수신자: 상대방
                         .notificationType(NotificationType.CHAT_NEW_MESSAGE)
                         .title("새로운 메시지가 도착했습니다")
-                        .content(String.format("%s님이 '%s' 상품 채팅에서 메시지를 보냈습니다.", sender.getNickname(), productTitle))
+                        .content(notificationContent)
                         .relatedEntityType("CHAT_ROOM")
                         .relatedEntityId(chatRoomId)
                         .build();
