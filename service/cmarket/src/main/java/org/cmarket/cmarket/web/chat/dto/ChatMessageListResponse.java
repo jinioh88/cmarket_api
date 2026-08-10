@@ -23,6 +23,9 @@ public class ChatMessageListResponse {
     private long totalElements;
     private boolean hasNext;
     private boolean hasPrevious;
+
+    /** 내가 이 방의 상대를 차단했는가. 화면이 입력창을 잠그는 데 쓴다. (#877) */
+    private Boolean isOpponentBlocked;
     
     public static ChatMessageListResponse from(ChatMessageListDto dto) {
         List<ChatMessageListItemResponse> messages = dto.getMessages().stream()
@@ -36,6 +39,7 @@ public class ChatMessageListResponse {
                 .totalElements(dto.getTotalElements())
                 .hasNext(dto.isHasNext())
                 .hasPrevious(dto.isHasPrevious())
+                .isOpponentBlocked(dto.getIsOpponentBlocked())
                 .build();
     }
 }

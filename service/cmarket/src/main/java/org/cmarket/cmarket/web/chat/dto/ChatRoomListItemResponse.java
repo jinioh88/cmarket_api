@@ -36,6 +36,9 @@ public class ChatRoomListItemResponse {
     // 읽음 상태
     private boolean hasUnread;
     private int unreadCount;
+
+    /** 내가 이 방의 상대를 차단했는가. 화면이 입력창을 잠그는 데 쓴다. (#877) */
+    private Boolean isOpponentBlocked;
     
     /**
      * 앱 DTO를 웹 DTO로 변환
@@ -57,6 +60,7 @@ public class ChatRoomListItemResponse {
                 .lastMessageTime(dto.getLastMessageTime())
                 .hasUnread(dto.isHasUnread())
                 .unreadCount(dto.getUnreadCount())
+                .isOpponentBlocked(dto.getIsOpponentBlocked())
                 .build();
     }
 }

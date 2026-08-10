@@ -80,15 +80,26 @@ public class ChatWebSocketController {
             ChatMessageResponse response = ChatMessageResponse.from(messageDto);
             
             // 2. 메시지 전송
-            if (Boolean.TRUE.equals(response.getIsBlocked())) {
-                // 개인정보 차단 메시지: 발신자에게만 전송
+            //
+            // 발신자에게만 보내는 경우가 둘이다.
+            //   ① 개인정보가 들어 있어 서버가 막은 메시지 — 발신자에게 「전송되지 않았습니다」를 보여준다
+            //   ② 상대가 나를 차단한 경우(#877) — **아무 표시도 안 한다.** 발신자 화면에는
+            //      보통 메시지로 보이고 상대에게만 안 간다. 차단 사실이 드러나면 보복을 부른다
+            //
+            // ⚠️ ②는 `response` 에 안 실려 있다(ChatMessageDto 에만 있다). 실으면 차단당한 쪽이
+            //    알게 된다.
+            boolean deliverToSenderOnly = Boolean.TRUE.equals(response.getIsBlocked())
+                    || Boolean.TRUE.equals(messageDto.getBlockedByOpponent());
+
+            if (deliverToSenderOnly) {
                 messagingTemplate.convertAndSendToUser(
                         email,
                         "/queue/chat",
                         response
                 );
-                log.info("차단된 메시지 발신자에게만 전송: chatRoomId={}, senderId={}, reason={}", 
-                        chatRoomId, messageDto.getSenderId(), response.getBlockReason());
+                log.info("발신자에게만 전송: chatRoomId={}, senderId={}, 개인정보차단={}, 상대가차단={}",
+                        chatRoomId, messageDto.getSenderId(),
+                        response.getIsBlocked(), messageDto.getBlockedByOpponent());
             } else {
                 // 일반 메시지: 채팅방 구독자 전체에게 전송
                 messagingTemplate.convertAndSend(
@@ -99,7 +110,12 @@ public class ChatWebSocketController {
             
             // 3. 채팅방 목록 실시간 업데이트 이벤트 전송
             // 메시지가 전송되면 채팅방 목록 화면에 있는 모든 참여자에게 업데이트 이벤트 전송
-            sendChatRoomListUpdate(chatRoomId);
+            //
+            // ⚠️ 발신자에게만 보낸 메시지는 여기서도 건너뛴다. 안 그러면 상대의 채팅 목록에
+            //    「마지막 메시지」가 바뀌어 **막은 메시지의 내용이 그대로 보인다.**
+            if (!deliverToSenderOnly) {
+                sendChatRoomListUpdate(chatRoomId);
+            }
             
         } catch (Exception e) {
             log.error("메시지 전송 실패: chatRoomId={}, email={}", chatRoomId, email, e);

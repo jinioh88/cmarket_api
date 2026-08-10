@@ -25,6 +25,7 @@ import org.cmarket.cmarket.domain.chat.model.MessageType;
 import org.cmarket.cmarket.domain.chat.repository.ChatMessageRepository;
 import org.cmarket.cmarket.domain.chat.repository.ChatRoomRepository;
 import org.cmarket.cmarket.domain.chat.repository.ChatRoomUserRepository;
+import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
 import org.cmarket.cmarket.domain.exception.BusinessException;
 import org.cmarket.cmarket.domain.exception.ErrorCode;
 import org.cmarket.cmarket.domain.product.model.Product;
@@ -56,6 +57,7 @@ public class ChatServiceImpl implements ChatService {
     private final ChatReadStatusService chatReadStatusService;
     private final ChatSessionService chatSessionService;
     private final PrivacyFilterService privacyFilterService;
+    private final UserBlockRepository userBlockRepository;
     private final ApplicationEventPublisher eventPublisher;
     
     @Override
@@ -200,6 +202,10 @@ public class ChatServiceImpl implements ChatService {
             String opponentProfileImageUrl = opponent != null ? opponent.getUserProfileImageUrl() : null;
             
             // 최근 메시지 정보는 ChatRoomUser에 비정규화되어 있음
+            // 내가 이 상대를 차단했는가. 화면이 입력창을 잠그는 데 쓴다(#877).
+            boolean isOpponentBlocked = opponentId != null
+                    && userBlockRepository.existsByBlockerIdAndBlockedUserId(userId, opponentId);
+
             ChatRoomListItemDto item = ChatRoomListItemDto.builder()
                     .chatRoomId(chatRoomId)
                     .productId(chatRoom.getProductId())
@@ -213,6 +219,7 @@ public class ChatServiceImpl implements ChatService {
                     .lastMessageTime(myChatRoomUser.getLastMessageAt())
                     .hasUnread(unreadCount > 0)
                     .unreadCount(unreadCount)
+                    .isOpponentBlocked(isOpponentBlocked)
                     .build();
             
             chatRoomItems.add(item);
@@ -316,15 +323,35 @@ public class ChatServiceImpl implements ChatService {
                 savedMessage.getId(), savedMessage.getContent(), 
                 savedMessage.getContent() != null ? savedMessage.getContent().length() : 0);
         
-        // 9. ChatRoomUser의 lastMessage 정보 업데이트 (양쪽 모두)
+        // 상대가 나를 차단했는가. (#877)
+        //
+        // **한 방향만 본다.** 차단당한 사람 → 차단한 사람만이다. 반대(내가 차단한 상대에게
+        // 보내는 것)는 안 막는다. 두 가지 이유다 —
+        //   ① 모달이 약속한 것이 「차단한 사용자는 **회원님에게** 채팅을 보낼 수 없습니다」로
+        //      한 방향이다. 양쪽을 막으면 약속보다 넓게 막는 셈이다
+        //   ② 화면(입력창 잠금)이 아직 안 나간 상태로 이것만 배포돼도 **조용히 사라지는
+        //      메시지가 없다.** 양방향이면 차단한 사람이 보낸 글이 아무 표시 없이 사라진다
+        //
+        // ⚠️ 차단당한 쪽에는 **알리지 않는다.** 자기 화면에는 보낸 글이 그대로 보이고
+        //    상대에게만 안 간다(카카오톡·당근이 같다). 차단 사실이 드러나면 보복을 부른다.
+        //    그래서 예외를 던지지 않고 조용히 건너뛴다.
+        boolean blockedByOpponent = opponent != null
+                && userBlockRepository.existsByBlockerIdAndBlockedUserId(opponent.getUserId(), senderId);
+
+        // 9. ChatRoomUser의 lastMessage 정보 업데이트
         senderChatRoomUser.updateLastMessage(content, now, isBlocked);
-        if (opponent != null) {
+        // ⚠️ 상대가 나를 차단했으면 **상대 쪽은 안 건드린다.** 안 그러면 채팅 목록의
+        //    「마지막 메시지」에 막은 메시지 내용이 그대로 보인다. 개인정보 차단은
+        //    「[차단된 메시지]」로 가려지지만 이쪽은 isBlocked 가 거짓이라 안 가려진다.
+        if (opponent != null && !blockedByOpponent) {
             opponent.updateLastMessage(content, now, isBlocked);
         }
         
         // 10. Redis에 상대방의 안 읽은 메시지 개수 증가
         // 단, 개인정보가 포함된 메시지는 발신자에게만 표시되므로 증가하지 않음
-        if (!isBlocked && opponent != null) {
+        // ⚠️ **상대가 나를 차단했으면 여기도 건너뛴다** (#877) — 안 읽은 수도 안 올리고
+        //    알림도 안 만든다. 알림이 오면 가장 직접적인 통로가 안 막힌 셈이다.
+        if (!isBlocked && !blockedByOpponent && opponent != null) {
             Long opponentId = opponent.getUserId();
             // 상대방이 해당 채팅방에 접속 중이면 증가하지 않음
             Long currentChatRoom = chatSessionService.getUserCurrentChatRoom(opponentId);
@@ -368,7 +395,9 @@ public class ChatServiceImpl implements ChatService {
             }
         }
         
-        return ChatMessageDto.fromEntity(savedMessage);
+        // 상대가 나를 차단했으면 컨트롤러가 발신자에게만 보내도록 표시해서 넘긴다(#877).
+        // ⚠️ 이 값은 ChatMessageResponse 로 안 나간다 — 나가면 차단당한 쪽이 알게 된다.
+        return ChatMessageDto.fromEntity(savedMessage, blockedByOpponent);
     }
     
     @Override
@@ -402,12 +431,31 @@ public class ChatServiceImpl implements ChatService {
         Page<ChatMessage> messagePage = chatMessageRepository
                 .findByChatRoomIdOrderByCreatedAtDesc(chatRoomId, pageRequest);
         
+        // 내가 이 방의 상대를 차단했다면, **차단한 뒤에 온 메시지**만 걸러낸다. (#877)
+        //
+        // ⚠️ **실시간만 막으면 반쪽이다.** 보내는 쪽에서 안 넘겨도 방을 다시 열면 REST 로
+        //    다 가져오게 된다.
+        // ⚠️ **차단 전 대화는 지우지 않는다.** 방을 남기기로 한 이유가 「거래 이야기가 오갔을 수
+        //    있어 기록은 지킨다」였다(#877 ②). 그 사람 메시지를 통째로 지우면 대화가 텅 비어
+        //    그 결정과 어긋난다. 차단은 「앞으로」를 막는 것이다.
+        LocalDateTime blockedAt = chatRoomUserRepository
+                .findOpponentByChatRoomIdAndMyUserId(chatRoomId, userId)
+                .flatMap(op -> userBlockRepository.findByBlockerIdAndBlockedUserId(userId, op.getUserId()))
+                .map(block -> block.getCreatedAt())
+                .orElse(null);
+
         // 6. DTO 변환 (차단된 메시지 필터링 포함)
         List<ChatMessageListItemDto> messages = messagePage.getContent().stream()
                 .map(msg -> {
                     // 차단된 메시지는 발신자 본인에게만 표시
                     if (Boolean.TRUE.equals(msg.getIsBlocked()) && !msg.getSenderId().equals(userId)) {
                         return null;  // 다른 사람이 보낸 차단된 메시지는 제외
+                    }
+                    // 차단한 뒤에 상대가 보낸 메시지는 안 보여준다
+                    if (blockedAt != null
+                            && !msg.getSenderId().equals(userId)
+                            && msg.getCreatedAt().isAfter(blockedAt)) {
+                        return null;
                     }
                     return ChatMessageListItemDto.fromEntity(msg, userId);
                 })
@@ -423,6 +471,9 @@ public class ChatServiceImpl implements ChatService {
         
         return ChatMessageListDto.builder()
                 .messages(reversedMessages)
+                // 앱 채팅방은 방 정보를 안 가져오고 메시지만 조회한다. 입력창을 잠그려면
+                // 여기서 알아야 한다(#877). blockedAt 이 있으면 내가 차단한 것이다.
+                .isOpponentBlocked(blockedAt != null)
                 .currentPage(messagePage.getNumber())
                 .totalPages(messagePage.getTotalPages())
                 .totalElements(messagePage.getTotalElements())
