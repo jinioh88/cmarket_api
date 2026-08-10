@@ -360,6 +360,8 @@ public class ChatServiceImpl implements ChatService {
                         .content(notificationContent)
                         .relatedEntityType("CHAT_ROOM")
                         .relatedEntityId(chatRoomId)
+                        // 화면이 「안 읽음」 표시 자리에 점 대신 이 숫자를 그린다.
+                        .groupCount(unreadCount)
                         .build();
                 
                 eventPublisher.publishEvent(new NotificationCreatedEvent(this, opponentId, notificationCommand));

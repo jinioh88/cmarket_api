@@ -21,6 +21,7 @@ public class NotificationDto {
     private String content;
     private String relatedEntityType;
     private Long relatedEntityId;
+    private Integer groupCount;  // 이 알림이 묶고 있는 건수 — 채팅만 쓴다 (nullable)
     private Boolean isRead;
     private LocalDateTime readAt;
     private LocalDateTime createdAt;
@@ -39,6 +40,7 @@ public class NotificationDto {
                 .content(notification.getContent())
                 .relatedEntityType(notification.getRelatedEntityType())
                 .relatedEntityId(notification.getRelatedEntityId())
+                .groupCount(notification.getGroupCount())
                 .isRead(notification.getIsRead())
                 .readAt(notification.getReadAt())
                 .createdAt(notification.getCreatedAt())

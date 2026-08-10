@@ -61,6 +61,15 @@ public class Notification {
     @Column(name = "related_entity_id")
     private Long relatedEntityId;  // 관련 엔티티 ID (nullable)
     
+    /**
+     * 이 알림 하나가 묶고 있는 건수. (#873)
+     *
+     * 채팅만 쓴다 — 자리를 비운 사이 온 메시지 수다. 안 묶는 알림은 null 이다.
+     * 화면은 이 값이 있으면 「안 읽음」 표시 자리에 점 대신 숫자를 그린다.
+     */
+    @Column(name = "group_count")
+    private Integer groupCount;
+
     @Column(nullable = false, name = "is_read")
     private Boolean isRead = false;  // 읽음 여부 (기본값 false)
     

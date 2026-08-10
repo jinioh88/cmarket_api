@@ -68,6 +68,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .content(command.getContent())
                 .relatedEntityType(command.getRelatedEntityType())
                 .relatedEntityId(command.getRelatedEntityId())
+                .groupCount(command.getGroupCount())
                 .build();
         
         Notification savedNotification = notificationRepository.save(notification);

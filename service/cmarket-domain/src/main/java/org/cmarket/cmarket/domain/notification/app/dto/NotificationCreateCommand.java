@@ -18,4 +18,5 @@ public class NotificationCreateCommand {
     private String content;  // 알림 내용
     private String relatedEntityType;  // 관련 엔티티 타입 (nullable)
     private Long relatedEntityId;  // 관련 엔티티 ID (nullable)
+    private Integer groupCount;  // 이 알림이 묶고 있는 건수 — 채팅만 쓴다 (nullable)
 }

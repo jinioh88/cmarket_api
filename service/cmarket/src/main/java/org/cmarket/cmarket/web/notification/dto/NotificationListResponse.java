@@ -20,6 +20,8 @@ public class NotificationListResponse {
     private String content;
     private String relatedEntityType;
     private Long relatedEntityId;
+    /** 이 알림이 묶고 있는 건수. 채팅만 쓴다 — 안 묶는 알림은 null 이다. (#873) */
+    private Integer groupCount;
     private Boolean isRead;
     private LocalDateTime readAt;
     private LocalDateTime createdAt;
@@ -38,6 +40,7 @@ public class NotificationListResponse {
         response.content = dto.getContent();
         response.relatedEntityType = dto.getRelatedEntityType();
         response.relatedEntityId = dto.getRelatedEntityId();
+        response.groupCount = dto.getGroupCount();
         response.isRead = dto.getIsRead();
         response.readAt = dto.getReadAt();
         response.createdAt = dto.getCreatedAt();
