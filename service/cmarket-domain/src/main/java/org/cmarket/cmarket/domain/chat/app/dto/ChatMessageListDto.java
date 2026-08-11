@@ -37,4 +37,23 @@ public class ChatMessageListDto {
      * 래퍼면 게터가 `getIsOpponentBlocked()` 라 키가 그대로다 — 옆의 `isBlocked` 도 같은 이유다.
      */
     private Boolean isOpponentBlocked;
+
+    /**
+     * 상대와 상품. (#889)
+     *
+     * **앱 채팅방은 방 정보를 안 가져오고 메시지만 조회한다.** 방 번호만 들고 들어오므로
+     * 여기서 안 실어 주면 앱은 누구와 무슨 상품 이야기를 하는지 화면에 못 그린다.
+     * 웹은 방 목록(`ChatRoomListItemDto`)에서 같은 값을 읽으므로 이쪽을 안 쓴다.
+     *
+     * ⚠️ **상대가 탈퇴하면 `opponentId` 가 없고 닉네임이 「알 수 없는 사용자」다.**
+     * 화면은 그때 프로필로 가는 길을 만들지 않는다 — 웹이 이미 그렇게 한다.
+     */
+    private Long opponentId;
+    private String opponentNickname;
+    private String opponentProfileImageUrl;
+
+    private Long productId;
+    private String productTitle;
+    private Long productPrice;
+    private String productImageUrl;
 }

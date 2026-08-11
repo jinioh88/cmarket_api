@@ -438,11 +438,30 @@ public class ChatServiceImpl implements ChatService {
         // ⚠️ **차단 전 대화는 지우지 않는다.** 방을 남기기로 한 이유가 「거래 이야기가 오갔을 수
         //    있어 기록은 지킨다」였다(#877 ②). 그 사람 메시지를 통째로 지우면 대화가 텅 비어
         //    그 결정과 어긋난다. 차단은 「앞으로」를 막는 것이다.
-        LocalDateTime blockedAt = chatRoomUserRepository
-                .findOpponentByChatRoomIdAndMyUserId(chatRoomId, userId)
+        Optional<ChatRoomUser> opponentOpt = chatRoomUserRepository
+                .findOpponentByChatRoomIdAndMyUserId(chatRoomId, userId);
+
+        LocalDateTime blockedAt = opponentOpt
                 .flatMap(op -> userBlockRepository.findByBlockerIdAndBlockedUserId(userId, op.getUserId()))
                 .map(block -> block.getCreatedAt())
                 .orElse(null);
+
+        // 상대와 상품 정보를 같이 실어 보낸다. (#889)
+        //
+        // **앱 채팅방은 방 정보를 안 가져오고 메시지만 조회한다.** 방 번호만 들고 들어오므로,
+        // 여기서 안 실어 주면 앱 화면에는 누구와 무슨 상품 이야기를 하는지 보여 줄 길이 없다.
+        // 웹은 방 목록에서 읽으므로 이 값이 필요 없다 — 그래서 목록에는 안 더한다.
+        //
+        // ⚠️ 방을 찾는 조회는 **바로 위 blockedAt 에서 이미 하던 것**이라 늘지 않는다.
+        //    상품은 ChatRoom 을 한 번 더 읽는데, 방 번호로 찾는 것이라 가볍다.
+        //
+        // ⚠️ 상대가 탈퇴하면 「알 수 없는 사용자」로 준다 — 방 목록과 **같은 규칙**이다.
+        //    그때 opponentId 가 없으므로 화면은 프로필로 가는 길을 안 만든다.
+        Long opponentId = opponentOpt.map(ChatRoomUser::getUserId).orElse(null);
+        String opponentNickname = opponentOpt.map(ChatRoomUser::getUserNickname).orElse("알 수 없는 사용자");
+        String opponentProfileImageUrl = opponentOpt.map(ChatRoomUser::getUserProfileImageUrl).orElse(null);
+
+        ChatRoom chatRoomInfo = chatRoomRepository.findById(chatRoomId).orElse(null);
 
         // 6. DTO 변환 (차단된 메시지 필터링 포함)
         List<ChatMessageListItemDto> messages = messagePage.getContent().stream()
@@ -474,6 +493,14 @@ public class ChatServiceImpl implements ChatService {
                 // 앱 채팅방은 방 정보를 안 가져오고 메시지만 조회한다. 입력창을 잠그려면
                 // 여기서 알아야 한다(#877). blockedAt 이 있으면 내가 차단한 것이다.
                 .isOpponentBlocked(blockedAt != null)
+                // 앱 채팅방 머리말에 쓴다(#889). 웹은 방 목록에서 읽으므로 안 쓴다.
+                .opponentId(opponentId)
+                .opponentNickname(opponentNickname)
+                .opponentProfileImageUrl(opponentProfileImageUrl)
+                .productId(chatRoomInfo != null ? chatRoomInfo.getProductId() : null)
+                .productTitle(chatRoomInfo != null ? chatRoomInfo.getProductTitle() : null)
+                .productPrice(chatRoomInfo != null ? chatRoomInfo.getProductPrice() : null)
+                .productImageUrl(chatRoomInfo != null ? chatRoomInfo.getProductImageUrl() : null)
                 .currentPage(messagePage.getNumber())
                 .totalPages(messagePage.getTotalPages())
                 .totalElements(messagePage.getTotalElements())
