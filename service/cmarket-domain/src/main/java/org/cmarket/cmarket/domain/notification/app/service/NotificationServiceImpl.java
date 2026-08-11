@@ -150,14 +150,19 @@ public class NotificationServiceImpl implements NotificationService {
         
         // 4. RDB에서 알림 읽음 처리
         int updatedCount = notificationRepository.markAsRead(notificationId, userId, LocalDateTime.now());
-        
-        if (updatedCount == 0) {
-            // 이미 읽음 처리된 경우 (동시성 이슈 등)
-            throw new NotificationNotFoundException("이미 읽음 처리된 알림입니다.");
+
+        // ⚠️ **이미 읽은 알림은 성공이다.** 전에는 여기서 「없음」(404)을 던졌다.
+        //
+        //    「읽음으로 만들어 달라」는 요청인데 이미 읽음이면 목적은 이미 이뤄졌다. 그런데도
+        //    404 를 주니, 알림을 두 번 누르기만 해도 화면에 오류가 났다(#881).
+        //    바로 위에서 알림이 있는 것과 내 것인 것을 이미 확인했으므로, 여기서 0이 나오는 경우는
+        //    「이미 읽음」뿐이다.
+        //
+        //    없는 알림·남의 알림은 위 두 검사에서 걸러져 그대로 404 · 403 이다.
+        if (updatedCount > 0) {
+            // 5. 캐시 무효화 (데이터 정합성 보장)
+            notificationCache.evictAll(userId);
         }
-        
-        // 5. 캐시 무효화 (데이터 정합성 보장)
-        notificationCache.evictAll(userId);
     }
     
     @Override
