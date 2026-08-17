@@ -28,6 +28,8 @@ import org.cmarket.cmarket.domain.product.repository.FavoriteRepository;
 import org.cmarket.cmarket.domain.product.repository.ProductRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
 import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
+import org.cmarket.cmarket.domain.view.app.service.ViewLogService;
+import org.cmarket.cmarket.domain.view.model.ViewTargetType;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,6 +54,7 @@ public class ProductServiceImpl implements ProductService {
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final UserBlockRepository userBlockRepository;
+    private final ViewLogService viewLogService;
     private final ApplicationEventPublisher eventPublisher;
     
     @Override
@@ -86,8 +89,16 @@ public class ProductServiceImpl implements ProductService {
         return ProductDto.fromEntity(savedProduct);
     }
     
+    /**
+     * 상품 상세 조회
+     *
+     * ⚠️ 예전에는 @Transactional(readOnly = true) 였다. 되돌리지 말 것.
+     *    읽기 전용 트랜잭션에서는 하이버네이트가 플러시를 하지 않아 조회수 UPDATE가 나가지 않았다.
+     *    그래서 상품 조회수가 한 번도 오르지 않았다(운영 상품 60개가 전부 0이었다).
+     *    자세한 사연은 아래 increaseViewCount 주석에 적어 두었다.
+     */
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ProductDetailDto getProductDetail(Long productId, String email) {
         // 상품 조회 (소프트 삭제된 상품 제외)
         Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
@@ -146,10 +157,7 @@ public class ProductServiceImpl implements ProductService {
                 .toList();
         
         // 조회수 증가 처리 (로그인한 사용자이고 판매자가 아닌 경우)
-        if (email != null && !product.getSellerId().equals(userId)) {
-            // 별도 트랜잭션으로 조회수 증가 처리 (비동기 또는 별도 트랜잭션)
-            increaseViewCountInSeparateTransaction(productId, email);
-        }
+        increaseViewCount(product, userId);
         
         // ProductDetailDto 생성 및 반환
         return ProductDetailDto.builder()
@@ -177,38 +185,42 @@ public class ProductServiceImpl implements ProductService {
     }
     
     /**
-     * 별도 트랜잭션으로 조회수 증가 처리
-     * 
-     * 상세 조회와 트랜잭션을 분리하여 조회수 증가를 처리합니다.
+     * 조회수 증가 처리
+     *
+     * 로그인한 사용자가 상품을 조회했을 때, 판매자 본인이 아니고
+     * 오늘 처음 보는 상품이라면 조회수를 증가시킵니다.
+     *
+     * ⚠️ 예전에는 여기가 increaseViewCountInSeparateTransaction 이라는 별도 트랜잭션이었다.
+     *    그런데 상세 조회 메서드가 같은 클래스 안에서 그것을 그냥 불렀다.
+     *    스프링의 @Transactional 은 프록시(대리인)를 거쳐야 먹는데,
+     *    같은 클래스 안의 호출은 대리인을 안 거치므로 REQUIRES_NEW 가 무시됐다.
+     *    결국 읽기 전용 트랜잭션 안에서 돌아 UPDATE 가 한 번도 나가지 않았다.
+     *
+     *    지금은 커뮤니티 글(CommunityServiceImpl.increaseViewCount)과 같은 모양으로 맞췄다.
+     *    영속 상태 엔티티를 고치면 트랜잭션 커밋 때 더티체킹으로 UPDATE 가 나가므로
+     *    save() 를 부르지 않는다.
+     *
+     * @param product 상품 엔티티 (이 트랜잭션에서 조회한 영속 상태여야 한다)
+     * @param viewerId 현재 로그인한 사용자 ID (비로그인 시 null)
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    public void increaseViewCountInSeparateTransaction(Long productId, String email) {
-        increaseViewCount(productId, email);
-    }
-    
-    @Override
-    @Transactional
-    public void increaseViewCount(Long productId, String email) {
-        // 상품 조회
-        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
-                .orElseThrow(() -> new org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException("상품을 찾을 수 없습니다."));
-        
-        // 사용자 조회
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
-                .orElseThrow(() -> new org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException("사용자를 찾을 수 없습니다."));
-        
-        Long userId = user.getId();
-        
-        // 판매자 본인이 조회한 경우 조회수 증가하지 않음
-        if (product.getSellerId().equals(userId)) {
+    private void increaseViewCount(Product product, Long viewerId) {
+        if (viewerId == null) {
             return;
         }
-        
-        // 조회수 증가
+
+        if (product.getSellerId().equals(viewerId)) {
+            return;  // 판매자가 본인일 경우 조회수 증가 없음
+        }
+
+        // 같은 사람이 같은 상품을 같은 날(한국 시간) 다시 봐도 한 번만 센다.
+        // 기록 남기기와 조회수 올리기가 같은 트랜잭션이라 둘이 어긋나지 않는다.
+        if (!viewLogService.markViewedToday(viewerId, ViewTargetType.PRODUCT, product.getId())) {
+            return;
+        }
+
         product.increaseViewCount();
-        productRepository.save(product);
     }
-    
+
     @Override
     @Transactional
     public ProductDto updateProduct(Long productId, ProductUpdateCommand command, String email) {

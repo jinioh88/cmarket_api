@@ -25,6 +25,8 @@ import org.cmarket.cmarket.domain.notification.app.event.NotificationCreatedEven
 import org.cmarket.cmarket.domain.notification.model.NotificationType;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
 import org.cmarket.cmarket.domain.report.repository.UserBlockRepository;
+import org.cmarket.cmarket.domain.view.app.service.ViewLogService;
+import org.cmarket.cmarket.domain.view.model.ViewTargetType;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -48,6 +50,7 @@ public class CommunityServiceImpl implements CommunityService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final UserBlockRepository userBlockRepository;
+    private final ViewLogService viewLogService;
     private final ApplicationEventPublisher eventPublisher;
     
     @Override
@@ -412,7 +415,8 @@ public class CommunityServiceImpl implements CommunityService {
     /**
      * 조회수 증가 처리
      *
-     * 로그인한 사용자가 게시글을 조회했을 때, 작성자가 아니라면 조회수를 증가시킵니다.
+     * 로그인한 사용자가 게시글을 조회했을 때, 작성자가 아니고
+     * 오늘 처음 보는 글이라면 조회수를 증가시킵니다.
      *
      * @param post 게시글 엔티티
      * @param email 현재 로그인한 사용자 이메일 (비로그인 시 null)
@@ -432,6 +436,12 @@ public class CommunityServiceImpl implements CommunityService {
 
         if (post.getAuthorId().equals(viewerId)) {
             return;  // 작성자가 본인일 경우 조회수 증가 없음
+        }
+
+        // 같은 사람이 같은 글을 같은 날(한국 시간) 다시 봐도 한 번만 센다.
+        // 기록 남기기와 조회수 올리기가 같은 트랜잭션이라 둘이 어긋나지 않는다.
+        if (!viewLogService.markViewedToday(viewerId, ViewTargetType.COMMUNITY_POST, post.getId())) {
+            return;
         }
 
         post.increaseViewCount();

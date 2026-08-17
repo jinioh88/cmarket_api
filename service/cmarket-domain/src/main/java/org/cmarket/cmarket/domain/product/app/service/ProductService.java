@@ -31,14 +31,9 @@ public interface ProductService {
             String email
     );
     
-    /**
-     * 상품 조회수 증가
-     * 
-     * @param productId 상품 ID
-     * @param email 현재 로그인한 사용자 이메일
-     */
-    void increaseViewCount(Long productId, String email);
-    
+    // 조회수 증가(increaseViewCount)는 상세 조회 안에서만 일어나므로 인터페이스에서 뺐다.
+    // 컨트롤러 어디에서도 부르지 않던 선언이었다.
+
     /**
      * 판매 상품 수정
      * 
