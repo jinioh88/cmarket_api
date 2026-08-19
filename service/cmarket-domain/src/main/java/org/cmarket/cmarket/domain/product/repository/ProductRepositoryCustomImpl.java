@@ -17,6 +17,7 @@ import org.cmarket.cmarket.domain.product.model.Product;
 import org.cmarket.cmarket.domain.product.model.ProductStatus;
 import org.cmarket.cmarket.domain.product.model.ProductType;
 import org.cmarket.cmarket.domain.product.model.QProduct;
+import org.cmarket.cmarket.domain.product.model.TradeStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -47,6 +48,7 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
             PetDetailType petDetailType,
             List<Category> categories,
             List<ProductStatus> productStatuses,
+            List<TradeStatus> tradeStatuses,
             Long minPrice,
             Long maxPrice,
             String addressSido,
@@ -84,7 +86,25 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         if (productStatuses != null && !productStatuses.isEmpty()) {
             builder.and(product.productStatus.in(productStatuses));
         }
-        
+
+        // 거래 상태 필터 (여러 개 선택 가능)
+        //
+        // 목록의 「판매중만 보기」가 반쪽이었다 — 서버가 다 내려주고 화면에서 걸러내서
+        // 20개를 달라고 했는데 6개만 남는 식이 되었다. 차단 제외와 같은 이유로 쿼리에서 건다.
+        //
+        // ⚠️ **판매요청(REQUEST) 상품은 trade_status 가 NULL 이다.** 그대로 in() 만 걸면
+        //    「판매중」을 골랐을 때 판매요청이 통째로 빠진다. 웹 화면은 예전부터
+        //    `tradeStatus === 'SELLING' || tradeStatus === null` 로 걸러 왔으므로
+        //    (ProductsSection.tsx), **SELLING 을 물으면 NULL 도 함께 준다.**
+        //    그래야 서버로 옮겨도 보이던 목록이 그대로다.
+        if (tradeStatuses != null && !tradeStatuses.isEmpty()) {
+            if (tradeStatuses.contains(TradeStatus.SELLING)) {
+                builder.and(product.tradeStatus.in(tradeStatuses).or(product.tradeStatus.isNull()));
+            } else {
+                builder.and(product.tradeStatus.in(tradeStatuses));
+            }
+        }
+
         // 가격 범위 필터
         if (minPrice != null) {
             builder.and(product.price.goe(minPrice));

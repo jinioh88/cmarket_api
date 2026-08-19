@@ -112,6 +112,7 @@ public class SearchServiceImpl implements SearchService {
                 command.getPetDetailType(),
                 command.getCategories(),
                 command.getProductStatuses(),
+                command.getTradeStatuses(),
                 command.getMinPrice(),
                 command.getMaxPrice(),
                 command.getAddressSido(),

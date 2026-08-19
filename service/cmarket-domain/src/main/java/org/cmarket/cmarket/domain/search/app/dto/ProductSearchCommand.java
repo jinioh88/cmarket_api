@@ -7,6 +7,7 @@ import org.cmarket.cmarket.domain.product.model.PetDetailType;
 import org.cmarket.cmarket.domain.product.model.PetType;
 import org.cmarket.cmarket.domain.product.model.ProductStatus;
 import org.cmarket.cmarket.domain.product.model.ProductType;
+import org.cmarket.cmarket.domain.product.model.TradeStatus;
 import java.util.List;
 
 /**
@@ -24,6 +25,7 @@ public class ProductSearchCommand {
     private PetDetailType petDetailType;
     private List<Category> categories;
     private List<ProductStatus> productStatuses;
+    private List<TradeStatus> tradeStatuses;  // 거래 상태 리스트 (여러 개 선택 가능)
     private Long minPrice;
     private Long maxPrice;
     private String addressSido;

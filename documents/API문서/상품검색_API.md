@@ -94,6 +94,7 @@ http://localhost:8080
 | `petDetailType` | `PetDetailType` | 아니오 | - | 반려동물 상세 종류 필터                                                                                                                 |
 | `categories` | `Category[]` | 아니오 | - | 상품 카테고리 필터 (여러 개 선택 가능)<br/>예: `categories=FOOD&categories=TOY`                                                               |
 | `productStatuses` | `ProductStatus[]` | 아니오 | - | 상품 상태 필터 (여러 개 선택 가능)<br/>예: `productStatuses=NEW&productStatuses=LIKE_NEW`                                                   |
+| `tradeStatuses` | `TradeStatus[]` | 아니오 | - | 거래 상태 필터 (여러 개 선택 가능)<br/>예: `tradeStatuses=SELLING`<br/>※ `SELLING` 을 주면 거래 상태가 없는 판매요청 상품(`null`)도 함께 나옵니다                                                   |
 | `minPrice` | Long | 아니오 | - | 최소 가격 (0 이상)                                                                                                                  |
 | `maxPrice` | Long | 아니오 | - | 최대 가격 (0 이상)                                                                                                                  |
 | `addressSido` | String | 아니오 | - | 시/도 필터 (예: "서울특별시", "경기광역시", "인천광역시")                                                                                         |
@@ -289,6 +290,19 @@ GET /api/products/search?keyword=강아지&productType=SELL&petDetailType=DOG&ca
   - `LIKE_NEW`: 거의 새것
   - `USED`: 사용감 있음
   - `NEED_REPAIR`: 수리 필요
+
+#### 거래 상태 필터 (`tradeStatuses`)
+- **여러 개 선택 가능**: 배열 형태로 여러 상태를 전달하면 OR 조건으로 처리됩니다
+  - 예: `tradeStatuses=SELLING&tradeStatuses=RESERVED` → 판매중 또는 예약중 상품 조회
+- **상태 Enum 값**:
+  - `SELLING`: 판매중
+  - `RESERVED`: 예약중
+  - `COMPLETED`: 거래완료
+- ⚠️ **판매요청(`productType=REQUEST`) 상품은 거래 상태를 갖지 않습니다(`null`).**
+  그래서 `SELLING` 을 물으면 **`null` 인 것도 함께** 내려줍니다 — 그렇게 하지 않으면
+  「판매중만 보기」를 켰을 때 판매요청이 통째로 사라집니다.
+  웹 화면이 예전부터 `tradeStatus === 'SELLING' || tradeStatus === null` 로 걸러 왔던 것과 같습니다.
+- `RESERVED` · `COMPLETED` 만 물으면 `null` 은 포함되지 않습니다 — 거래가 시작된 것만 보려는 뜻이라서입니다.
 
 #### 가격대 필터
 - **최소 가격** (`minPrice`): 지정한 가격 이상인 상품만 조회

@@ -6,6 +6,7 @@ import org.cmarket.cmarket.domain.product.model.PetType;
 import org.cmarket.cmarket.domain.product.model.Product;
 import org.cmarket.cmarket.domain.product.model.ProductStatus;
 import org.cmarket.cmarket.domain.product.model.ProductType;
+import org.cmarket.cmarket.domain.product.model.TradeStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -28,6 +29,7 @@ public interface ProductRepositoryCustom {
      * @param petDetailType 반려동물 상세 종류 - null 가능
      * @param categories 상품 카테고리 리스트 (여러 개 선택 가능) - null 또는 빈 리스트 가능
      * @param productStatuses 상품 상태 리스트 (여러 개 선택 가능) - null 또는 빈 리스트 가능
+     * @param tradeStatuses 거래 상태 리스트 (여러 개 선택 가능) - null 또는 빈 리스트 가능
      * @param minPrice 최소 가격 - null 가능
      * @param maxPrice 최대 가격 - null 가능
      * @param addressSido 시/도 - null 가능
@@ -45,6 +47,7 @@ public interface ProductRepositoryCustom {
             PetDetailType petDetailType,
             List<Category> categories,
             List<ProductStatus> productStatuses,
+            List<TradeStatus> tradeStatuses,
             Long minPrice,
             Long maxPrice,
             String addressSido,

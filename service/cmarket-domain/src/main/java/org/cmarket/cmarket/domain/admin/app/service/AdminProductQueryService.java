@@ -55,9 +55,14 @@ public class AdminProductQueryService {
                 null,
                 null,
                 categories,
+                // productStatuses
+                null,
+                // tradeStatuses — 관리자는 거래 상태와 무관하게 전부 본다
+                null,
+                // minPrice / maxPrice
                 null,
                 null,
-                null,
+                // addressSido / addressGugun
                 null,
                 null,
                 "createdAt",

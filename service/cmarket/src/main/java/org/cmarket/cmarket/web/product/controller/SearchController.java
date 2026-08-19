@@ -36,7 +36,7 @@ public class SearchController {
      * 
      * 상품을 검색하고 필터링 및 정렬할 수 있습니다.
      * - 키워드 검색: 제목, 설명, 카테고리명 검색
-     * - 필터링: 상품 타입, 반려동물 종류, 카테고리, 가격대, 지역, 상품 상태
+     * - 필터링: 상품 타입, 반려동물 종류, 카테고리, 가격대, 지역, 상품 상태, 거래 상태
      * - 정렬: 최신순, 가격순, 찜 많은 순
      * - 로그인한 사용자는 찜 여부 표시
      * 
@@ -89,6 +89,7 @@ public class SearchController {
                 .petDetailType(request.getPetDetailType())
                 .categories(request.getCategories())
                 .productStatuses(request.getProductStatuses())
+                .tradeStatuses(request.getTradeStatuses())
                 .minPrice(request.getMinPrice())
                 .maxPrice(request.getMaxPrice())
                 .addressSido(request.getAddressSido())

@@ -9,6 +9,7 @@ import org.cmarket.cmarket.domain.product.model.PetDetailType;
 import org.cmarket.cmarket.domain.product.model.PetType;
 import org.cmarket.cmarket.domain.product.model.ProductStatus;
 import org.cmarket.cmarket.domain.product.model.ProductType;
+import org.cmarket.cmarket.domain.product.model.TradeStatus;
 
 import java.util.List;
 
@@ -33,6 +34,8 @@ public class ProductSearchRequest {
     private List<Category> categories;  // 상품 카테고리 리스트 (여러 개 선택 가능)
     
     private List<ProductStatus> productStatuses;  // 상품 상태 리스트 (여러 개 선택 가능)
+    
+    private List<TradeStatus> tradeStatuses;  // 거래 상태 리스트 - 판매중(SELLING)/예약중(RESERVED)/거래완료(COMPLETED) (여러 개 선택 가능)
     
     @Min(0)
     private Long minPrice;  // 최소 가격
