@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.cmarket.cmarket.domain.auth.app.dto.UserDto;
 import org.cmarket.cmarket.domain.auth.app.exception.NicknameAlreadyExistsException;
 import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
+import org.cmarket.cmarket.domain.exception.BusinessException;
+import org.cmarket.cmarket.domain.exception.ErrorCode;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserDto;
@@ -116,9 +118,14 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public UserProfileDto getUserProfile(Long userId, String currentUserEmail) {
         // 1. 사용자 조회 (소프트 삭제된 사용자 제외)
+        //
+        // ⚠️ UserNotFoundException 이 아니라 PROFILE_USER_NOT_FOUND(404) 를 던진다.
+        //    UserNotFoundException 은 값이 401 이라(ErrorCode 주석 참고) 앱이 「로그인이 풀렸다」와
+        //    구분하지 못했다. 그래서 탈퇴한 사람의 프로필을 열면 「네트워크를 확인하라」는
+        //    엉뚱한 안내가 떴다(#995). 여기는 「그 사람이 이제 없다」이므로 404 가 맞다.
         User user = userRepository.findById(userId)
                 .filter(u -> !u.isDeleted())
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROFILE_USER_NOT_FOUND));
         
         // 2. 차단 여부 및 신고 여부 확인 (현재 사용자가 로그인한 경우에만)
         Boolean isBlocked = null;
