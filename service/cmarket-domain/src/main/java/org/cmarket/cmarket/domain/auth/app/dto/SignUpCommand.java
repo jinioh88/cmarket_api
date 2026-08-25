@@ -20,5 +20,8 @@ public class SignUpCommand {
     private LocalDate birthDate;
     private String addressSido;
     private String addressGugun;
+    // 약관 동의 (#1088). 옛 앱은 안 보내므로 null 로 온다 — 그때는 AGREED 로 적으면 안 된다
+    private Boolean termsAgreed;
+    private Boolean privacyAgreed;
 }
 

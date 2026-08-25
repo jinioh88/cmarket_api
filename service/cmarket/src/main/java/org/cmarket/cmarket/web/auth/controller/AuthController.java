@@ -230,6 +230,9 @@ public class AuthController {
                 .birthDate(request.getBirthDate())
                 .addressSido(request.getAddressSido())
                 .addressGugun(request.getAddressGugun())
+                // 약관 동의 (#1088). 옛 앱은 안 보내므로 null 로 간다
+                .termsAgreed(request.getTermsAgreed())
+                .privacyAgreed(request.getPrivacyAgreed())
                 .build();
         
         // 앱 서비스 호출

@@ -95,6 +95,10 @@ public class AuthServiceImpl implements AuthService {
         String encodedPassword = passwordEncoder.encode(command.getPassword());
         
         // 6. User 엔티티 생성 및 저장
+        // 둘 다 true 로 왔을 때만 「동의받았다」로 본다. 하나라도 빠지면 아니다.
+        boolean agreedNow = Boolean.TRUE.equals(command.getTermsAgreed())
+                && Boolean.TRUE.equals(command.getPrivacyAgreed());
+
         User user = User.builder()
                 .email(command.getEmail())
                 .password(encodedPassword)
@@ -107,13 +111,19 @@ public class AuthServiceImpl implements AuthService {
                 .provider(AuthProvider.LOCAL)
                 .socialId(null)
                 // 약관 동의 (#1088)
-                // ⚠️ 여기까지 왔다는 것은 **컨트롤러의 @NotNull + @AssertTrue 를 지나왔다**는
-                //    뜻이라 둘 다 true 다. 그래서 다시 안 묻고 AGREED 로 적는다.
-                //    ⚠️ 그 검증을 SignUpRequest 에서 떼면 이 줄이 거짓말이 된다 — 같이 봐라.
-                .termsAgreementStatus(TermsAgreementStatus.AGREED)
-                .termsAgreedAt(LocalDateTime.now())
-                .agreedTermsVersion(ConsentVersions.TERMS)
-                .agreedPrivacyVersion(ConsentVersions.PRIVACY)
+                //
+                // ⚠️ **무조건 AGREED 로 적으면 안 된다.** 서버가 동의를 필수로 안 막고 있어서
+                //    (SignUpRequest 의 주석 참고 — 옛 앱이 가입에 실패하지 않게 뺐다)
+                //    동의를 안 보내는 요청이 실제로 온다. 그것을 AGREED 로 적으면
+                //    **동의한 적 없는 사람을 동의했다고 기록**하는 셈이고, 그러면 증명하려고
+                //    만든 기록이 오히려 불리한 증거가 된다.
+                //
+                //    보낸 사람만 AGREED 다. 안 보낸 사람은 아래 셋이 null 이고 상태는
+                //    User 생성자가 PRE_TERMS 로 채운다.
+                .termsAgreementStatus(agreedNow ? TermsAgreementStatus.AGREED : TermsAgreementStatus.PRE_TERMS)
+                .termsAgreedAt(agreedNow ? LocalDateTime.now() : null)
+                .agreedTermsVersion(agreedNow ? ConsentVersions.TERMS : null)
+                .agreedPrivacyVersion(agreedNow ? ConsentVersions.PRIVACY : null)
                 .build();
         
         User savedUser = userRepository.save(user);
