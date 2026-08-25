@@ -63,6 +63,17 @@ public interface AuthService {
      * @throws IllegalArgumentException 사용자가 존재하지 않을 때
      */
     String sendPasswordResetCode(String email);
+
+    /**
+     * 계정 찾기 — 가입 방법을 메일로 안내한다 (#849)
+     *
+     * ⚠️ **없는 이메일이어도 예외를 던지지 않는다.** 던지는 순간 400 이 나가고,
+     *    그것이 곧 「이 이메일은 회원이 아니다」라는 신호가 된다(계정 열거).
+     *    가입된 계정이 있으면 메일을 보내고, 없으면 조용히 아무것도 하지 않는다.
+     *
+     * @param email 사용자 이메일
+     */
+    void sendAccountMethodNotice(String email);
     
     /**
      * 비밀번호 재설정

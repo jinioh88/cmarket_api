@@ -14,6 +14,7 @@ import org.cmarket.cmarket.web.auth.dto.LoginRequest;
 import org.cmarket.cmarket.web.auth.dto.LoginResponse;
 import org.cmarket.cmarket.web.auth.dto.PasswordChangeRequest;
 import org.cmarket.cmarket.web.auth.dto.PasswordResetRequest;
+import org.cmarket.cmarket.web.auth.dto.AccountFindRequest;
 import org.cmarket.cmarket.web.auth.dto.PasswordResetSendRequest;
 import org.cmarket.cmarket.web.auth.dto.RefreshTokenRequest;
 import org.cmarket.cmarket.web.auth.dto.SignUpRequest;
@@ -381,6 +382,33 @@ public class AuthController {
      * @param request 비밀번호 재설정 인증코드 발송 요청
      * @return 성공 응답
      */
+    /**
+     * 계정 찾기 — 가입 방법을 메일로 안내한다 (#849)
+     *
+     * ⚠️ **회원이든 아니든 똑같은 200 과 똑같은 문구를 돌려준다.** 갈라 말하는 순간
+     *    남의 이메일을 넣어 본 사람이 회원 여부를 알아낼 수 있다(계정 열거).
+     *    진짜 안내는 메일로 간다 — 메일함을 여는 사람은 그 이메일의 주인뿐이다.
+     *
+     * ⚠️ SecurityConfig 의 permitAll 목록에 "/api/auth/account/find" 가 있어야 한다.
+     *    빠지면 401 이 나는데 **화면은 그래도 「보냈습니다」라고 말하므로 아무도 못 알아챈다.**
+     *
+     * @param request 계정 찾기 요청
+     * @return 성공 응답 (가입 여부와 무관하게 같다)
+     */
+    @PostMapping("/account/find")
+    public ResponseEntity<SuccessResponse<String>> findAccount(
+            @Valid @RequestBody AccountFindRequest request
+    ) {
+        // 앱 서비스 호출 — 없는 이메일이어도 예외를 던지지 않는다
+        authService.sendAccountMethodNotice(request.getEmail());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(
+                        ResponseCode.SUCCESS,
+                        "가입된 계정이 있다면 안내 메일을 보냈습니다."
+                ));
+    }
+    
     @PostMapping("/password/reset/send")
     public ResponseEntity<SuccessResponse<String>> sendPasswordResetCode(
             @Valid @RequestBody PasswordResetSendRequest request

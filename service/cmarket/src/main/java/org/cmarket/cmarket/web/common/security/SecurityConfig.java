@@ -320,6 +320,10 @@ public class SecurityConfig {
                     "/api/auth/google",  // Google ID Token 로그인 엔드포인트
                     "/api/auth/email/**",
                     "/api/auth/password/reset/**",  // 비밀번호 재설정 엔드포인트
+                    // ⚠️ 빠뜨리면 401 이 나는데 **화면은 그래도 「메일 보냈습니다」라고 말한다.**
+                    //    계정 열거를 막으려고 서버 응답을 안 보게 만들었기 때문이다(#849).
+                    //    그래서 아무도 못 알아챈다 — 지우지 말 것.
+                    "/api/auth/account/find",  // 계정 찾기(가입 방법 안내) 엔드포인트
                     "/api/auth/nickname/check",  // 닉네임 중복 확인 엔드포인트
                     "/login",  // Spring Security 기본 로그인 페이지 (OAuth2 실패 시 리다이렉트)
                     "/login/**",  // 로그인 관련 엔드포인트

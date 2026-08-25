@@ -31,7 +31,11 @@ public class NotificationEventListener {
      * 
      * @param event 알림 생성 이벤트
      */
-    @Async
+    // ⚠️ **이름을 반드시 박아 둔다.** #849 에서 메일 전용 Executor(mailTaskExecutor)가
+    //    생기면서 Executor 빈이 둘이 됐다. 이름 없는 @Async 는 「유일한 Executor」를
+    //    못 찾으면 SimpleAsyncTaskExecutor(요청마다 새 스레드, 상한 없음)로 물러서는데,
+    //    **오류가 안 나고 조용히 바뀐다.** 이름을 박으면 그 일이 안 생긴다.
+    @Async("notificationTaskExecutor")
     @EventListener
     public void handleNotificationCreated(NotificationCreatedEvent event) {
         try {

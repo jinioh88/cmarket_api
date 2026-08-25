@@ -183,6 +183,24 @@ public class AuthServiceImpl implements AuthService {
         return verificationCode;
     }
     
+    /**
+     * 계정 찾기 — 가입 방법을 메일로 안내한다 (#849)
+     *
+     * ⚠️ **바로 위 sendPasswordResetCode 와 일부러 다르게 짰다.** 그쪽은 없는 이메일이면
+     *    예외를 던지고 소셜이면 어느 소셜인지 문구에 담는다 — 화면이 그것을 그대로 보여줘서
+     *    남의 이메일을 넣어 본 사람도 알게 된다. 여기서는 그 길을 막는다.
+     *
+     *      없는 이메일   → 아무것도 안 한다 (예외도 안 던진다)
+     *      있는 이메일   → 메일로만 알려준다. 메일함을 여는 사람은 그 주인뿐이다
+     *
+     *    그래서 호출한 쪽은 **회원이든 아니든 똑같은 200 과 똑같은 문구**를 돌려줄 수 있다.
+     */
+    @Override
+    public void sendAccountMethodNotice(String email) {
+        userRepository.findByEmailAndDeletedAtIsNull(email)
+                .ifPresent(user -> emailService.sendAccountMethodNotice(email, user.getProvider()));
+    }
+
     @Override
     public String sendPasswordResetCode(String email) {
         // 1. 이메일로 사용자 조회 (소프트 삭제된 사용자 제외)
