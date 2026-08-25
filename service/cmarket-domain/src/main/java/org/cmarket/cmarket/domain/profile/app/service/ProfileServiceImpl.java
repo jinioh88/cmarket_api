@@ -7,6 +7,7 @@ import org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException;
 import org.cmarket.cmarket.domain.exception.BusinessException;
 import org.cmarket.cmarket.domain.exception.ErrorCode;
 import org.cmarket.cmarket.domain.auth.model.User;
+import org.cmarket.cmarket.domain.auth.model.ConsentVersions;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserDto;
 import org.cmarket.cmarket.domain.profile.app.dto.BlockedUserListDto;
@@ -102,6 +103,18 @@ public class ProfileServiceImpl implements ProfileService {
                 command.getProfileImageUrl(),
                 command.getIntroduction()
         );
+
+        // 5. 약관 동의 기록 (#1088 — 소셜 가입 마무리에서만 온다)
+        //
+        // ⚠️ **소셜 가입과 프로필 수정이 같은 API 를 쓴다.** 그래서 값이 온 경우에만 적는다 —
+        //    프로필을 고칠 때는 null 로 와서 아무것도 안 건드린다.
+        //
+        // ⚠️ **여기서 「동의 안 했으면 막기」를 하지 않는다.** 그러면 프로필 수정이 막힌다.
+        //    소셜 가입에서 동의를 강제하는 것은 화면 몫이다(단추 끄기 + 제출 직전 검사).
+        if (Boolean.TRUE.equals(command.getTermsAgreed())
+                && Boolean.TRUE.equals(command.getPrivacyAgreed())) {
+            user.recordTermsAgreement(ConsentVersions.TERMS, ConsentVersions.PRIVACY);
+        }
         
         // 5. UserDto 생성 및 반환
         return UserDto.builder()

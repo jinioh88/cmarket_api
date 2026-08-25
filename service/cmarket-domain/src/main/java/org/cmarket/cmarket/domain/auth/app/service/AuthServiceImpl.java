@@ -8,6 +8,8 @@ import org.cmarket.cmarket.domain.auth.app.dto.SignUpCommand;
 import org.cmarket.cmarket.domain.auth.app.dto.UserDto;
 import org.cmarket.cmarket.domain.auth.app.dto.WithdrawalCommand;
 import org.cmarket.cmarket.domain.auth.model.AuthProvider;
+import org.cmarket.cmarket.domain.auth.model.TermsAgreementStatus;
+import org.cmarket.cmarket.domain.auth.model.ConsentVersions;
 import org.cmarket.cmarket.domain.auth.model.EmailVerification;
 import org.cmarket.cmarket.domain.auth.model.TokenBlacklist;
 import org.cmarket.cmarket.domain.auth.model.User;
@@ -104,6 +106,14 @@ public class AuthServiceImpl implements AuthService {
                 .role(UserRole.USER)
                 .provider(AuthProvider.LOCAL)
                 .socialId(null)
+                // 약관 동의 (#1088)
+                // ⚠️ 여기까지 왔다는 것은 **컨트롤러의 @NotNull + @AssertTrue 를 지나왔다**는
+                //    뜻이라 둘 다 true 다. 그래서 다시 안 묻고 AGREED 로 적는다.
+                //    ⚠️ 그 검증을 SignUpRequest 에서 떼면 이 줄이 거짓말이 된다 — 같이 봐라.
+                .termsAgreementStatus(TermsAgreementStatus.AGREED)
+                .termsAgreedAt(LocalDateTime.now())
+                .agreedTermsVersion(ConsentVersions.TERMS)
+                .agreedPrivacyVersion(ConsentVersions.PRIVACY)
                 .build();
         
         User savedUser = userRepository.save(user);

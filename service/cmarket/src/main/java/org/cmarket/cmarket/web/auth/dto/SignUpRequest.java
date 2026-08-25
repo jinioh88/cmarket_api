@@ -1,5 +1,6 @@
 package org.cmarket.cmarket.web.auth.dto;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -41,5 +42,22 @@ public class SignUpRequest {
     
     @Size(max = 50, message = "구/군은 최대 50자까지 입력 가능합니다.")
     private String addressGugun;  // 구/군
+
+    // ── 약관 동의 (#1088) ────────────────────────────────────────────────
+    //
+    // ⚠️ **@AssertTrue 하나로는 못 막는다.** 규정상 null 은 통과다
+    //    (Jakarta Bean Validation: "Null elements are considered valid").
+    //    값을 아예 안 보내면 그냥 지나간다 — **@NotNull 을 같이 붙여야** 막힌다.
+    //
+    // ⚠️ 화면에서도 두 겹으로 막고 있지만(단추 끄기 + 제출 직전 검사), 화면을 거치지 않는
+    //    요청은 그 둘을 다 지나온다. 서버가 마지막 자물쇠다.
+
+    @NotNull(message = "이용약관 동의 여부는 필수입니다.")
+    @AssertTrue(message = "이용약관에 동의해야 가입할 수 있습니다.")
+    private Boolean termsAgreed;
+
+    @NotNull(message = "개인정보처리방침 동의 여부는 필수입니다.")
+    @AssertTrue(message = "개인정보처리방침에 동의해야 가입할 수 있습니다.")
+    private Boolean privacyAgreed;
 }
 

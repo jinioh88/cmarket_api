@@ -87,6 +87,28 @@ public class User {
     
     @Column(length = 1000)
     private String introduction;  // 소개글 (최대 1000자)
+
+    // ── 약관 동의 (#1088) ────────────────────────────────────────────────
+    // ⚠️ **네 칸 다 nullable 로 둔다.** 행이 이미 있는 표에 NOT NULL 을 붙이면 MySQL 이
+    //    암묵 기본값을 넣거나 실패한다. 컬럼을 먼저 만들고, 기존 행은 UPDATE 로 채운다.
+    //    (ddl-auto=update 는 **컬럼만** 만든다 — 기존 행을 안 채운다)
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private TermsAgreementStatus termsAgreementStatus;
+
+    /** 동의한 시각. 약관 도입 전 가입자는 null 이다 — 받은 적이 없으니 적을 시각도 없다. */
+    @Column
+    private LocalDateTime termsAgreedAt;
+
+    // ⚠️ **판을 두 칸으로 나눈다.** 이용약관과 개인정보처리방침의 시행일이 **이미 다르다.**
+    //    한 칸으로 묶으면 어느 판에 동의했는지 못 적는다.
+    //    (시각은 하나다 — 지금은 둘을 한 번에 받아 늘 같다)
+    @Column(length = 20)
+    private String agreedTermsVersion;
+
+    @Column(length = 20)
+    private String agreedPrivacyVersion;
     
     @Builder
     public User(
@@ -99,7 +121,11 @@ public class User {
             String addressGugun,
             UserRole role,
             AuthProvider provider,
-            String socialId
+            String socialId,
+            TermsAgreementStatus termsAgreementStatus,
+            LocalDateTime termsAgreedAt,
+            String agreedTermsVersion,
+            String agreedPrivacyVersion
     ) {
         this.email = email;
         this.password = password;
@@ -111,10 +137,38 @@ public class User {
         this.role = role != null ? role : UserRole.USER;
         this.provider = provider;
         this.socialId = socialId;
+        // ⚠️ **모르면 「동의 안 함」쪽으로 기운다.** 값을 안 넘긴 자리가 있으면 AGREED 가
+        //    아니라 PRE_TERMS 가 되어야 한다 — 동의한 적 없는 사람을 동의했다고 적는 것이
+        //    반대보다 훨씬 나쁘다.
+        this.termsAgreementStatus =
+                termsAgreementStatus != null ? termsAgreementStatus : TermsAgreementStatus.PRE_TERMS;
+        this.termsAgreedAt = termsAgreedAt;
+        this.agreedTermsVersion = agreedTermsVersion;
+        this.agreedPrivacyVersion = agreedPrivacyVersion;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
     
+    /**
+     * 약관 동의를 기록한다 (#1088 — 소셜 가입 마무리에서 부른다)
+     *
+     * ⚠️ **이미 AGREED 인 사람은 덮어쓰지 않는다.** 처음 동의한 시각이 증명에 쓰는 값이다.
+     *    프로필을 고칠 때마다 시각이 밀리면 「언제 동의했나」를 못 말한다.
+     *
+     * ⚠️ 소셜 가입은 프로필 수정과 **같은 API** 를 쓴다. 그래서 값이 안 오면
+     *    (프로필 수정) 아무것도 안 건드린다.
+     */
+    public void recordTermsAgreement(String termsVersion, String privacyVersion) {
+        if (this.termsAgreementStatus == TermsAgreementStatus.AGREED) {
+            return;
+        }
+        this.termsAgreementStatus = TermsAgreementStatus.AGREED;
+        this.termsAgreedAt = LocalDateTime.now();
+        this.agreedTermsVersion = termsVersion;
+        this.agreedPrivacyVersion = privacyVersion;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     /**
      * 비밀번호 변경
      */

@@ -223,6 +223,9 @@ public class ProfileController {
                         .addressGugun(request.getAddressGugun())
                         .profileImageUrl(request.getProfileImageUrl())
                         .introduction(request.getIntroduction())
+                        // 약관 동의 (#1088). 프로필 수정에서는 안 오므로 null 이다
+                        .termsAgreed(request.getTermsAgreed())
+                        .privacyAgreed(request.getPrivacyAgreed())
                         .build();
         
         // 앱 서비스 호출

@@ -21,5 +21,8 @@ public class ProfileUpdateCommand {
     private String addressGugun;
     private String profileImageUrl;
     private String introduction;
+    // 약관 동의 (#1088) — 소셜 가입 마무리에서만 온다. 프로필 수정에서는 null 이다
+    private Boolean termsAgreed;
+    private Boolean privacyAgreed;
 }
 
