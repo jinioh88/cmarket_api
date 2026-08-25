@@ -6,6 +6,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Locale;
 
 /**
  * 횟수 제한 (#849)
@@ -54,6 +55,25 @@ public class RateLimiter {
         return tryConsume(bucket, ip, limit, window);
     }
 
+    /**
+     * 이메일 기준으로 한 번 쓴다.
+     *
+     * ⚠️ **대문자와 앞뒤 빈칸을 지운 뒤 센다**(#1091). Redis 키는 넘어온 글자를 그대로
+     *    쓰는데 **DB 는 대소문자를 안 가린다**(연결 collation 이 utf8mb4_general_ci 다).
+     *    그래서 `A@x.com` 과 `a@x.com` 은 **같은 사람을 찾아 메일을 보내면서
+     *    계수기는 따로 센다** — 첫 글자만 대문자로 바꾸면 창이 그대로 뚫린다.
+     *    폰 자판이 첫 글자를 저절로 크게 만드는 일이 흔해서 **공격이 아니어도 걸린다.**
+     *
+     * ⚠️ 대소문자를 가리는 DB 였더라도 **이 고침은 해롭지 않다.** 그때는 대문자가 섞인
+     *    이메일이 애초에 사람을 못 찾아 메일이 안 나가므로, 키를 맞춰도 달라질 것이 없다.
+     */
+    public boolean tryConsumeEmail(String bucket, String email, int limit, Duration window) {
+        if (email == null) {
+            return true;
+        }
+        return tryConsume(bucket, email.trim().toLowerCase(Locale.ROOT), limit, window);
+    }
+
     public boolean tryConsume(String bucket, String id, int limit, Duration window) {
         String key = KEY_PREFIX + bucket + ":" + id;
         try {
@@ -63,6 +83,22 @@ public class RateLimiter {
             }
             if (count == 1L) {
                 // 첫 번째일 때만 창을 연다. 매번 걸면 창이 계속 밀려 영원히 안 닫힌다.
+                //
+                // ⚠️ **알고도 안 고친 구멍이 하나 있다**(#1091 에서 짚었다). INCR 은 됐는데
+                //    바로 이 expire 가 예외를 던지면, 아래 catch 가 그 요청은 통과시키지만
+                //    **키는 TTL 없이 남는다.** 그러면 다음 요청부터 count 가 2·3·4… 로 늘어
+                //    한도에 걸린다. **한도가 1 인 account-notice:sent 는 두 번째 요청부터
+                //    영영 막힌다 — 10분이 지나도 안 풀린다.**
+                //
+                //    안 고친 까닭: INCR 과 expire 사이에 레디스 연결이 끊길 때뿐이라 아주 드물고,
+                //    고치는 방법(「TTL 이 없으면 건다」로 바꾸기)은 왕복이 하나 늘면서도
+                //    원자성은 여전히 불완전하다. 값어치보다 무게가 크다고 봤다.
+                //
+                //    ⚠️ **대신 이 글을 남긴다.** 「나만 안내 메일이 안 온다」는 신고가 들어오면
+                //    이것부터 의심해라. 그 키의 TTL 을 보고, -1(창이 없음)이면 지우면 풀린다.
+                //
+                //      redis-cli TTL auth:ratelimit:account-notice:sent:<소문자 이메일>
+                //      redis-cli DEL auth:ratelimit:account-notice:sent:<소문자 이메일>
                 stringRedisTemplate.expire(key, window);
             }
             if (count > limit) {

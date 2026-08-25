@@ -132,7 +132,7 @@ public class EmailServiceImpl implements EmailService {
         // ⚠️ **화면 응답은 이것과 무관하게 늘 같다.** 여기서 안 보내도 컨트롤러는 이미
         //    「가입된 계정이 있다면 안내 메일을 보냈습니다」를 돌려준 뒤다 —
         //    갈라 말하는 순간 계정 열거가 다시 뚫린다(#849).
-        if (!rateLimiter.tryConsume("account-notice:sent", to, 1, NOTICE_WINDOW)) {
+        if (!rateLimiter.tryConsumeEmail("account-notice:sent", to, 1, NOTICE_WINDOW)) {
             log.info("가입 방법 안내 메일 건너뜀 — 최근에 이미 보냈다: {}", to);
             return;
         }

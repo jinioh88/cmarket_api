@@ -270,8 +270,14 @@ public class AuthController {
         // ⚠️ 한도를 넉넉히 잡았다(IP 분당 30 · 계정 분당 10). 여기 걸리면 정상 사용자가
         //    로그인을 못 한다 — 특히 **한 곳에서 여러 사람이 테스트할 때** 같은 IP 로 묶인다.
         //    출시 전 테스터 기간에 문제가 되면 이 블록만 걷어내면 된다.
+        //
+        // ⚠️ **이메일 쪽은 tryConsumeEmail 로 센다**(#1091). 대소문자만 바꿔도 계수기가 갈라져
+        //    **계정당 제한이 무력화된다** — DB 는 대소문자를 안 가려 로그인은 그대로 되는데
+        //    셈만 따로 되기 때문이다. 안내 메일 쪽을 고치다 **같은 뿌리의 같은 결함**이라
+        //    여기도 함께 맞췄다. 여기는 편의가 아니라 **무차별 대입을 늦추는 자리**라
+        //    뚫려 있으면 안 된다.
         if (!(rateLimiter.tryConsumeIp("login:ip", httpRequest.getRemoteAddr(), LOGIN_LIMIT_PER_IP, LOGIN_WINDOW)
-                & rateLimiter.tryConsume("login:email", request.getEmail(), LOGIN_LIMIT_PER_EMAIL, LOGIN_WINDOW))) {
+                & rateLimiter.tryConsumeEmail("login:email", request.getEmail(), LOGIN_LIMIT_PER_EMAIL, LOGIN_WINDOW))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new SuccessResponse<>(
                             ResponseCode.TOO_MANY_REQUESTS,
@@ -464,7 +470,7 @@ public class AuthController {
         //    `&&` 로 건너뛰면 IP 한도에 걸린 동안 이메일 쪽 계수기가 멈춘다.
         boolean allowed =
                 rateLimiter.tryConsumeIp("account-find:ip", httpRequest.getRemoteAddr(), MAIL_LIMIT_PER_IP, MAIL_WINDOW)
-                        & rateLimiter.tryConsume("account-find:email", request.getEmail(), MAIL_LIMIT_PER_EMAIL, MAIL_WINDOW);
+                        & rateLimiter.tryConsumeEmail("account-find:email", request.getEmail(), MAIL_LIMIT_PER_EMAIL, MAIL_WINDOW);
 
         if (allowed) {
             // 앱 서비스 호출 — 없는 이메일이어도 예외를 던지지 않는다
@@ -491,7 +497,7 @@ public class AuthController {
         // ⚠️ 막혔을 때도 같은 200 이다(계정 찾기와 같은 까닭).
         boolean allowed =
                 rateLimiter.tryConsumeIp("password-reset:ip", httpRequest.getRemoteAddr(), MAIL_LIMIT_PER_IP, MAIL_WINDOW)
-                        & rateLimiter.tryConsume("password-reset:email", request.getEmail(), MAIL_LIMIT_PER_EMAIL, MAIL_WINDOW);
+                        & rateLimiter.tryConsumeEmail("password-reset:email", request.getEmail(), MAIL_LIMIT_PER_EMAIL, MAIL_WINDOW);
 
         if (allowed) {
             authService.sendPasswordResetCode(request.getEmail());
