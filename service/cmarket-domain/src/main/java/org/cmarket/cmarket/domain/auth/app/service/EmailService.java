@@ -35,5 +35,21 @@ public interface EmailService {
      * @param provider 가입 경로 (LOCAL · GOOGLE · KAKAO)
      */
     void sendAccountMethodNotice(String to, AuthProvider provider);
+
+    /**
+     * 비밀번호 재설정 인증코드 발송 (#849 2단계)
+     *
+     * ⚠️ **내용은 sendVerificationCode 와 같은데 메서드를 따로 둔다.** 까닭은 「언제
+     *    비동기로 보내는가」가 다르기 때문이다.
+     *
+     *      회원가입   동기여야 한다 — 메일이 안 나가면 그 자리에서 사용자에게 알려야 한다.
+     *                 조용히 실패하면 오지 않는 코드를 하염없이 기다리게 된다
+     *      비번 찾기  비동기여야 한다 — 회원일 때만 SMTP 왕복만큼 느려지면 **걸리는 시간으로**
+     *                 회원 여부가 새어 나간다. 화면 문구를 뭉개도 이 구멍은 남는다
+     *
+     * @param to               수신자 이메일
+     * @param verificationCode 인증코드 (6자리 숫자)
+     */
+    void sendPasswordResetCode(String to, String verificationCode);
 }
 

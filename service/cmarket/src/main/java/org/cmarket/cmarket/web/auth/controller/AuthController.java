@@ -24,7 +24,10 @@ import org.cmarket.cmarket.web.auth.dto.WithdrawalRequest;
 import org.cmarket.cmarket.web.common.response.ResponseCode;
 import org.cmarket.cmarket.web.common.response.SuccessResponse;
 import org.cmarket.cmarket.web.common.security.JwtTokenProvider;
+import org.cmarket.cmarket.web.common.security.RateLimiter;
 import org.cmarket.cmarket.web.common.security.SecurityUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -61,6 +64,22 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;  // 검증용으로만 사용
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final org.cmarket.cmarket.web.auth.service.GoogleAuthService googleAuthService;
+    private final RateLimiter rateLimiter;
+
+    // ── 횟수 제한 한도 (#849) ────────────────────────────────────────────
+    // ⚠️ **넉넉하게 잡았다.** 여기 걸리면 정상 사용자가 못 쓰게 되는데, 계정 열거는
+    //    수천~수만 번 두드려야 쓸모가 생기는 공격이라 굳이 빡빡할 까닭이 없다.
+    //    막혔을 때 무엇을 돌려주는지가 자리마다 다르다 — 아래 각 메서드 주석 참고.
+    private static final Duration MAIL_WINDOW = Duration.ofHours(1);
+    private static final int MAIL_LIMIT_PER_IP = 10;
+    private static final int MAIL_LIMIT_PER_EMAIL = 5;
+
+    private static final Duration CHECK_WINDOW = Duration.ofMinutes(1);
+    private static final int CHECK_LIMIT_PER_IP = 60;
+
+    private static final Duration LOGIN_WINDOW = Duration.ofMinutes(1);
+    private static final int LOGIN_LIMIT_PER_IP = 30;
+    private static final int LOGIN_LIMIT_PER_EMAIL = 10;
     
     public AuthController(
             AuthService authService,
@@ -68,7 +87,8 @@ public class AuthController {
             JwtTokenProvider jwtTokenProvider,
             EmailVerificationService emailVerificationService,
             TokenBlacklistRepository tokenBlacklistRepository,
-            org.cmarket.cmarket.web.auth.service.GoogleAuthService googleAuthService
+            org.cmarket.cmarket.web.auth.service.GoogleAuthService googleAuthService,
+            RateLimiter rateLimiter
     ) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
@@ -76,6 +96,7 @@ public class AuthController {
         this.emailVerificationService = emailVerificationService;
         this.tokenBlacklistRepository = tokenBlacklistRepository;
         this.googleAuthService = googleAuthService;
+        this.rateLimiter = rateLimiter;
     }
     
     /**
@@ -90,8 +111,24 @@ public class AuthController {
      */
     @GetMapping("/email/check")
     public ResponseEntity<SuccessResponse<Boolean>> checkEmail(
-            @RequestParam @Email String email
+            @RequestParam @Email String email,
+            HttpServletRequest httpRequest
     ) {
+        // ⚠️ **여기는 가입 여부를 일부러 알려주는 자리다.** 가입 화면에서 중복을 안 알려 주면
+        //    사람이 「왜 가입이 안 되지」에 갇힌다 — 쓸모가 안전보다 앞선다고 정했다(#849).
+        //    대신 **대량으로 훑는 것**을 횟수로 막는다.
+        //
+        // ⚠️ 여기서는 429 를 줘도 된다. 「막힐 만큼 눌렀다」는 신호이지 「이 이메일이
+        //    회원이다」라는 신호가 아니다. 오히려 조용히 통과시키면 화면이 잘못된 답을 믿는다.
+        if (!rateLimiter.tryConsumeIp("email-check:ip", httpRequest.getRemoteAddr(), CHECK_LIMIT_PER_IP, CHECK_WINDOW)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new SuccessResponse<>(
+                            ResponseCode.TOO_MANY_REQUESTS,
+                            "요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.",
+                            null
+                    ));
+        }
+
         boolean isAvailable = authService.isEmailAvailable(email);
         
         return ResponseEntity.status(HttpStatus.OK)
@@ -221,8 +258,25 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<SuccessResponse<LoginResponse>> login(
-            @Valid @RequestBody LoginRequest request
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest
     ) {
+        // ⚠️ **로그인은 지금도 열거가 안 된다** — 없는 계정이든 비밀번호가 틀렸든 같은 문구를
+        //    준다. 여기 제한을 두는 것은 열거보다 **비밀번호 무차별 대입**을 늦추기 위해서다.
+        //
+        // ⚠️ 한도를 넉넉히 잡았다(IP 분당 30 · 계정 분당 10). 여기 걸리면 정상 사용자가
+        //    로그인을 못 한다 — 특히 **한 곳에서 여러 사람이 테스트할 때** 같은 IP 로 묶인다.
+        //    출시 전 테스터 기간에 문제가 되면 이 블록만 걷어내면 된다.
+        if (!(rateLimiter.tryConsumeIp("login:ip", httpRequest.getRemoteAddr(), LOGIN_LIMIT_PER_IP, LOGIN_WINDOW)
+                & rateLimiter.tryConsume("login:email", request.getEmail(), LOGIN_LIMIT_PER_EMAIL, LOGIN_WINDOW))) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new SuccessResponse<>(
+                            ResponseCode.TOO_MANY_REQUESTS,
+                            "로그인 시도가 너무 잦습니다. 잠시 후 다시 시도해주세요.",
+                            null
+                    ));
+        }
+
         // 웹 DTO → 앱 DTO 변환
         LoginCommand command = LoginCommand.builder()
                 .email(request.getEmail())
@@ -397,10 +451,22 @@ public class AuthController {
      */
     @PostMapping("/account/find")
     public ResponseEntity<SuccessResponse<String>> findAccount(
-            @Valid @RequestBody AccountFindRequest request
+            @Valid @RequestBody AccountFindRequest request,
+            HttpServletRequest httpRequest
     ) {
-        // 앱 서비스 호출 — 없는 이메일이어도 예외를 던지지 않는다
-        authService.sendAccountMethodNotice(request.getEmail());
+        // ⚠️ **막혔을 때도 같은 200 을 준다.** 429 를 주면 「막힐 만큼 눌렀다」가 또 하나의
+        //    신호가 되고, 무엇보다 화면은 어차피 서버 응답을 안 보므로 사용자에게는
+        //    똑같이 보인다. 메일만 안 나간다.
+        // ⚠️ `&&` 가 아니라 `&` 다. 앞이 false 여도 뒤를 반드시 세야 한다 —
+        //    `&&` 로 건너뛰면 IP 한도에 걸린 동안 이메일 쪽 계수기가 멈춘다.
+        boolean allowed =
+                rateLimiter.tryConsumeIp("account-find:ip", httpRequest.getRemoteAddr(), MAIL_LIMIT_PER_IP, MAIL_WINDOW)
+                        & rateLimiter.tryConsume("account-find:email", request.getEmail(), MAIL_LIMIT_PER_EMAIL, MAIL_WINDOW);
+
+        if (allowed) {
+            // 앱 서비스 호출 — 없는 이메일이어도 예외를 던지지 않는다
+            authService.sendAccountMethodNotice(request.getEmail());
+        }
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(
@@ -411,20 +477,32 @@ public class AuthController {
     
     @PostMapping("/password/reset/send")
     public ResponseEntity<SuccessResponse<String>> sendPasswordResetCode(
-            @Valid @RequestBody PasswordResetSendRequest request
+            @Valid @RequestBody PasswordResetSendRequest request,
+            HttpServletRequest httpRequest
     ) {
         // 1. 앱 서비스 호출 (이메일로 사용자 조회 및 인증코드 발송)
         //
         // ⚠️ 인증코드를 응답에 담지 않는다. 이쪽은 계정 탈취로 이어진다 —
         //    코드를 얻으면 verify를 통과시킬 수 있고, resetPassword는 인증 여부만
         //    보므로 남의 이메일 주소만 알면 비밀번호를 바꿀 수 있게 된다.
-        authService.sendPasswordResetCode(request.getEmail());
+        // ⚠️ 막혔을 때도 같은 200 이다(계정 찾기와 같은 까닭).
+        boolean allowed =
+                rateLimiter.tryConsumeIp("password-reset:ip", httpRequest.getRemoteAddr(), MAIL_LIMIT_PER_IP, MAIL_WINDOW)
+                        & rateLimiter.tryConsume("password-reset:email", request.getEmail(), MAIL_LIMIT_PER_EMAIL, MAIL_WINDOW);
+
+        if (allowed) {
+            authService.sendPasswordResetCode(request.getEmail());
+        }
 
         // 2. 응답 반환
+        //
+        // ⚠️ **문구가 바뀌었다(#849).** 예전에는 「인증코드를 발송했습니다」였는데, 이제
+        //    소셜 계정에게는 인증코드가 아니라 가입 방법 안내가 가고, 없는 이메일에는
+        //    아무것도 안 간다. 그 셋이 밖에서 구분되면 안 되므로 문구를 하나로 맞춘다.
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(
                         ResponseCode.SUCCESS,
-                        "인증코드를 발송했습니다."
+                        "가입된 계정이 있다면 안내 메일을 보냈습니다."
                 ));
     }
     

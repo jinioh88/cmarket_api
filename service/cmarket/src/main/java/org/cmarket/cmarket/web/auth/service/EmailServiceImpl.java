@@ -62,6 +62,42 @@ public class EmailServiceImpl implements EmailService {
     }
     
     /**
+     * 비밀번호 재설정 인증코드 발송 (#849 2단계)
+     *
+     * ⚠️ **비동기다.** 동기로 보내면 회원일 때만 SMTP 왕복만큼 느려져, 화면 문구를 뭉개도
+     *    **걸리는 시간으로** 회원 여부가 새어 나간다.
+     *
+     * ⚠️ 회원가입의 sendVerificationCode 는 **동기 그대로 둔다** — 그쪽은 메일이 안 나가면
+     *    그 자리에서 알려야 한다.
+     */
+    @Override
+    @Async("mailTaskExecutor")
+    public void sendPasswordResetCode(String to, String verificationCode) {
+        String emailContent = buildVerificationEmailContent(verificationCode);
+
+        if (mailEnabled) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(to);
+                message.setSubject("[Cuddle Market] 이메일 인증코드");
+                message.setText(emailContent);
+
+                mailSender.send(message);
+                log.info("비밀번호 재설정 인증코드 발송 완료: {}", to);
+            } catch (Exception e) {
+                // 비동기라 여기서 던져도 호출한 쪽으로 안 간다. 이미 응답이 나갔다.
+                log.warn("비밀번호 재설정 인증코드 발송 실패: {}", to, e);
+            }
+        } else {
+            log.info("=== 비밀번호 재설정 인증코드 (개발 모드) ===");
+            log.info("수신자: {}", to);
+            log.info("인증코드: {}", verificationCode);
+            log.info("================================");
+        }
+    }
+
+    /**
      * 가입 방법 안내 메일 발송 (#849 계정 찾기)
      *
      * ⚠️ **반드시 비동기로 돌린다.** 메일 발송이 요청 스레드에 있으면 회원일 때만

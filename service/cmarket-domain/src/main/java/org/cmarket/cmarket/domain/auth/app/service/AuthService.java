@@ -62,7 +62,12 @@ public interface AuthService {
      * @param email 사용자 이메일
      * @throws IllegalArgumentException 사용자가 존재하지 않을 때
      */
-    String sendPasswordResetCode(String email);
+    /**
+     * ⚠️ **예전에는 인증코드(String)를 돌려줬는데 이제 void 다.** 부르는 쪽이 그 값을 쓰지
+     *    않았고(AuthController 가 버렸다), 무엇보다 **없는 이메일이면 만들 코드 자체가 없다.**
+     *    돌려줄 것이 있고 없고가 갈리면 그것이 또 하나의 신호가 된다(#849).
+     */
+    void sendPasswordResetCode(String email);
 
     /**
      * 계정 찾기 — 가입 방법을 메일로 안내한다 (#849)

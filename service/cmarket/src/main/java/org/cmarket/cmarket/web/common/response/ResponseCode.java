@@ -16,6 +16,7 @@ public enum ResponseCode {
     NOT_FOUND(404, "찾을 수 없음"),
     CONFLICT(409, "충돌"),
     PAYLOAD_TOO_LARGE(413, "요청 본문이 너무 큽니다"),
+    TOO_MANY_REQUESTS(429, "요청이 너무 잦습니다"),
     
     INTERNAL_SERVER_ERROR(500, "서버 오류");
     

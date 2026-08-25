@@ -201,35 +201,47 @@ public class AuthServiceImpl implements AuthService {
                 .ifPresent(user -> emailService.sendAccountMethodNotice(email, user.getProvider()));
     }
 
+    /**
+     * 비밀번호 재설정 인증코드 발송 (#849 2단계 — 응답을 뭉갠다)
+     *
+     * ⚠️ **예전에는 갈라 말했다.** 없는 이메일이면 「등록되지 않은 이메일입니다」로 400 을,
+     *    소셜이면 「카카오로 가입한 계정입니다」로 400 을 던졌다. 화면이 그것을 그대로
+     *    보여줘서 **남의 이메일을 넣어 본 사람이 회원 여부와 가입 경로를 알아낼 수 있었다**
+     *    (계정 열거). 그 정보는 피싱에 그대로 쓰인다.
+     *
+     *    이제 세 경우가 밖에서 구분되지 않는다.
+     *
+     *      없는 이메일   아무것도 안 한다
+     *      소셜 계정     「가입 방법 안내」 메일을 보낸다 (계정 찾기와 같은 메일)
+     *      LOCAL        인증코드 메일을 보낸다
+     *      → 어느 쪽이든 예외를 안 던진다. 컨트롤러는 늘 같은 200 을 준다
+     *
+     * ⚠️ **친절을 잃지 않았다.** 예전에 화면이 하던 「카카오로 가입하셨어요」를 이제 **메일이**
+     *    한다. 메일함을 여는 사람은 그 이메일의 주인뿐이라, 알아야 할 사람에게만 닿는다.
+     *
+     * ⚠️ **메일을 비동기로 보낸다.** 동기로 보내면 회원일 때만 SMTP 왕복만큼 느려져,
+     *    문구를 뭉개도 **걸리는 시간으로** 회원 여부가 새어 나간다.
+     *
+     * ⚠️ **resetPassword() 는 그대로 둔다.** 거기는 인증코드를 통과한 사람만 오는 자리라
+     *    갈라 말해도 안 샌다. 오히려 뭉개면 「왜 안 바뀌지」가 된다.
+     */
     @Override
-    public String sendPasswordResetCode(String email) {
-        // 1. 이메일로 사용자 조회 (소프트 삭제된 사용자 제외)
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
-                .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다."));
-        
-        // 2. 소셜 로그인 사용자는 비밀번호 재설정 불가
-        //
-        // ⚠️ 어느 소셜인지 문구에 담는다. 「소셜 로그인 사용자는…」으로 뭉뚱그리면 화면이
-        //    「카카오·구글로 가입한 계정이에요」라고밖에 못 쓴다. 기억이 안 나서 여기까지 온
-        //    사람에게 「아, 카카오로 했었지」를 되살려 주는 것이 그 화면의 일이다.
-        if (user.getProvider() != AuthProvider.LOCAL) {
-            String provider = user.getProvider().displayName();
-            throw new IllegalArgumentException(provider + "로 가입한 계정입니다. " + provider + " 로그인을 이용해주세요.");
-        }
-        
-        // 3. 이메일 인증코드 생성 및 저장
-        EmailVerificationSendCommand command = EmailVerificationSendCommand.builder()
-                .email(email)
-                .build();
-        String verificationCode = emailVerificationService.sendVerificationCode(command);
-        
-        // 4. 이메일 발송
-        emailService.sendVerificationCode(email, verificationCode);
-        
-        // 5. 인증코드 반환
-        return verificationCode;
+    public void sendPasswordResetCode(String email) {
+        userRepository.findByEmailAndDeletedAtIsNull(email).ifPresent(user -> {
+            if (user.getProvider() != AuthProvider.LOCAL) {
+                // 소셜 계정 — 인증코드를 보내 봐야 쓸 데가 없다. 대신 가입 방법을 알려준다.
+                emailService.sendAccountMethodNotice(email, user.getProvider());
+                return;
+            }
+
+            EmailVerificationSendCommand command = EmailVerificationSendCommand.builder()
+                    .email(email)
+                    .build();
+            String verificationCode = emailVerificationService.sendVerificationCode(command);
+            emailService.sendPasswordResetCode(email, verificationCode);
+        });
     }
-    
+
     @Override
     public void resetPassword(String email, String newPassword) {
         // 1. 이메일로 사용자 조회 (소프트 삭제된 사용자 제외)
