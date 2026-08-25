@@ -64,7 +64,7 @@ public class EmailServiceImpl implements EmailService {
     /**
      * 비밀번호 재설정 인증코드 발송 (#849 2단계)
      *
-     * ⚠️ **비동기다.** 동기로 보내면 회원일 때만 SMTP 왕복만큼 느려져, 화면 문구를 뭉개도
+     * ⚠️ **비동기다.** 동기로 보내면 회원일 때만 SMTP 왕복만큼 느려져, 화면이 같은 말만 해도
      *    **걸리는 시간으로** 회원 여부가 새어 나간다.
      *
      * ⚠️ 회원가입의 sendVerificationCode 는 **동기 그대로 둔다** — 그쪽은 메일이 안 나가면
