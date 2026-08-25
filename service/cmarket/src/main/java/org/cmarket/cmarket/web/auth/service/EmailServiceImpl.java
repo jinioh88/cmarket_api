@@ -8,8 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.cmarket.cmarket.web.common.security.RateLimiter;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
 
 /**
  * 이메일 발송 서비스 구현체
@@ -23,16 +26,28 @@ public class EmailServiceImpl implements EmailService {
     
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
     
+    /**
+     * 같은 사람에게 「가입 방법 안내」를 다시 보내지 않는 창 (#1091)
+     *
+     * ⚠️ **인증코드 메일에는 걸지 않는다.** 그쪽은 코드가 매번 다르고 「재전송」이 정당한
+     *    기능이다 — 메일이 늦거나 스팸함에 갔을 수 있다. 여기 거는 안내 메일은
+     *    **내용이 늘 똑같아서** 여러 통 갈 이유가 전혀 없다.
+     */
+    private static final Duration NOTICE_WINDOW = Duration.ofMinutes(10);
+
     private JavaMailSender mailSender;
     private final String fromEmail;
     private final boolean mailEnabled;
+    private final RateLimiter rateLimiter;
     
     public EmailServiceImpl(
             @Autowired(required = false) JavaMailSender mailSender,
-            @Value("${spring.mail.username:}") String fromEmail
+            @Value("${spring.mail.username:}") String fromEmail,
+            RateLimiter rateLimiter
     ) {
         this.mailSender = mailSender;
         this.fromEmail = fromEmail;
+        this.rateLimiter = rateLimiter;
         // spring.mail.host가 설정되어 있고 JavaMailSender가 있으면 실제 이메일 발송 활성화
         this.mailEnabled = (mailSender != null) && !fromEmail.isEmpty();
     }
@@ -110,6 +125,18 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("mailTaskExecutor")
     public void sendAccountMethodNotice(String to, AuthProvider provider) {
+        // ⚠️ **같은 내용을 여러 통 보내지 않는다**(#1091). 사용자가 「메일이 안 오네?」 하고
+        //    다시 누르면 누른 만큼 나갔고, 똑같은 메일이 쌓이면 **오류가 난 줄 안다.**
+        //    실제로 2026-08-25 검증 때 세 번 요청해 3통이 도착했다.
+        //
+        // ⚠️ **화면 응답은 이것과 무관하게 늘 같다.** 여기서 안 보내도 컨트롤러는 이미
+        //    「가입된 계정이 있다면 안내 메일을 보냈습니다」를 돌려준 뒤다 —
+        //    갈라 말하는 순간 계정 열거가 다시 뚫린다(#849).
+        if (!rateLimiter.tryConsume("account-notice:sent", to, 1, NOTICE_WINDOW)) {
+            log.info("가입 방법 안내 메일 건너뜀 — 최근에 이미 보냈다: {}", to);
+            return;
+        }
+
         String emailContent = buildAccountMethodEmailContent(provider);
 
         if (mailEnabled) {
