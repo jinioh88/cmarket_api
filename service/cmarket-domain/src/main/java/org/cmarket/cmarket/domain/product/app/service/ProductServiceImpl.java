@@ -411,14 +411,19 @@ public class ProductServiceImpl implements ProductService {
         Long userId = user.getId();
         
         // 찜 목록 조회 (페이지네이션, 최신순 정렬)
-        Page<Favorite> favoritePage = favoriteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        // ⚠️ **삭제된 상품은 쿼리에서 이미 빠진다.** 예전에는 여기서 전부 가져온 뒤 아래에서
+        //    걸러냈는데, 걸러낸 것이 total 에는 그대로 남아 「목록은 비었는데 개수는 1」 이
+        //    됐다. 목록과 개수가 같은 조건에서 나오게 쿼리로 옮겼다.
+        Page<Favorite> favoritePage = favoriteRepository.findAliveByUserIdOrderByCreatedAtDesc(userId, pageable);
         
         // N+1 문제 방지: 찜한 상품 ID 목록 추출
         List<Long> productIds = favoritePage.getContent().stream()
                 .map(Favorite::getProductId)
                 .toList();
         
-        // 상품 정보 일괄 조회 (소프트 삭제된 상품 제외)
+        // 상품 정보 일괄 조회
+        // 위 쿼리가 이미 걸렀으므로 여기서 빠지는 것은 없다. 그래도 filter 를 남겨 두는 것은,
+        // 조회와 삭제가 겹치는 아주 짧은 사이에 지워진 상품을 막기 위해서다.
         List<Product> products = productIds.isEmpty()
                 ? java.util.Collections.emptyList()
                 : productRepository.findAllById(productIds).stream()
@@ -457,7 +462,8 @@ public class ProductServiceImpl implements ProductService {
                 .filter(java.util.Objects::nonNull)
                 .toList();
         
-        // PageResult 생성 (필터링된 결과에 맞춰 total 조정)
+        // PageResult 생성
+        // total 은 쿼리가 센 값을 그대로 쓴다 — 이제 목록과 같은 조건이라 어긋나지 않는다.
         PageResult<FavoriteItemDto> pageResult = new PageResult<>(
                 favoritePage.getNumber(),
                 favoritePage.getSize(),
