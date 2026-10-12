@@ -316,14 +316,17 @@ public class ProductServiceImpl implements ProductService {
         if (statusChanged) {
             List<Long> favoriteUserIds = favoriteRepository.findUserIdsByProductId(productId);
             for (Long favoriteUserId : favoriteUserIds) {
-                // oldTradeStatus가 null인 경우 null로 전달
-                String oldStatusName = oldTradeStatus != null ? oldTradeStatus.name() : null;
+                // 알림은 사람이 읽는 글이라 enum 이름(RESERVED 등) 대신 화면에 쓰는 한국어로 적는다 (#1120)
+                String statusChangeContent = String.format("'%s' 상품의 거래 상태가 '%s'에서 '%s'%s 변경되었습니다.",
+                        product.getTitle(),
+                        toTradeStatusLabel(oldTradeStatus, product.getProductType()),
+                        toTradeStatusLabel(command.tradeStatus(), product.getProductType()),
+                        command.tradeStatus() == TradeStatus.COMPLETED ? "로" : "으로");
                 NotificationCreateCommand notificationCommand = NotificationCreateCommand.builder()
                         .userId(favoriteUserId)
                         .notificationType(NotificationType.PRODUCT_FAVORITE_STATUS_CHANGED)
                         .title("찜한 상품의 거래 상태가 변경되었습니다")
-                        .content(String.format("'%s' 상품의 거래 상태가 '%s'에서 '%s'로 변경되었습니다.", 
-                                product.getTitle(), oldStatusName, command.tradeStatus().name()))
+                        .content(statusChangeContent)
                         .relatedEntityType("PRODUCT")
                         .relatedEntityId(productId)
                         .build();
@@ -732,6 +735,27 @@ public class ProductServiceImpl implements ProductService {
         );
 
         return new MyProductListDto(pageResult);
+    }
+
+    /**
+     * 거래 상태를 알림에 적을 한국어로 바꾼다.
+     *
+     * 웹·앱 화면이 쓰는 말과 같아야 한다 — 프론트 packages/shared/src/lib/tradeStatus.ts 의 getTradeLabel 과 같은 규칙이다.
+     * 판매요청 글은 완료를 「요청완료」, 상태가 없을 때(null)를 「요청중」이라고 부른다.
+     */
+    private static String toTradeStatusLabel(TradeStatus tradeStatus, ProductType productType) {
+        boolean isRequest = productType == ProductType.REQUEST;
+
+        if (tradeStatus == TradeStatus.RESERVED) {
+            return "예약중";
+        }
+        if (tradeStatus == TradeStatus.COMPLETED) {
+            return isRequest ? "요청완료" : "판매완료";
+        }
+        if (tradeStatus == TradeStatus.SELLING) {
+            return "판매중";
+        }
+        return isRequest ? "요청중" : "판매중";
     }
 }
 
