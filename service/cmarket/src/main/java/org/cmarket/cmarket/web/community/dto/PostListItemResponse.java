@@ -18,6 +18,8 @@ import java.util.regex.Pattern;
 @NoArgsConstructor
 public class PostListItemResponse {
     private static final Pattern MARKDOWN_IMAGE_PATTERN = Pattern.compile("!\\[[^\\]]*\\]\\((https?://[^\\s)]+)");
+    /** 사진 표시 한 덩이 전체 — ![대체 문구](주소) */
+    private static final Pattern MARKDOWN_IMAGE_WHOLE_PATTERN = Pattern.compile("!\\[[^\\]]*\\]\\([^)]*\\)");
 
     private Long id;
     private String title;
@@ -43,11 +45,13 @@ public class PostListItemResponse {
         response.title = dto.getTitle();
         
         // content를 100글자로 제한
+        // 사진 표시 ![](주소) 를 먼저 뺀다. 그대로 자르면 주소가 중간에서 끊겨 목록에 글자로 보인다 (#1120)
         String content = dto.getContent();
-        if (content != null && content.length() > 100) {
-            response.contentPreview = content.substring(0, 100);
+        String preview = toPreviewText(content);
+        if (preview != null && preview.length() > 100) {
+            response.contentPreview = preview.substring(0, 100);
         } else {
-            response.contentPreview = content;
+            response.contentPreview = preview;
         }
         response.thumbnailImageUrl = extractThumbnailImageUrl(content);
         response.authorNickname = dto.getAuthorNickname();
@@ -58,6 +62,19 @@ public class PostListItemResponse {
         response.updatedAt = dto.getUpdatedAt();
         response.isModified = dto.getIsModified();
         return response;
+    }
+
+    /**
+     * 미리보기에 쓸 글자만 남긴다. 사진 표시를 통째로 빼고, 빠진 자리에 남는 빈 줄·빈칸을 한 칸으로 줄인다.
+     */
+    private static String toPreviewText(String content) {
+        if (content == null) {
+            return null;
+        }
+
+        return MARKDOWN_IMAGE_WHOLE_PATTERN.matcher(content).replaceAll(" ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private static String extractThumbnailImageUrl(String content) {
