@@ -39,3 +39,6 @@ out/
 ### Application Properties (민감한 정보 포함) ###
 service/cmarket/src/main/resources/application.properties
 service/cmarket/src/main/resources/application-local.properties
+
+### Nginx Proxy Manager 데이터 (인증서, 토큰, 접속 기록) ###
+proxy/
