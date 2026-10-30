@@ -35,6 +35,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -93,7 +94,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     @Transactional(readOnly = true)
     public PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword,
-                                   Integer page, Integer size, String email) {
+                                   Integer page, Integer size, String email, Collection<Long> onlyPostIds) {
         // 정렬 기준 기본값 설정
         if (sortBy == null || sortBy.isEmpty()) {
             sortBy = "latest";
@@ -110,6 +111,11 @@ public class CommunityServiceImpl implements CommunityService {
         int pageSize = size != null ? size : 20;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
+        // 거를 글 번호가 정해졌는데 하나도 없으면(예: 진행 중인 행사가 없다) 조회할 것도 없다
+        if (onlyPostIds != null && onlyPostIds.isEmpty()) {
+            return new PostListDto(PageResult.fromPage(Page.<PostListItemDto>empty(pageable)));
+        }
+
         // 내가 차단한 사람의 글은 목록에서 뺀다.
         // 비회원이면 차단이 있을 수 없으므로 빈 목록이다.
         final Long viewerId = email != null
@@ -121,7 +127,7 @@ public class CommunityServiceImpl implements CommunityService {
 
         // 게시글 목록 조회 (QueryDSL 사용)
         Page<Post> postPage = postRepository.findPosts(
-                sortBy, sortOrder, boardType, searchType, keyword, blockedAuthorIds, pageable);
+                sortBy, sortOrder, boardType, searchType, keyword, blockedAuthorIds, onlyPostIds, pageable);
         
         // Post 엔티티를 PostListItemDto로 변환 (엔티티에 저장된 작성자 정보 사용)
         PageResult<PostListItemDto> pageResult = PageResult.fromPage(

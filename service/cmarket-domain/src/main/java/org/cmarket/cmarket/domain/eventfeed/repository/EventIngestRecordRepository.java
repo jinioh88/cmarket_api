@@ -15,6 +15,8 @@ public interface EventIngestRecordRepository extends JpaRepository<EventIngestRe
 
     List<EventIngestRecord> findBySourceCodeAndExternalIdIn(String sourceCode, Collection<String> externalIds);
 
+    List<EventIngestRecord> findByStatus(EventIngestStatus status);
+
     List<EventIngestRecord> findByStatusAndPostIdIn(EventIngestStatus status, Collection<Long> postIds);
 
     boolean existsBySourceCodeAndExternalId(String sourceCode, String externalId);

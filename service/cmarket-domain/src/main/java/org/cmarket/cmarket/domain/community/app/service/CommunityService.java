@@ -6,6 +6,8 @@ import org.cmarket.cmarket.domain.community.app.dto.PostDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostListDto;
 import org.cmarket.cmarket.domain.community.model.BoardType;
 
+import java.util.Collection;
+
 /**
  * 커뮤니티 서비스 인터페이스
  * 
@@ -35,7 +37,7 @@ public interface CommunityService {
      * @return 게시글 목록
      */
     PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword,
-                            Integer page, Integer size, String email);
+                            Integer page, Integer size, String email, Collection<Long> onlyPostIds);
 
     /**
      * 게시글 상세 조회

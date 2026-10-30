@@ -15,6 +15,7 @@ import org.cmarket.cmarket.web.community.dto.PostResponse;
 import org.cmarket.cmarket.web.community.dto.PostUpdateRequest;
 import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.eventfeed.app.EventIngestService;
+import org.cmarket.cmarket.domain.eventfeed.model.EventPeriodStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -41,6 +44,8 @@ public class CommunityController {
     
     private final CommunityService communityService;
     private final EventIngestService eventIngestService;
+
+    private static final ZoneId KOREA = ZoneId.of("Asia/Seoul");
     
     public CommunityController(CommunityService communityService, EventIngestService eventIngestService) {
         this.communityService = communityService;
@@ -104,7 +109,8 @@ public class CommunityController {
             @RequestParam(required = false) String searchType,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) EventPeriodStatus eventStatus
     ) {
         // 비회원도 볼 수 있는 주소다. 로그인 안 했으면 null이 온다.
         // (로그인했으면 그 사람이 차단한 작성자의 글을 목록에서 뺀다)
@@ -112,7 +118,8 @@ public class CommunityController {
 
         // 앱 서비스 호출
         org.cmarket.cmarket.domain.community.app.dto.PostListDto postListDto =
-                communityService.getPostList(sortBy, boardType, searchType, keyword, page, size, email);
+                communityService.getPostList(sortBy, boardType, searchType, keyword, page, size, email,
+                        findEventPostIds(boardType, eventStatus));
         
         // 앱 DTO → 웹 DTO 변환
         PostListResponse response = PostListResponse.fromDto(postListDto);
@@ -124,6 +131,17 @@ public class CommunityController {
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
     }
     
+    /**
+     * 행사 소식을 진행 상태(예정, 진행 중, 종료)로 거를 때 남길 글 번호. 안 거르면 null.
+     * 「오늘」은 한국 날짜다 — 서버 시간대와 상관없이 웹의 상태 칩과 같은 날로 센다.
+     */
+    private List<Long> findEventPostIds(BoardType boardType, EventPeriodStatus eventStatus) {
+        if (boardType != BoardType.EVENT || eventStatus == null) {
+            return null;
+        }
+        return eventIngestService.findPostIdsByPeriodStatus(eventStatus, LocalDate.now(KOREA));
+    }
+
     /**
      * 게시글 상세 조회
      *

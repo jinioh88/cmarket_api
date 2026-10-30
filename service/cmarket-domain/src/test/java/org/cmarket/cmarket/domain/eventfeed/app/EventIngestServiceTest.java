@@ -10,6 +10,7 @@ import org.cmarket.cmarket.domain.eventfeed.app.dto.EventInfoDto;
 import org.cmarket.cmarket.domain.eventfeed.app.dto.EventIngestResult;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestRecord;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestStatus;
+import org.cmarket.cmarket.domain.eventfeed.model.EventPeriodStatus;
 import org.cmarket.cmarket.domain.eventfeed.repository.EventIngestRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -197,5 +198,26 @@ class EventIngestServiceTest {
         when(recordRepository.findBySourceCodeAndExternalIdIn(any(), any())).thenReturn(List.of(seen));
 
         assertThat(service.findUnseen("SEOUL", List.of("1", "2"))).containsExactly("2");
+    }
+
+    private EventIngestRecord postedRecord(long postId, LocalDate start, LocalDate end) {
+        return EventIngestRecord.builder()
+                .sourceCode("SEOUL").externalId(String.valueOf(postId)).status(EventIngestStatus.POSTED)
+                .postId(postId).sourceUrl("u").eventStartDate(start).eventEndDate(end).build();
+    }
+
+    @Test
+    void 진행_상태로_글_번호를_거른다() {
+        LocalDate today = LocalDate.of(2026, 10, 30);
+        when(recordRepository.findByStatus(EventIngestStatus.POSTED)).thenReturn(List.of(
+                postedRecord(1L, LocalDate.of(2026, 11, 8), null),                          // 예정
+                postedRecord(2L, LocalDate.of(2026, 10, 29), LocalDate.of(2026, 11, 2)),    // 진행 중
+                postedRecord(3L, LocalDate.of(2026, 10, 25), null),                          // 종료
+                postedRecord(4L, null, null)                                                 // 날짜 없음
+        ));
+
+        assertThat(service.findPostIdsByPeriodStatus(EventPeriodStatus.UPCOMING, today)).containsExactly(1L);
+        assertThat(service.findPostIdsByPeriodStatus(EventPeriodStatus.ONGOING, today)).containsExactly(2L);
+        assertThat(service.findPostIdsByPeriodStatus(EventPeriodStatus.ENDED, today)).containsExactly(3L);
     }
 }

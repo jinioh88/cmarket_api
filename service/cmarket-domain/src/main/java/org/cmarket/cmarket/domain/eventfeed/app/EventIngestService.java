@@ -10,11 +10,13 @@ import org.cmarket.cmarket.domain.eventfeed.app.dto.EventIngestCommand;
 import org.cmarket.cmarket.domain.eventfeed.app.dto.EventIngestResult;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestRecord;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestStatus;
+import org.cmarket.cmarket.domain.eventfeed.model.EventPeriodStatus;
 import org.cmarket.cmarket.domain.eventfeed.repository.EventIngestRecordRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +70,21 @@ public class EventIngestService {
         }
         return recordRepository.findByStatusAndPostIdIn(EventIngestStatus.POSTED, postIds).stream()
                 .collect(Collectors.toMap(EventIngestRecord::getPostId, EventInfoDto::from, (a, b) -> a));
+    }
+
+    /**
+     * 진행 상태가 맞는 행사 글 번호
+     * 
+     * 행사 글은 1년에 수십 건이라 게시 기록을 모두 읽어 자바에서 거른다.
+     * 그래야 상태 규칙이 EventPeriodStatus.of 한 곳에만 있다.
+     */
+    @Transactional(readOnly = true)
+    public List<Long> findPostIdsByPeriodStatus(EventPeriodStatus periodStatus, LocalDate today) {
+        return recordRepository.findByStatus(EventIngestStatus.POSTED).stream()
+                .filter(record -> record.getPostId() != null)
+                .filter(record -> EventPeriodStatus.of(record.getEventStartDate(), record.getEventEndDate(), today) == periodStatus)
+                .map(EventIngestRecord::getPostId)
+                .toList();
     }
 
     @Transactional

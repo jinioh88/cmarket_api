@@ -3,6 +3,7 @@ package org.cmarket.cmarket.domain.community.app.service;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.cmarket.cmarket.domain.community.app.dto.PostCreateCommand;
+import org.cmarket.cmarket.domain.community.app.dto.PostListDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostUpdateCommand;
 import org.cmarket.cmarket.domain.community.app.exception.EventBoardWriteNotAllowedException;
 import org.cmarket.cmarket.domain.community.model.BoardType;
@@ -17,12 +18,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -85,5 +91,26 @@ class CommunityServiceEventGuardTest {
     private Post postOf(BoardType boardType) {
         return Post.builder().authorId(52L).authorNickname("커들소식")
                 .title("제목").content("내용").boardType(boardType).build();
+    }
+
+    // 행사 소식을 진행 상태로 거를 때, 걸러진 글 번호만 목록에 남긴다(설계 7-2절)
+
+    @Test
+    void getPostList_onlyPostIds_passedToRepository() {
+        when(postRepository.findPosts(any(), any(), any(), any(), any(), anyList(), eq(List.of(5L, 6L)), any()))
+                .thenReturn(Page.empty());
+
+        communityService.getPostList("latest", BoardType.EVENT, null, null, 0, 10, null, List.of(5L, 6L));
+
+        verify(postRepository).findPosts(any(), any(), eq(BoardType.EVENT), any(), any(), anyList(), eq(List.of(5L, 6L)), any());
+    }
+
+    @Test
+    void getPostList_emptyOnlyPostIds_returnsEmptyPageWithoutQuery() {
+        PostListDto result = communityService.getPostList("latest", BoardType.EVENT, null, null, 0, 10, null, List.of());
+
+        assertThat(result.posts().content()).isEmpty();
+        assertThat(result.posts().totalElements()).isZero();
+        verify(postRepository, never()).findPosts(any(), any(), any(), any(), any(), anyList(), any(), any());
     }
 }

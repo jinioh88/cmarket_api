@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -32,7 +33,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
     
     @Override
     public Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, String searchType, String keyword,
-                                List<Long> excludedAuthorIds, Pageable pageable) {
+                                List<Long> excludedAuthorIds, Collection<Long> onlyPostIds, Pageable pageable) {
         // 기본 조건: 소프트 삭제되지 않은 게시글만
         BooleanExpression whereCondition = post.deletedAt.isNull();
 
@@ -45,6 +46,11 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
         // 8개만 남는 식이 되어 페이지 수와 무한스크롤이 어긋난다. 쿼리에서 뺀다.
         if (excludedAuthorIds != null && !excludedAuthorIds.isEmpty()) {
             whereCondition = whereCondition.and(post.authorId.notIn(excludedAuthorIds));
+        }
+
+        // 행사 소식을 진행 상태로 거를 때 그 글 번호만 남긴다 (빈 목록은 서비스가 미리 끝낸다)
+        if (onlyPostIds != null && !onlyPostIds.isEmpty()) {
+            whereCondition = whereCondition.and(post.id.in(onlyPostIds));
         }
 
         // 게시판 유형 필터링 (boardType이 null이 아니면 해당 유형만 조회)
