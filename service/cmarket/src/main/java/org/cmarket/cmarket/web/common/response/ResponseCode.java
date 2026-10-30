@@ -18,7 +18,8 @@ public enum ResponseCode {
     PAYLOAD_TOO_LARGE(413, "요청 본문이 너무 큽니다"),
     TOO_MANY_REQUESTS(429, "요청이 너무 잦습니다"),
     
-    INTERNAL_SERVER_ERROR(500, "서버 오류");
+    INTERNAL_SERVER_ERROR(500, "서버 오류"),
+    SERVICE_UNAVAILABLE(503, "서비스를 사용할 수 없습니다");
     
     private final int code;
     private final String message;

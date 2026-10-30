@@ -79,3 +79,13 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+// JUnit 5 시험을 돌린다. 이 줄이 없으면 이 모듈의 시험은 「찾지 못함」으로 아예 안 돈다.
+//
+// ⚠️ CmarketApiApplicationTests(스프링 전체를 띄우는 시험)는 뺀다. 운영 설정(JWT 키, DB 등)이
+// 없으면 뜨지 못해서 이 맥에서 늘 실패하고, 이 줄을 더하기 전에도 한 번도 돈 적이 없다.
+// 넣으면 `./gradlew build` 로 배포할 때 처음으로 돌아 배포를 막는다.
+tasks.named('test') {
+    useJUnitPlatform()
+    exclude '**/CmarketApiApplicationTests*'
+}
