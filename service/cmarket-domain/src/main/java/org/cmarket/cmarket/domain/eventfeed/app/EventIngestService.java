@@ -104,10 +104,8 @@ public class EventIngestService {
             return new EventIngestResult(EventIngestResult.Status.RECORDED_SKIP, null);
         }
 
-        // 출처가 달라도 같은 행사(행사명 열쇠와 시작일이 같다)면 한 번만 올린다
-        if (command.getEventStartDate() != null && !titleKey.isEmpty()
-                && recordRepository.existsByStatusAndTitleKeyAndEventStartDate(
-                        EventIngestStatus.POSTED, titleKey, command.getEventStartDate())) {
+        // 출처가 달라도 같은 행사면 한 번만 올린다: 시작일과 지역이 같고 행사명 열쇠가 비슷하다
+        if (isDuplicate(titleKey, command)) {
             saveRecord(command, EventIngestStatus.SKIPPED_DUPLICATE, null, titleKey);
             return new EventIngestResult(EventIngestResult.Status.DUPLICATE, null);
         }
@@ -125,6 +123,21 @@ public class EventIngestService {
 
         saveRecord(command, EventIngestStatus.POSTED, post.getId(), titleKey);
         return new EventIngestResult(EventIngestResult.Status.CREATED, post.getId());
+    }
+
+    private boolean isDuplicate(String titleKey, EventIngestCommand command) {
+        if (command.getEventStartDate() == null || titleKey.isEmpty()) {
+            return false;
+        }
+        return recordRepository.findByStatusAndEventStartDate(EventIngestStatus.POSTED, command.getEventStartDate())
+                .stream()
+                .filter(record -> sameRegionOrUnknown(record.getRegion(), command.getRegion()))
+                .anyMatch(record -> EventTitleKey.isSimilar(record.getTitleKey(), titleKey));
+    }
+
+    /** 둘 중 하나라도 지역이 비어 있으면 지역은 보지 않는다 */
+    private static boolean sameRegionOrUnknown(String a, String b) {
+        return a == null || b == null || a.equals(b);
     }
 
     private void validateLength(EventIngestCommand command) {

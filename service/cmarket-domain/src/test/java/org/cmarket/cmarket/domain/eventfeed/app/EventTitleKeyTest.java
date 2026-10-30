@@ -27,4 +27,24 @@ class EventTitleKeyTest {
     void 길이는_100자_이하() {
         assertThat(EventTitleKey.normalize("가".repeat(150))).hasSize(100);
     }
+
+    // 2026-10-30 실제: 쇼알라에 같은 박람회가 철자만 달리 두 번 올라 있었다
+
+    @Test
+    void 철자만_조금_다르면_비슷하다() {
+        String a = EventTitleKey.normalize("2026 크리쳐 케어로그 파충류 페스티발 - 대전");
+        String b = EventTitleKey.normalize("크리처 케어로그 파충류 페스티벌");
+        assertThat(EventTitleKey.isSimilar(a, b)).isTrue();
+    }
+
+    @Test
+    void 한쪽이_다른_쪽에_들어_있으면_비슷하다() {
+        assertThat(EventTitleKey.isSimilar("서울댕냥데이즈", "서울댕냥데이즈반려의하루")).isTrue();
+    }
+
+    @Test
+    void 다른_행사는_비슷하지_않다() {
+        assertThat(EventTitleKey.isSimilar("서울펫쇼", "서울캣쇼")).isFalse();
+        assertThat(EventTitleKey.isSimilar("메가주일산시즌2", "케이펫페어부산시즌2")).isFalse();
+    }
 }

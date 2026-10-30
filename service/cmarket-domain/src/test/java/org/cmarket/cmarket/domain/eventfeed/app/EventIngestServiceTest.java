@@ -88,8 +88,8 @@ class EventIngestServiceTest {
 
     @Test
     void 행사명과_시작일이_같은_게시_기록이_있으면_중복으로_둔다() {
-        when(recordRepository.existsByStatusAndTitleKeyAndEventStartDate(
-                EventIngestStatus.POSTED, "서울댕냥데이즈", LocalDate.of(2026, 10, 31))).thenReturn(true);
+        when(recordRepository.findByStatusAndEventStartDate(EventIngestStatus.POSTED, LocalDate.of(2026, 10, 31)))
+                .thenReturn(List.of(postedOn("서울댕냥데이즈", "서울")));
 
         EventIngestResult result = service.ingest(posted().title("서울 댕냥데이즈(2026)").build());
 
@@ -254,5 +254,36 @@ class EventIngestServiceTest {
         verify(recordRepository).save(record.capture());
         assertThat(record.getValue().getActivities()).isEqualTo("첫째 줄\n둘째");
         assertThat(record.getValue().getChecks()).isNull();
+    }
+
+    private EventIngestRecord postedOn(String titleKey, String region) {
+        return EventIngestRecord.builder().sourceCode("SHOWALA").externalId("x").status(EventIngestStatus.POSTED)
+                .postId(9L).sourceUrl("u").titleKey(titleKey).region(region)
+                .eventStartDate(LocalDate.of(2026, 10, 31)).build();
+    }
+
+    @Test
+    void 철자가_조금_다른_같은_지역_같은_날_행사는_중복() {
+        when(recordRepository.findByStatusAndEventStartDate(EventIngestStatus.POSTED, LocalDate.of(2026, 10, 31)))
+                .thenReturn(List.of(postedOn(EventTitleKey.normalize("2026 크리쳐 케어로그 파충류 페스티발 - 대전"), "서울")));
+
+        EventIngestResult result = service.ingest(posted().title("크리처 케어로그 파충류 페스티벌").build());
+
+        assertThat(result.getStatus()).isEqualTo(EventIngestResult.Status.DUPLICATE);
+        verify(postRepository, never()).save(any());
+    }
+
+    @Test
+    void 이름이_비슷해도_지역이_다르면_다른_행사() {
+        User author = mock(User.class);
+        when(author.getId()).thenReturn(52L);
+        when(userRepository.findByIdAndDeletedAtIsNull(52L)).thenReturn(Optional.of(author));
+        when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(recordRepository.findByStatusAndEventStartDate(EventIngestStatus.POSTED, LocalDate.of(2026, 10, 31)))
+                .thenReturn(List.of(postedOn("파충류동반자in청주", "충북")));
+
+        EventIngestResult result = service.ingest(posted().title("파충류 동반자 in 부산").region("부산").build());
+
+        assertThat(result.getStatus()).isEqualTo(EventIngestResult.Status.CREATED);
     }
 }
