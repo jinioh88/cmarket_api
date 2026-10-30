@@ -3,16 +3,23 @@ package org.cmarket.cmarket.domain.community.repository;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.DateExpression;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.model.Post;
 import org.cmarket.cmarket.domain.community.model.QPost;
+import org.cmarket.cmarket.domain.eventfeed.model.EventIngestStatus;
+import org.cmarket.cmarket.domain.eventfeed.model.QEventIngestRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,6 +33,7 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
     
     private final JPAQueryFactory queryFactory;
     private final QPost post = QPost.post;
+    private final QEventIngestRecord eventIngestRecord = QEventIngestRecord.eventIngestRecord;
     
     public PostRepositoryCustomImpl(EntityManager entityManager) {
         this.queryFactory = new JPAQueryFactory(entityManager);
@@ -92,9 +100,17 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
         JPAQuery<Post> query = queryFactory
                 .selectFrom(post)
                 .where(whereCondition)
-                .orderBy(buildOrderSpecifiers(sortBy, sortOrder))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize());
+
+        // 행사 소식의 「곧 끝나는 순」: 수집 기록의 기간으로 정렬한다(설계 7-2절)
+        if ("ending".equalsIgnoreCase(sortBy) && boardType == BoardType.EVENT) {
+            query.leftJoin(eventIngestRecord)
+                    .on(eventIngestRecord.postId.eq(post.id).and(eventIngestRecord.status.eq(EventIngestStatus.POSTED)))
+                    .orderBy(buildEndingOrder());
+        } else {
+            query.orderBy(buildOrderSpecifiers(sortBy, sortOrder));
+        }
         
         // 카운트 쿼리
         JPAQuery<Long> countQuery = queryFactory
@@ -107,6 +123,25 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
     
+    /**
+     * 「곧 끝나는 순」 정렬
+     * 
+     * 끝나는 날(없으면 시작일)이 오늘(한국 날짜)보다 앞이면 끝난 행사다. 끝나지 않은 행사를 먼저,
+     * 그 안에서 끝나는 날이 가까운 순으로 둔다. 끝난 행사는 맨 아래로 간다. 웹 상태 칩과 같은 규칙이다.
+     */
+    private OrderSpecifier<?>[] buildEndingOrder() {
+        DateExpression<LocalDate> endDate = eventIngestRecord.eventEndDate.coalesce(eventIngestRecord.eventStartDate);
+        LocalDate today = LocalDate.now(KOREA);
+        NumberExpression<Integer> ended = new CaseBuilder().when(endDate.lt(today)).then(1).otherwise(0);
+        return new OrderSpecifier<?>[]{
+                ended.asc(),
+                endDate.asc(),
+                post.createdAt.desc()
+        };
+    }
+
+    private static final ZoneId KOREA = ZoneId.of("Asia/Seoul");
+
     /**
      * 정렬 조건 생성
      * 
