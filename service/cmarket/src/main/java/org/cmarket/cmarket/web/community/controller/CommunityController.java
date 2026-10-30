@@ -110,7 +110,8 @@ public class CommunityController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) EventPeriodStatus eventStatus
+            @RequestParam(required = false) EventPeriodStatus eventStatus,
+            @RequestParam(required = false, defaultValue = "false") boolean includeEvent
     ) {
         // 비회원도 볼 수 있는 주소다. 로그인 안 했으면 null이 온다.
         // (로그인했으면 그 사람이 차단한 작성자의 글을 목록에서 뺀다)
@@ -119,7 +120,7 @@ public class CommunityController {
         // 앱 서비스 호출
         org.cmarket.cmarket.domain.community.app.dto.PostListDto postListDto =
                 communityService.getPostList(sortBy, boardType, searchType, keyword, page, size, email,
-                        findEventPostIds(boardType, eventStatus));
+                        findEventPostIds(boardType, eventStatus), includeEvent);
         
         // 앱 DTO → 웹 DTO 변환
         PostListResponse response = PostListResponse.fromDto(postListDto);

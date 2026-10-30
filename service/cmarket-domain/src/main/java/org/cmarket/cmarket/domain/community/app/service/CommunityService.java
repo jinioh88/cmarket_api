@@ -37,7 +37,8 @@ public interface CommunityService {
      * @return 게시글 목록
      */
     PostListDto getPostList(String sortBy, BoardType boardType, String searchType, String keyword,
-                            Integer page, Integer size, String email, Collection<Long> onlyPostIds);
+                            Integer page, Integer size, String email, Collection<Long> onlyPostIds,
+                            boolean includeEvent);
 
     /**
      * 게시글 상세 조회

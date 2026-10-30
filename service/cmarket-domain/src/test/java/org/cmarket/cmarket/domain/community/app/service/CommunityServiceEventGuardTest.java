@@ -27,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -98,21 +99,21 @@ class CommunityServiceEventGuardTest {
 
     @Test
     void getPostList_onlyPostIds_passedToRepository() {
-        when(postRepository.findPosts(any(), any(), any(), any(), any(), anyList(), eq(List.of(5L, 6L)), any()))
+        when(postRepository.findPosts(any(), any(), any(), any(), any(), anyList(), eq(List.of(5L, 6L)), eq(false), any()))
                 .thenReturn(Page.empty());
 
-        communityService.getPostList("latest", BoardType.EVENT, null, null, 0, 10, null, List.of(5L, 6L));
+        communityService.getPostList("latest", BoardType.EVENT, null, null, 0, 10, null, List.of(5L, 6L), false);
 
-        verify(postRepository).findPosts(any(), any(), eq(BoardType.EVENT), any(), any(), anyList(), eq(List.of(5L, 6L)), any());
+        verify(postRepository).findPosts(any(), any(), eq(BoardType.EVENT), any(), any(), anyList(), eq(List.of(5L, 6L)), eq(false), any());
     }
 
     @Test
     void getPostList_emptyOnlyPostIds_returnsEmptyPageWithoutQuery() {
-        PostListDto result = communityService.getPostList("latest", BoardType.EVENT, null, null, 0, 10, null, List.of());
+        PostListDto result = communityService.getPostList("latest", BoardType.EVENT, null, null, 0, 10, null, List.of(), false);
 
         assertThat(result.posts().content()).isEmpty();
         assertThat(result.posts().totalElements()).isZero();
-        verify(postRepository, never()).findPosts(any(), any(), any(), any(), any(), anyList(), any(), any());
+        verify(postRepository, never()).findPosts(any(), any(), any(), any(), any(), anyList(), any(), anyBoolean(), any());
     }
 
     // 행사 소식에는 댓글 영역을 두지 않는다. 화면에서만 숨기면 주소를 직접 불러 달 수 있다(설계 7-1절)
@@ -126,5 +127,17 @@ class CommunityServiceEventGuardTest {
                 .isInstanceOf(EventBoardWriteNotAllowedException.class)
                 .hasMessageContaining("댓글");
         verify(commentRepository, never()).save(any());
+    }
+
+    // 최종 검토 I4: 관리자 목록은 게시판을 고르지 않아도 행사 소식까지 모두 보인다(설계 7-1절)
+
+    @Test
+    void getPostList_includeEvent_passedToRepository() {
+        when(postRepository.findPosts(any(), any(), isNull(), any(), any(), anyList(), isNull(), eq(true), any()))
+                .thenReturn(Page.empty());
+
+        communityService.getPostList("latest", null, null, null, 0, 10, null, null, true);
+
+        verify(postRepository).findPosts(any(), any(), isNull(), any(), any(), anyList(), isNull(), eq(true), any());
     }
 }

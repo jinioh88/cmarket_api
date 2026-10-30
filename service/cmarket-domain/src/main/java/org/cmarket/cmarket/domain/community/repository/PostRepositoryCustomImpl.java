@@ -41,7 +41,8 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
     
     @Override
     public Page<Post> findPosts(String sortBy, String sortOrder, BoardType boardType, String searchType, String keyword,
-                                List<Long> excludedAuthorIds, Collection<Long> onlyPostIds, Pageable pageable) {
+                                List<Long> excludedAuthorIds, Collection<Long> onlyPostIds, boolean includeEvent,
+                                Pageable pageable) {
         // 기본 조건: 소프트 삭제되지 않은 게시글만
         BooleanExpression whereCondition = post.deletedAt.isNull();
 
@@ -68,7 +69,8 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
         // boardType=EVENT를 줄 때만 나온다.
         if (boardType != null) {
             whereCondition = whereCondition.and(post.boardType.eq(boardType));
-        } else {
+        } else if (!includeEvent) {
+            // 관리자 목록(includeEvent=true)은 모두 보인다(설계 7-1절)
             whereCondition = whereCondition.and(post.boardType.ne(BoardType.EVENT));
         }
         
