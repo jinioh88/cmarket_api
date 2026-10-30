@@ -83,6 +83,23 @@ public class EventIngestRecord {
     @Column(length = 100)
     private String summary;
 
+    // 상세 표와 목록에 쓰는 칸 (설계 7-2절). 목록 칸은 줄바꿈으로 이어 한 칸에 둔다
+    @Column(length = 100)
+    private String target;
+
+    @Column(length = 100)
+    private String fee;
+
+    @Column(length = 1000)
+    private String activities;
+
+    @Column(length = 500)
+    private String checks;
+
+    // 포스터 원래 주소 (복사하지 않는다)
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     @Column(nullable = false, name = "collected_at")
     private LocalDateTime collectedAt;
 
@@ -99,7 +116,12 @@ public class EventIngestRecord {
             String region,
             String place,
             String organizer,
-            String summary
+            String summary,
+            String target,
+            String fee,
+            String activities,
+            String checks,
+            String imageUrl
     ) {
         this.sourceCode = sourceCode;
         this.externalId = externalId;
@@ -113,6 +135,11 @@ public class EventIngestRecord {
         this.place = place;
         this.organizer = organizer;
         this.summary = summary;
+        this.target = target;
+        this.fee = fee;
+        this.activities = activities;
+        this.checks = checks;
+        this.imageUrl = imageUrl;
         this.collectedAt = LocalDateTime.now();
     }
 }

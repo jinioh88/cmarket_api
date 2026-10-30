@@ -160,6 +160,25 @@ public class EventIngestService {
                 .place(command.getPlace())
                 .organizer(command.getOrganizer())
                 .summary(command.getSummary())
+                .target(command.getTarget())
+                .fee(command.getFee())
+                .activities(joinLines(command.getActivities()))
+                .checks(joinLines(command.getChecks()))
+                .imageUrl(command.getImageUrl())
                 .build());
+    }
+
+    /**
+     * 목록 칸을 줄바꿈으로 이어 한 칸에 둔다. 항목 안의 줄바꿈은 빈칸으로, 빈 항목은 뺀다
+     */
+    private static String joinLines(List<String> items) {
+        if (items == null) {
+            return null;
+        }
+        String joined = items.stream()
+                .filter(item -> item != null && !item.isBlank())
+                .map(item -> item.replaceAll("\\s*\\n\\s*", " ").trim())
+                .collect(Collectors.joining("\n"));
+        return joined.isEmpty() ? null : joined;
     }
 }

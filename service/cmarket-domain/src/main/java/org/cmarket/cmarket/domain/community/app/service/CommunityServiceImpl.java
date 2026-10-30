@@ -21,6 +21,7 @@ import org.cmarket.cmarket.domain.community.model.Post;
 import org.cmarket.cmarket.domain.community.model.Comment;
 import org.cmarket.cmarket.domain.community.repository.PostRepository;
 import org.cmarket.cmarket.domain.community.repository.CommentRepository;
+import org.cmarket.cmarket.domain.exception.ErrorCode;
 import org.cmarket.cmarket.domain.notification.app.dto.NotificationCreateCommand;
 import org.cmarket.cmarket.domain.notification.app.event.NotificationCreatedEvent;
 import org.cmarket.cmarket.domain.notification.model.NotificationType;
@@ -221,6 +222,11 @@ public class CommunityServiceImpl implements CommunityService {
         // 게시글 존재 확인 (소프트 삭제된 게시글 제외)
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new PostNotFoundException());
+        
+        // 행사 소식에는 댓글을 두지 않는다 (화면에서만 숨기면 주소를 직접 불러 달 수 있다)
+        if (post.getBoardType() == BoardType.EVENT) {
+            throw new EventBoardWriteNotAllowedException(ErrorCode.EVENT_BOARD_COMMENT_NOT_ALLOWED);
+        }
         
         // 사용자 조회 (작성자 확인)
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)

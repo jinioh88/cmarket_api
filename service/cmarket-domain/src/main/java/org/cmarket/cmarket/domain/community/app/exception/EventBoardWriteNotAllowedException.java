@@ -13,4 +13,8 @@ public class EventBoardWriteNotAllowedException extends BusinessException {
     public EventBoardWriteNotAllowedException() {
         super(ErrorCode.EVENT_BOARD_WRITE_NOT_ALLOWED);
     }
+    
+    public EventBoardWriteNotAllowedException(ErrorCode errorCode) {
+        super(errorCode);
+    }
 }

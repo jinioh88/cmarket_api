@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestStatus;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 행사 수집 명령 DTO
@@ -27,4 +28,8 @@ public class EventIngestCommand {
     private String place;
     private String organizer;
     private String summary;
+    private String target;
+    private String fee;
+    private List<String> activities;
+    private List<String> checks;
 }

@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestRecord;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 행사 글에 붙는 행사 칸 DTO
@@ -20,6 +21,12 @@ public class EventInfoDto {
     private final String place;
     private final String organizer;
     private final String summary;
+    private final String target;
+    private final String fee;
+    private final List<String> activities;
+    private final List<String> checks;
+    private final String sourceUrl;
+    private final String imageUrl;
 
     public static EventInfoDto from(EventIngestRecord record) {
         return new EventInfoDto(
@@ -28,7 +35,17 @@ public class EventInfoDto {
                 record.getRegion(),
                 record.getPlace(),
                 record.getOrganizer(),
-                record.getSummary()
+                record.getSummary(),
+                record.getTarget(),
+                record.getFee(),
+                lines(record.getActivities()),
+                lines(record.getChecks()),
+                record.getSourceUrl(),
+                record.getImageUrl()
         );
+    }
+
+    private static List<String> lines(String joined) {
+        return joined == null || joined.isBlank() ? List.of() : List.of(joined.split("\n"));
     }
 }

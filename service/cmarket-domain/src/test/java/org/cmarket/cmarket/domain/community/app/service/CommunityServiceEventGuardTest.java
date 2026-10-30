@@ -2,6 +2,7 @@ package org.cmarket.cmarket.domain.community.app.service;
 
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
+import org.cmarket.cmarket.domain.community.app.dto.CommentCreateCommand;
 import org.cmarket.cmarket.domain.community.app.dto.PostCreateCommand;
 import org.cmarket.cmarket.domain.community.app.dto.PostListDto;
 import org.cmarket.cmarket.domain.community.app.dto.PostUpdateCommand;
@@ -112,5 +113,18 @@ class CommunityServiceEventGuardTest {
         assertThat(result.posts().content()).isEmpty();
         assertThat(result.posts().totalElements()).isZero();
         verify(postRepository, never()).findPosts(any(), any(), any(), any(), any(), anyList(), any(), any());
+    }
+
+    // 행사 소식에는 댓글 영역을 두지 않는다. 화면에서만 숨기면 주소를 직접 불러 달 수 있다(설계 7-1절)
+
+    @Test
+    void createComment_onEventPost_throws() {
+        when(postRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(postOf(BoardType.EVENT)));
+        CommentCreateCommand command = CommentCreateCommand.builder().content("댓글").build();
+
+        assertThatThrownBy(() -> communityService.createComment(1L, command, "a@b.com"))
+                .isInstanceOf(EventBoardWriteNotAllowedException.class)
+                .hasMessageContaining("댓글");
+        verify(commentRepository, never()).save(any());
     }
 }

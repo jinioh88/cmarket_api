@@ -8,6 +8,7 @@ import org.cmarket.cmarket.domain.eventfeed.app.dto.EventIngestCommand;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestStatus;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 행사 수집 요청 DTO
@@ -56,6 +57,18 @@ public class EventIngestRequest {
     @Size(max = 100)
     private String summary;
 
+    @Size(max = 100)
+    private String target;
+
+    @Size(max = 100)
+    private String fee;
+
+    @Size(max = 3)
+    private List<@Size(max = 200) String> activities;
+
+    @Size(max = 2)
+    private List<@Size(max = 200) String> checks;
+
     public EventIngestCommand toCommand() {
         return EventIngestCommand.builder()
                 .sourceCode(sourceCode)
@@ -71,6 +84,10 @@ public class EventIngestRequest {
                 .place(place)
                 .organizer(organizer)
                 .summary(summary)
+                .target(target)
+                .fee(fee)
+                .activities(activities)
+                .checks(checks)
                 .build();
     }
 }

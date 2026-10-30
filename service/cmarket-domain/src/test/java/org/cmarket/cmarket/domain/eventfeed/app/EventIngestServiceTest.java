@@ -57,7 +57,10 @@ class EventIngestServiceTest {
                 .eventStartDate(LocalDate.of(2026, 10, 31))
                 .eventEndDate(LocalDate.of(2026, 11, 2))
                 .region("서울").place("문화비축기지").organizer("서울특별시")
-                .summary("반려견과 함께 즐기는 가을 축제");
+                .summary("반려견과 함께 즐기는 가을 축제")
+                .target("반려견, 반려묘").fee("무료")
+                .activities(List.of("반려견 놀이터", "건강 상담"))
+                .checks(List.of("목줄을 챙기세요"));
     }
 
     @Test
@@ -129,6 +132,11 @@ class EventIngestServiceTest {
         assertThat(record.getValue().getPlace()).isEqualTo("문화비축기지");
         assertThat(record.getValue().getOrganizer()).isEqualTo("서울특별시");
         assertThat(record.getValue().getSummary()).isEqualTo("반려견과 함께 즐기는 가을 축제");
+        assertThat(record.getValue().getTarget()).isEqualTo("반려견, 반려묘");
+        assertThat(record.getValue().getFee()).isEqualTo("무료");
+        assertThat(record.getValue().getActivities()).isEqualTo("반려견 놀이터\n건강 상담");
+        assertThat(record.getValue().getChecks()).isEqualTo("목줄을 챙기세요");
+        assertThat(record.getValue().getImageUrl()).isEqualTo("https://www.seoul.go.kr/a.jpg");
     }
 
     @Test
@@ -136,7 +144,9 @@ class EventIngestServiceTest {
         EventIngestRecord posted = EventIngestRecord.builder()
                 .sourceCode("SEOUL").externalId("1").status(EventIngestStatus.POSTED).postId(1L).sourceUrl("u")
                 .eventStartDate(LocalDate.of(2026, 10, 31)).eventEndDate(LocalDate.of(2026, 11, 2))
-                .region("서울").place("문화비축기지").organizer("서울특별시").summary("소개").build();
+                .region("서울").place("문화비축기지").organizer("서울특별시").summary("소개")
+                .target("반려견").fee("무료").activities("놀이터\n상담").checks("목줄")
+                .imageUrl("https://www.seoul.go.kr/a.jpg").build();
         when(recordRepository.findByStatusAndPostIdIn(EventIngestStatus.POSTED, List.of(1L, 2L)))
                 .thenReturn(List.of(posted));
 
@@ -150,6 +160,12 @@ class EventIngestServiceTest {
         assertThat(dto.getPlace()).isEqualTo("문화비축기지");
         assertThat(dto.getOrganizer()).isEqualTo("서울특별시");
         assertThat(dto.getSummary()).isEqualTo("소개");
+        assertThat(dto.getTarget()).isEqualTo("반려견");
+        assertThat(dto.getFee()).isEqualTo("무료");
+        assertThat(dto.getActivities()).containsExactly("놀이터", "상담");
+        assertThat(dto.getChecks()).containsExactly("목줄");
+        assertThat(dto.getSourceUrl()).isEqualTo("u");
+        assertThat(dto.getImageUrl()).isEqualTo("https://www.seoul.go.kr/a.jpg");
     }
 
     @Test
@@ -219,5 +235,20 @@ class EventIngestServiceTest {
         assertThat(service.findPostIdsByPeriodStatus(EventPeriodStatus.UPCOMING, today)).containsExactly(1L);
         assertThat(service.findPostIdsByPeriodStatus(EventPeriodStatus.ONGOING, today)).containsExactly(2L);
         assertThat(service.findPostIdsByPeriodStatus(EventPeriodStatus.ENDED, today)).containsExactly(3L);
+    }
+
+    @Test
+    void 목록_칸은_줄바꿈을_빈칸으로_바꿔_한_줄씩_저장한다() {
+        User author = mock(User.class);
+        when(author.getId()).thenReturn(52L);
+        when(userRepository.findByIdAndDeletedAtIsNull(52L)).thenReturn(Optional.of(author));
+        when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.ingest(posted().activities(List.of("첫째\n줄", " ", "둘째")).checks(null).build());
+
+        ArgumentCaptor<EventIngestRecord> record = ArgumentCaptor.forClass(EventIngestRecord.class);
+        verify(recordRepository).save(record.capture());
+        assertThat(record.getValue().getActivities()).isEqualTo("첫째 줄\n둘째");
+        assertThat(record.getValue().getChecks()).isNull();
     }
 }
