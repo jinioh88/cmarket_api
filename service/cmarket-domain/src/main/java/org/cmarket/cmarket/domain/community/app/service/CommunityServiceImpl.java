@@ -138,14 +138,15 @@ public class CommunityServiceImpl implements CommunityService {
     
     @Override
     public PostDto updatePost(Long postId, org.cmarket.cmarket.domain.community.app.dto.PostUpdateCommand command, String email) {
-        // 다른 글을 행사 소식으로 옮기지 못하게 막는다
-        if (command.getBoardType() == BoardType.EVENT) {
-            throw new EventBoardWriteNotAllowedException();
-        }
-        
         // 게시글 조회 (소프트 삭제된 게시글 제외)
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new PostNotFoundException());
+        
+        // 다른 글을 행사 소식으로 옮기지 못하게 막는다.
+        // 행사 글을 행사 글 그대로 고치는 것(운영 계정)은 막지 않는다
+        if (command.getBoardType() == BoardType.EVENT && post.getBoardType() != BoardType.EVENT) {
+            throw new EventBoardWriteNotAllowedException();
+        }
         
         // 사용자 조회
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
