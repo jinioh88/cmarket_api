@@ -14,5 +14,10 @@ public enum BoardType {
     /**
      * 정보공유
      */
-    INFO
+    INFO,
+
+    /**
+     * 행사 소식 (수집 주소로만 만든다)
+     */
+    EVENT
 }

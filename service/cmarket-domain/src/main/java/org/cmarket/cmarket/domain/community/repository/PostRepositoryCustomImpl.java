@@ -48,8 +48,14 @@ public class PostRepositoryCustomImpl implements PostRepositoryCustom {
         }
 
         // 게시판 유형 필터링 (boardType이 null이 아니면 해당 유형만 조회)
+        //
+        // 게시판을 고르지 않은 목록에는 행사 소식(EVENT)을 넣지 않는다.
+        // 수집한 글이 사람이 쓴 글 사이에 섞이지 않게 하려는 것이고,
+        // boardType=EVENT를 줄 때만 나온다.
         if (boardType != null) {
             whereCondition = whereCondition.and(post.boardType.eq(boardType));
+        } else {
+            whereCondition = whereCondition.and(post.boardType.ne(BoardType.EVENT));
         }
         
         // 검색 조건 추가

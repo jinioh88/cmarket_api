@@ -12,6 +12,7 @@ import org.cmarket.cmarket.domain.community.app.exception.CommentAccessDeniedExc
 import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.app.exception.CommentDepthExceededException;
 import org.cmarket.cmarket.domain.community.app.exception.CommentNotFoundException;
+import org.cmarket.cmarket.domain.community.app.exception.EventBoardWriteNotAllowedException;
 import org.cmarket.cmarket.domain.community.app.exception.InvalidImageCountException;
 import org.cmarket.cmarket.domain.community.app.exception.PostAccessDeniedException;
 import org.cmarket.cmarket.domain.community.app.exception.PostAlreadyDeletedException;
@@ -55,6 +56,11 @@ public class CommunityServiceImpl implements CommunityService {
     
     @Override
     public PostDto createPost(String email, PostCreateCommand command) {
+        // 행사 소식은 수집 주소로만 들어온다
+        if (command.getBoardType() == BoardType.EVENT) {
+            throw new EventBoardWriteNotAllowedException();
+        }
+        
         // 사용자 조회 (작성자 확인)
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new org.cmarket.cmarket.domain.auth.app.exception.UserNotFoundException("사용자를 찾을 수 없습니다."));
@@ -132,6 +138,11 @@ public class CommunityServiceImpl implements CommunityService {
     
     @Override
     public PostDto updatePost(Long postId, org.cmarket.cmarket.domain.community.app.dto.PostUpdateCommand command, String email) {
+        // 다른 글을 행사 소식으로 옮기지 못하게 막는다
+        if (command.getBoardType() == BoardType.EVENT) {
+            throw new EventBoardWriteNotAllowedException();
+        }
+        
         // 게시글 조회 (소프트 삭제된 게시글 제외)
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new PostNotFoundException());

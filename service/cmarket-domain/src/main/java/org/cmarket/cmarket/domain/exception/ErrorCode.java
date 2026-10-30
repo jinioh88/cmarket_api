@@ -74,6 +74,7 @@ public enum ErrorCode {
     POST_ALREADY_DELETED(400, "이미 삭제된 게시글입니다."),
     COMMENT_DEPTH_EXCEEDED(400, "댓글은 최대 3단계까지만 작성할 수 있습니다."),
     INVALID_IMAGE_COUNT(400, "이미지는 최대 5장까지 등록 가능합니다."),
+    EVENT_BOARD_WRITE_NOT_ALLOWED(400, "행사 소식 게시판에는 글을 쓸 수 없습니다."),
     
     // 커뮤니티 관련 (403)
     POST_ACCESS_DENIED(403, "게시글에 대한 접근 권한이 없습니다."),
