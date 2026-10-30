@@ -27,6 +27,7 @@ public class EventInfoDto {
     private final List<String> checks;
     private final String sourceUrl;
     private final String imageUrl;
+    private final String hours;
 
     public static EventInfoDto from(EventIngestRecord record) {
         return new EventInfoDto(
@@ -41,7 +42,8 @@ public class EventInfoDto {
                 lines(record.getActivities()),
                 lines(record.getChecks()),
                 record.getSourceUrl(),
-                record.getImageUrl()
+                record.getImageUrl(),
+                record.getHours()
         );
     }
 

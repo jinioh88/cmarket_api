@@ -90,6 +90,10 @@ public class EventIngestRecord {
     @Column(length = 100)
     private String fee;
 
+    // 운영시간 (예: 오전 11시~오후 7시)
+    @Column(length = 100)
+    private String hours;
+
     @Column(length = 1000)
     private String activities;
 
@@ -119,6 +123,7 @@ public class EventIngestRecord {
             String summary,
             String target,
             String fee,
+            String hours,
             String activities,
             String checks,
             String imageUrl
@@ -137,6 +142,7 @@ public class EventIngestRecord {
         this.summary = summary;
         this.target = target;
         this.fee = fee;
+        this.hours = hours;
         this.activities = activities;
         this.checks = checks;
         this.imageUrl = imageUrl;

@@ -20,7 +20,7 @@ class EventAttachTest {
             LocalDate.of(2026, 10, 31), LocalDate.of(2026, 11, 2),
             "서울", "문화비축기지", "서울특별시", "반려견과 함께 즐기는 가을 축제",
             "반려견", "무료", List.of("놀이터"), List.of("목줄"),
-            "https://www.seoul.go.kr/news", "https://www.seoul.go.kr/a.jpg");
+            "https://www.seoul.go.kr/news", "https://www.seoul.go.kr/a.jpg", "오전 11시~오후 7시");
 
     private PostListItemResponse item(long id, BoardType boardType) {
         PostListItemResponse item = new PostListItemResponse();
@@ -46,6 +46,7 @@ class EventAttachTest {
         assertThat(event.getSummary()).isEqualTo("반려견과 함께 즐기는 가을 축제");
         assertThat(event.getTarget()).isEqualTo("반려견");
         assertThat(event.getFee()).isEqualTo("무료");
+        assertThat(event.getHours()).isEqualTo("오전 11시~오후 7시");
         assertThat(event.getActivities()).containsExactly("놀이터");
         assertThat(event.getChecks()).containsExactly("목줄");
         assertThat(event.getSourceUrl()).isEqualTo("https://www.seoul.go.kr/news");
