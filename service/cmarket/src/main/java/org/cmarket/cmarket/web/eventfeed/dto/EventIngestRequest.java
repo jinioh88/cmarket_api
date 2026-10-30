@@ -42,6 +42,20 @@ public class EventIngestRequest {
 
     private LocalDate eventStartDate;
 
+    private LocalDate eventEndDate;
+
+    @Size(max = 20)
+    private String region;
+
+    @Size(max = 100)
+    private String place;
+
+    @Size(max = 100)
+    private String organizer;
+
+    @Size(max = 100)
+    private String summary;
+
     public EventIngestCommand toCommand() {
         return EventIngestCommand.builder()
                 .sourceCode(sourceCode)
@@ -52,6 +66,11 @@ public class EventIngestRequest {
                 .content(content)
                 .imageUrl(imageUrl)
                 .eventStartDate(eventStartDate)
+                .eventEndDate(eventEndDate)
+                .region(region)
+                .place(place)
+                .organizer(organizer)
+                .summary(summary)
                 .build();
     }
 }

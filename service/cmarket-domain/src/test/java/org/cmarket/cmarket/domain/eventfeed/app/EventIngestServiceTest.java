@@ -6,6 +6,7 @@ import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.model.Post;
 import org.cmarket.cmarket.domain.community.repository.PostRepository;
 import org.cmarket.cmarket.domain.eventfeed.app.dto.EventIngestCommand;
+import org.cmarket.cmarket.domain.eventfeed.app.dto.EventInfoDto;
 import org.cmarket.cmarket.domain.eventfeed.app.dto.EventIngestResult;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestRecord;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestStatus;
@@ -20,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +53,10 @@ class EventIngestServiceTest {
                 .sourceUrl("https://www.seoul.go.kr/news/news_report.do?bbsNo=158&nttNo=468820")
                 .status(EventIngestStatus.POSTED)
                 .title("2026 서울 댕냥데이즈").content("본문")
-                .eventStartDate(LocalDate.of(2026, 10, 31));
+                .eventStartDate(LocalDate.of(2026, 10, 31))
+                .eventEndDate(LocalDate.of(2026, 11, 2))
+                .region("서울").place("문화비축기지").organizer("서울특별시")
+                .summary("반려견과 함께 즐기는 가을 축제");
     }
 
     @Test
@@ -117,6 +123,38 @@ class EventIngestServiceTest {
         assertThat(record.getValue().getPostId()).isEqualTo(123L);
         assertThat(record.getValue().getStatus()).isEqualTo(EventIngestStatus.POSTED);
         assertThat(record.getValue().getTitleKey()).isEqualTo("서울댕냥데이즈");
+        assertThat(record.getValue().getEventEndDate()).isEqualTo(LocalDate.of(2026, 11, 2));
+        assertThat(record.getValue().getRegion()).isEqualTo("서울");
+        assertThat(record.getValue().getPlace()).isEqualTo("문화비축기지");
+        assertThat(record.getValue().getOrganizer()).isEqualTo("서울특별시");
+        assertThat(record.getValue().getSummary()).isEqualTo("반려견과 함께 즐기는 가을 축제");
+    }
+
+    @Test
+    void 게시한_글_번호의_행사_칸만_돌려준다() {
+        EventIngestRecord posted = EventIngestRecord.builder()
+                .sourceCode("SEOUL").externalId("1").status(EventIngestStatus.POSTED).postId(1L).sourceUrl("u")
+                .eventStartDate(LocalDate.of(2026, 10, 31)).eventEndDate(LocalDate.of(2026, 11, 2))
+                .region("서울").place("문화비축기지").organizer("서울특별시").summary("소개").build();
+        when(recordRepository.findByStatusAndPostIdIn(EventIngestStatus.POSTED, List.of(1L, 2L)))
+                .thenReturn(List.of(posted));
+
+        Map<Long, EventInfoDto> info = service.findEventInfo(List.of(1L, 2L));
+
+        assertThat(info).containsOnlyKeys(1L);
+        EventInfoDto dto = info.get(1L);
+        assertThat(dto.getStartDate()).isEqualTo(LocalDate.of(2026, 10, 31));
+        assertThat(dto.getEndDate()).isEqualTo(LocalDate.of(2026, 11, 2));
+        assertThat(dto.getRegion()).isEqualTo("서울");
+        assertThat(dto.getPlace()).isEqualTo("문화비축기지");
+        assertThat(dto.getOrganizer()).isEqualTo("서울특별시");
+        assertThat(dto.getSummary()).isEqualTo("소개");
+    }
+
+    @Test
+    void 글_번호가_없으면_저장소를_부르지_않는다() {
+        assertThat(service.findEventInfo(List.of())).isEmpty();
+        verifyNoInteractions(recordRepository);
     }
 
     @Test

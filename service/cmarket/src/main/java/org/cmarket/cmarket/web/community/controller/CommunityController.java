@@ -14,6 +14,7 @@ import org.cmarket.cmarket.web.community.dto.PostListResponse;
 import org.cmarket.cmarket.web.community.dto.PostResponse;
 import org.cmarket.cmarket.web.community.dto.PostUpdateRequest;
 import org.cmarket.cmarket.domain.community.model.BoardType;
+import org.cmarket.cmarket.domain.eventfeed.app.EventIngestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 커뮤니티 관련 컨트롤러
  * 
@@ -37,9 +40,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommunityController {
     
     private final CommunityService communityService;
+    private final EventIngestService eventIngestService;
     
-    public CommunityController(CommunityService communityService) {
+    public CommunityController(CommunityService communityService, EventIngestService eventIngestService) {
         this.communityService = communityService;
+        this.eventIngestService = eventIngestService;
     }
     
     /**
@@ -111,6 +116,9 @@ public class CommunityController {
         
         // 앱 DTO → 웹 DTO 변환
         PostListResponse response = PostListResponse.fromDto(postListDto);
+
+        // 행사 소식 글에는 기간·지역·주최·한 줄 소개를 붙인다 (한 페이지에 한 번 조회)
+        response.attachEvents(eventIngestService.findEventInfo(response.getPostIds()));
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
@@ -138,6 +146,9 @@ public class CommunityController {
                 communityService.getPostDetail(postId, email);
         
         PostDetailResponse response = PostDetailResponse.fromDto(postDetailDto);
+        if (postDetailDto.getBoardType() == BoardType.EVENT) {
+            response.attachEvent(eventIngestService.findEventInfo(List.of(postId)).get(postId));
+        }
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));

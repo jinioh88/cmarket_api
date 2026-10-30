@@ -32,6 +32,7 @@ public class PostListItemResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean isModified;
+    private EventInfoResponse event;  // 행사 소식 글일 때만 (아니면 null)
     
     /**
      * 앱 DTO를 웹 DTO로 변환
@@ -84,5 +85,9 @@ public class PostListItemResponse {
 
         Matcher matcher = MARKDOWN_IMAGE_PATTERN.matcher(content);
         return matcher.find() ? matcher.group(1) : null;
+    }
+
+    void attachEvent(EventInfoResponse event) {
+        this.event = event;
     }
 }

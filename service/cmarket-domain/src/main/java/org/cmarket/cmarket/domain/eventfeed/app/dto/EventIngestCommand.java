@@ -22,4 +22,9 @@ public class EventIngestCommand {
     private String content;
     private String imageUrl;          // 원래 주소 그대로 (복사하지 않는다)
     private LocalDate eventStartDate;
+    private LocalDate eventEndDate;
+    private String region;
+    private String place;
+    private String organizer;
+    private String summary;
 }

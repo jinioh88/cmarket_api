@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.cmarket.cmarket.domain.community.app.dto.PostDetailDto;
 import org.cmarket.cmarket.domain.community.model.BoardType;
+import org.cmarket.cmarket.domain.eventfeed.app.dto.EventInfoDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +29,7 @@ public class PostDetailResponse {
     private Long commentCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private EventInfoResponse event;  // 행사 소식 글일 때만 (아니면 null)
 
     /**
      * 앱 DTO를 웹 DTO로 변환
@@ -51,5 +53,11 @@ public class PostDetailResponse {
         response.updatedAt = dto.getUpdatedAt();
         return response;
     }
-}
 
+    /**
+     * 행사 칸을 붙인다. 행사 글이 아니면 null을 넘긴다.
+     */
+    public void attachEvent(EventInfoDto event) {
+        this.event = EventInfoResponse.from(event);
+    }
+}

@@ -4,8 +4,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.cmarket.cmarket.domain.community.app.dto.PostListDto;
 import org.cmarket.cmarket.domain.profile.app.dto.PageResult;
+import org.cmarket.cmarket.domain.eventfeed.app.dto.EventInfoDto;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 게시글 목록 응답 DTO
@@ -49,5 +51,18 @@ public class PostListResponse {
         
         return response;
     }
-}
 
+    /**
+     * 이 페이지에 있는 글 번호 (행사 칸을 한 번에 찾으려고 쓴다)
+     */
+    public List<Long> getPostIds() {
+        return content.stream().map(PostListItemResponse::getId).toList();
+    }
+
+    /**
+     * 행사 글에 행사 칸을 붙인다. Map에 없는 글은 그대로 null이다.
+     */
+    public void attachEvents(Map<Long, EventInfoDto> events) {
+        content.forEach(item -> item.attachEvent(EventInfoResponse.from(events.get(item.getId()))));
+    }
+}

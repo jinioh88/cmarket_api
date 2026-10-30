@@ -66,6 +66,23 @@ public class EventIngestRecord {
     @Column(name = "event_start_date")
     private LocalDate eventStartDate;
 
+    @Column(name = "event_end_date")
+    private LocalDate eventEndDate;
+
+    // 목록에 보이는 넓은 지역(서울, 제주 등). 상세에는 장소와 같이 보인다
+    @Column(length = 20)
+    private String region;
+
+    @Column(length = 100)
+    private String place;
+
+    @Column(length = 100)
+    private String organizer;
+
+    // 한 줄 소개 (AI가 쓴다. 없을 수 있다)
+    @Column(length = 100)
+    private String summary;
+
     @Column(nullable = false, name = "collected_at")
     private LocalDateTime collectedAt;
 
@@ -77,7 +94,12 @@ public class EventIngestRecord {
             Long postId,
             String sourceUrl,
             String titleKey,
-            LocalDate eventStartDate
+            LocalDate eventStartDate,
+            LocalDate eventEndDate,
+            String region,
+            String place,
+            String organizer,
+            String summary
     ) {
         this.sourceCode = sourceCode;
         this.externalId = externalId;
@@ -86,6 +108,11 @@ public class EventIngestRecord {
         this.sourceUrl = sourceUrl;
         this.titleKey = titleKey;
         this.eventStartDate = eventStartDate;
+        this.eventEndDate = eventEndDate;
+        this.region = region;
+        this.place = place;
+        this.organizer = organizer;
+        this.summary = summary;
         this.collectedAt = LocalDateTime.now();
     }
 }

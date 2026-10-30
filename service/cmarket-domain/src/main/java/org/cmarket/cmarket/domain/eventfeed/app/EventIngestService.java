@@ -5,6 +5,7 @@ import org.cmarket.cmarket.domain.auth.repository.UserRepository;
 import org.cmarket.cmarket.domain.community.model.BoardType;
 import org.cmarket.cmarket.domain.community.model.Post;
 import org.cmarket.cmarket.domain.community.repository.PostRepository;
+import org.cmarket.cmarket.domain.eventfeed.app.dto.EventInfoDto;
 import org.cmarket.cmarket.domain.eventfeed.app.dto.EventIngestCommand;
 import org.cmarket.cmarket.domain.eventfeed.app.dto.EventIngestResult;
 import org.cmarket.cmarket.domain.eventfeed.model.EventIngestRecord;
@@ -14,7 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,6 +56,18 @@ public class EventIngestService {
                 .map(EventIngestRecord::getExternalId)
                 .collect(Collectors.toSet());
         return externalIds.stream().filter(id -> !seen.contains(id)).distinct().toList();
+    }
+
+    /**
+     * 행사 글 번호별 행사 칸. 행사 글이 아니면 Map에 없다.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, EventInfoDto> findEventInfo(Collection<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Map.of();
+        }
+        return recordRepository.findByStatusAndPostIdIn(EventIngestStatus.POSTED, postIds).stream()
+                .collect(Collectors.toMap(EventIngestRecord::getPostId, EventInfoDto::from, (a, b) -> a));
     }
 
     @Transactional
@@ -123,6 +138,11 @@ public class EventIngestService {
                 .sourceUrl(command.getSourceUrl())
                 .titleKey(titleKey.isEmpty() ? null : titleKey)
                 .eventStartDate(command.getEventStartDate())
+                .eventEndDate(command.getEventEndDate())
+                .region(command.getRegion())
+                .place(command.getPlace())
+                .organizer(command.getOrganizer())
+                .summary(command.getSummary())
                 .build());
     }
 }
