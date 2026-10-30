@@ -58,7 +58,7 @@ class EventIngestServiceTest {
                 .eventEndDate(LocalDate.of(2026, 11, 2))
                 .region("서울").place("문화비축기지").organizer("서울특별시")
                 .summary("반려견과 함께 즐기는 가을 축제")
-                .target("반려견, 반려묘").fee("무료").hours("오전 11시~오후 7시")
+                .target("반려견, 반려묘").fee("무료").hours("오전 11시~오후 7시").application("사전 신청 필요")
                 .activities(List.of("반려견 놀이터", "건강 상담"))
                 .checks(List.of("목줄을 챙기세요"));
     }
@@ -135,6 +135,7 @@ class EventIngestServiceTest {
         assertThat(record.getValue().getTarget()).isEqualTo("반려견, 반려묘");
         assertThat(record.getValue().getFee()).isEqualTo("무료");
         assertThat(record.getValue().getHours()).isEqualTo("오전 11시~오후 7시");
+        assertThat(record.getValue().getApplication()).isEqualTo("사전 신청 필요");
         assertThat(record.getValue().getActivities()).isEqualTo("반려견 놀이터\n건강 상담");
         assertThat(record.getValue().getChecks()).isEqualTo("목줄을 챙기세요");
         assertThat(record.getValue().getImageUrl()).isEqualTo("https://www.seoul.go.kr/a.jpg");
@@ -146,7 +147,7 @@ class EventIngestServiceTest {
                 .sourceCode("SEOUL").externalId("1").status(EventIngestStatus.POSTED).postId(1L).sourceUrl("u")
                 .eventStartDate(LocalDate.of(2026, 10, 31)).eventEndDate(LocalDate.of(2026, 11, 2))
                 .region("서울").place("문화비축기지").organizer("서울특별시").summary("소개")
-                .target("반려견").fee("무료").hours("10:00~17:00").activities("놀이터\n상담").checks("목줄")
+                .target("반려견").fee("무료").hours("10:00~17:00").application("현장 접수").activities("놀이터\n상담").checks("목줄")
                 .imageUrl("https://www.seoul.go.kr/a.jpg").build();
         when(recordRepository.findByStatusAndPostIdIn(EventIngestStatus.POSTED, List.of(1L, 2L)))
                 .thenReturn(List.of(posted));
@@ -164,6 +165,7 @@ class EventIngestServiceTest {
         assertThat(dto.getTarget()).isEqualTo("반려견");
         assertThat(dto.getFee()).isEqualTo("무료");
         assertThat(dto.getHours()).isEqualTo("10:00~17:00");
+        assertThat(dto.getApplication()).isEqualTo("현장 접수");
         assertThat(dto.getActivities()).containsExactly("놀이터", "상담");
         assertThat(dto.getChecks()).containsExactly("목줄");
         assertThat(dto.getSourceUrl()).isEqualTo("u");

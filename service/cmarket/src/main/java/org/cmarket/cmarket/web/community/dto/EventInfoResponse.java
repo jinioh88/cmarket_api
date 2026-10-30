@@ -26,6 +26,7 @@ public class EventInfoResponse {
     private final String sourceUrl;  // 원문 주소 (「공식 안내 보기」)
     private final String imageUrl;   // 포스터 원래 주소
     private final String hours;      // 운영시간
+    private final String application; // 신청 방법
 
     private EventInfoResponse(EventInfoDto dto) {
         this.startDate = dto.getStartDate();
@@ -41,6 +42,7 @@ public class EventInfoResponse {
         this.sourceUrl = dto.getSourceUrl();
         this.imageUrl = dto.getImageUrl();
         this.hours = dto.getHours();
+        this.application = dto.getApplication();
     }
 
     public static EventInfoResponse from(EventInfoDto dto) {

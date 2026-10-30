@@ -66,6 +66,9 @@ public class EventIngestRequest {
     @Size(max = 100)
     private String hours;
 
+    @Size(max = 100)
+    private String application;
+
     @Size(max = 3)
     private List<@Size(max = 200) String> activities;
 
@@ -90,6 +93,7 @@ public class EventIngestRequest {
                 .target(target)
                 .fee(fee)
                 .hours(hours)
+                .application(application)
                 .activities(activities)
                 .checks(checks)
                 .build();

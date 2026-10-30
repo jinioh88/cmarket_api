@@ -163,6 +163,7 @@ public class EventIngestService {
                 .target(command.getTarget())
                 .fee(command.getFee())
                 .hours(command.getHours())
+                .application(command.getApplication())
                 .activities(joinLines(command.getActivities()))
                 .checks(joinLines(command.getChecks()))
                 .imageUrl(command.getImageUrl())

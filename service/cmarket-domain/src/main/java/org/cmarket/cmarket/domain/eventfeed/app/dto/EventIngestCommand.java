@@ -31,6 +31,7 @@ public class EventIngestCommand {
     private String target;
     private String fee;
     private String hours;
+    private String application;
     private List<String> activities;
     private List<String> checks;
 }
