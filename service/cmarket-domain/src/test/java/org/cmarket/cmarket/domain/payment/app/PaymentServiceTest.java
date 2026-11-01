@@ -52,6 +52,7 @@ class PaymentServiceTest {
     @Mock UserRepository userRepository;
     @Mock PaymentGateway paymentGateway;
     @Mock ChatTradeNoticeService chatTradeNoticeService;
+    @Mock org.cmarket.cmarket.domain.chat.repository.ChatRoomRepository chatRoomRepository;
 
     @InjectMocks PaymentService paymentService;
 
@@ -72,6 +73,9 @@ class PaymentServiceTest {
         when(paymentRepository.findByOrderIdForUpdate("CM-ORDER-1")).thenReturn(Optional.of(order));
         when(paymentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(paymentGateway.confirm(anyString(), anyString(), anyLong())).thenReturn(approvedAt);
+        org.cmarket.cmarket.domain.chat.model.ChatRoom room = mock(org.cmarket.cmarket.domain.chat.model.ChatRoom.class);
+        when(room.getId()).thenReturn(100L);
+        when(chatRoomRepository.findByProductIdAndUsers(10L, 7L, 1L)).thenReturn(Optional.of(room));
     }
 
     private void user(String email, Long id) {
@@ -119,7 +123,8 @@ class PaymentServiceTest {
     @Test
     void confirm_ok_marksDone_completesProduct_postsNotice() {
         List<ChatSystemNotice> notices = List.of(new ChatSystemNotice(100L, "결제가 완료됐어요"));
-        when(chatTradeNoticeService.post(10L, 1L, 7L, "결제가 완료됐어요", null)).thenReturn(notices);
+        // 다른 사람의 방에도 한 줄을 남겨 화면이 바로 「판매 완료」로 바뀌게 한다(2026-11-01 로컬 확인 뒤 사용자 결정)
+        when(chatTradeNoticeService.post(10L, 1L, 7L, "결제가 완료됐어요", "판매가 완료됐어요")).thenReturn(notices);
 
         PaymentResultDto result = paymentService.confirm("buyer@b.com", cmd(50000L));
 
@@ -128,6 +133,8 @@ class PaymentServiceTest {
         assertThat(product.getTradeStatus()).isEqualTo(TradeStatus.COMPLETED);
         assertThat(result.notices()).isEqualTo(notices);
         assertThat(result.approvedAt()).isEqualTo(approvedAt);
+        // 성공 페이지의 「채팅으로 돌아가기」가 결제한 그 방으로 가게 방 번호를 함께 준다
+        assertThat(result.chatRoomId()).isEqualTo(100L);
         verify(paymentGateway).confirm("pk_1", "CM-ORDER-1", 50000L);
     }
 
@@ -168,6 +175,7 @@ class PaymentServiceTest {
 
         assertThat(result.orderId()).isEqualTo("CM-ORDER-1");
         assertThat(result.approvedAt()).isEqualTo(approvedAt);
+        assertThat(result.chatRoomId()).isEqualTo(100L);
         verify(paymentGateway, never()).confirm(anyString(), anyString(), anyLong());
     }
 

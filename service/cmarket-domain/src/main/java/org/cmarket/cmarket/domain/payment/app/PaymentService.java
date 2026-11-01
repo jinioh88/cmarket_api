@@ -38,12 +38,15 @@ import java.util.UUID;
 public class PaymentService {
 
     private static final String PAID_NOTICE = "결제가 완료됐어요";
+    // 다른 사람의 방에도 남겨 화면이 바로 「판매 완료」로 바뀌게 한다(2026-11-01 사용자 결정). 누가 샀는지는 넣지 않는다
+    private static final String SOLD_NOTICE = "판매가 완료됐어요";
 
     private final PaymentRepository paymentRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final PaymentGateway paymentGateway;
     private final ChatTradeNoticeService chatTradeNoticeService;
+    private final org.cmarket.cmarket.domain.chat.repository.ChatRoomRepository chatRoomRepository;
 
     @Transactional
     public PaymentOrderDto prepareOrder(String buyerEmail, Long productId) {
@@ -122,13 +125,17 @@ public class PaymentService {
         product.updateTradeStatus(TradeStatus.COMPLETED);
         productRepository.save(product);
         List<ChatSystemNotice> notices = chatTradeNoticeService.post(
-                payment.getProductId(), product.getSellerId(), buyer.getId(), PAID_NOTICE, null);
+                payment.getProductId(), product.getSellerId(), buyer.getId(), PAID_NOTICE, SOLD_NOTICE);
         return result(payment, product, notices);
     }
 
     private PaymentResultDto result(Payment payment, Product product, List<ChatSystemNotice> notices) {
+        Long chatRoomId = chatRoomRepository
+                .findByProductIdAndUsers(payment.getProductId(), payment.getBuyerId(), payment.getSellerId())
+                .map(org.cmarket.cmarket.domain.chat.model.ChatRoom::getId)
+                .orElse(null);
         return new PaymentResultDto(payment.getOrderId(), payment.getAmount(), payment.getProductId(),
-                product.getTitle(), payment.getApprovedAt(), notices);
+                product.getTitle(), payment.getApprovedAt(), chatRoomId, notices);
     }
 
     private User findUser(String email) {
