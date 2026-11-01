@@ -39,6 +39,12 @@ public class ChatRoomListItemResponse {
 
     /** 내가 이 방의 상대를 차단했는가. 화면이 입력창을 잠그는 데 쓴다. (#877) */
     private Boolean isOpponentBlocked;
+
+    /** 이 방이 지금 열려 있는지 (#1126). OPEN · PAUSED_RESERVED · CLOSED_SOLD · CLOSED_DONE */
+    private String roomState;
+
+    /** 지금 보는 사람이 이 방에서 결제할 수 있는가 (#1126) */
+    private Boolean canPay;
     
     /**
      * 앱 DTO를 웹 DTO로 변환
@@ -61,6 +67,8 @@ public class ChatRoomListItemResponse {
                 .hasUnread(dto.isHasUnread())
                 .unreadCount(dto.getUnreadCount())
                 .isOpponentBlocked(dto.getIsOpponentBlocked())
+                .roomState(dto.getRoomState())
+                .canPay(dto.getCanPay())
                 .build();
     }
 }

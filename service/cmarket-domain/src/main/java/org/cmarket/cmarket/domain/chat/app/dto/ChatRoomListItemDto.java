@@ -48,4 +48,16 @@ public class ChatRoomListItemDto {
      * 래퍼면 게터가 `getIsOpponentBlocked()` 라 키가 그대로다 — 옆의 `isBlocked` 도 같은 이유다.
      */
     private Boolean isOpponentBlocked;
+
+    /**
+     * 이 방이 지금 열려 있는지 (#1126). ChatRoomState 이름: OPEN · PAUSED_RESERVED · CLOSED_SOLD · CLOSED_DONE.
+     * 예약자가 누구인지는 싣지 않는다 — 보는 사람 기준의 결과만 싣는다.
+     */
+    private String roomState;
+
+    /**
+     * 지금 보는 사람이 이 방에서 결제할 수 있는가 (#1126). 예약자 본인만 참이다.
+     * Boolean 인 까닭은 isOpponentBlocked 와 같다(JSON 키가 canPay 로 나가게).
+     */
+    private Boolean canPay;
 }

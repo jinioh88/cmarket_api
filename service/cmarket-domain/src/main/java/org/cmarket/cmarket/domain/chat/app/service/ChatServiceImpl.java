@@ -59,6 +59,7 @@ public class ChatServiceImpl implements ChatService {
     private final PrivacyFilterService privacyFilterService;
     private final UserBlockRepository userBlockRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final org.cmarket.cmarket.domain.payment.repository.PaymentRepository paymentRepository;
     
     @Override
     @Transactional
@@ -78,6 +79,13 @@ public class ChatServiceImpl implements ChatService {
         // 4. 판매자 본인과의 채팅 방지
         if (buyer.getId().equals(seller.getId())) {
             throw new BusinessException(ErrorCode.SELF_CHAT_NOT_ALLOWED);
+        }
+
+        // 4-1. 예약자가 있는 예약중 상품은 예약자만 채팅할 수 있다 (#1126). 이미 있는 방을 돌려주는 경우도 같다
+        if (product.getTradeStatus() == org.cmarket.cmarket.domain.product.model.TradeStatus.RESERVED
+                && product.getReservedBuyerId() != null
+                && !product.getReservedBuyerId().equals(buyer.getId())) {
+            throw new BusinessException(ErrorCode.CHAT_PRODUCT_RESERVED);
         }
         
         // 5. 기존 채팅방 존재 확인 (동일 상품 + 구매자 + 판매자)
@@ -206,6 +214,7 @@ public class ChatServiceImpl implements ChatService {
             boolean isOpponentBlocked = opponentId != null
                     && userBlockRepository.existsByBlockerIdAndBlockedUserId(userId, opponentId);
 
+            TradeView trade = tradeView(chatRoom, userId, opponentId);
             ChatRoomListItemDto item = ChatRoomListItemDto.builder()
                     .chatRoomId(chatRoomId)
                     .productId(chatRoom.getProductId())
@@ -220,6 +229,8 @@ public class ChatServiceImpl implements ChatService {
                     .hasUnread(unreadCount > 0)
                     .unreadCount(unreadCount)
                     .isOpponentBlocked(isOpponentBlocked)
+                    .roomState(trade.state().name())
+                    .canPay(trade.canPay())
                     .build();
             
             chatRoomItems.add(item);
@@ -262,7 +273,7 @@ public class ChatServiceImpl implements ChatService {
         Long senderId = sender.getId();
         
         // 2. 채팅방 존재 확인
-        chatRoomRepository.findById(chatRoomId)
+        ChatRoom targetRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
         
         // 3. 발신자 참여 정보 조회
@@ -283,6 +294,13 @@ public class ChatServiceImpl implements ChatService {
         // 6. 상대방이 나갔는지 확인
         if (opponent != null && opponent.isLeft()) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_USER_LEFT);
+        }
+
+        // 6-1. 예약·판매 완료로 멈추거나 닫힌 방에는 양쪽 모두 보낼 수 없다 (#1126, 설계 6절)
+        Long opponentUserId = opponent != null ? opponent.getUserId() : null;
+        if (tradeView(targetRoom, senderId, opponentUserId).state()
+                != org.cmarket.cmarket.domain.chat.model.ChatRoomState.OPEN) {
+            throw new BusinessException(ErrorCode.CHAT_ROOM_PAUSED);
         }
         
         // 7. 개인정보 필터링
@@ -598,6 +616,7 @@ public class ChatServiceImpl implements ChatService {
         String opponentProfileImageUrl = opponent != null ? opponent.getUserProfileImageUrl() : null;
         
         // 7. 채팅방 목록 아이템 생성
+        TradeView trade = tradeView(chatRoom, userId, opponentId);
         return ChatRoomListItemDto.builder()
                 .chatRoomId(chatRoomId)
                 .productId(chatRoom.getProductId())
@@ -611,6 +630,8 @@ public class ChatServiceImpl implements ChatService {
                 .lastMessageTime(myChatRoomUser.getLastMessageAt())
                 .hasUnread(unreadCount > 0)
                 .unreadCount(unreadCount)
+                .roomState(trade.state().name())
+                .canPay(trade.canPay())
                 .build();
     }
     
@@ -649,6 +670,31 @@ public class ChatServiceImpl implements ChatService {
      * @param sellerId 판매자 ID
      * @return 기존 채팅방 (없으면 Optional.empty())
      */
+    /**
+     * 이 방이 지금 열려 있는지와, 보는 사람이 여기서 결제할 수 있는지 (#1126)
+     *
+     * 방의 구매자 = 참여자 중 판매자가 아닌 사람. 상품이 지워졌으면 열린 것으로 본다.
+     */
+    private TradeView tradeView(ChatRoom room, Long viewerId, Long otherId) {
+        Product product = productRepository.findById(room.getProductId()).orElse(null);
+        if (product == null) {
+            return new TradeView(org.cmarket.cmarket.domain.chat.model.ChatRoomState.OPEN, false);
+        }
+        Long roomBuyerId = product.getSellerId().equals(viewerId) ? otherId : viewerId;
+        boolean paid = product.getTradeStatus() == org.cmarket.cmarket.domain.product.model.TradeStatus.COMPLETED
+                && paymentRepository.existsByProductIdAndStatus(room.getProductId(),
+                        org.cmarket.cmarket.domain.payment.model.PaymentStatus.DONE);
+        return new TradeView(
+                org.cmarket.cmarket.domain.chat.model.ChatRoomState.of(
+                        product.getTradeStatus(), product.getReservedBuyerId(), paid, roomBuyerId),
+                org.cmarket.cmarket.domain.chat.model.ChatRoomState.canPay(
+                        product.getTradeStatus(), product.getReservedBuyerId(), paid, product.getPrice(),
+                        viewerId, roomBuyerId));
+    }
+
+    private record TradeView(org.cmarket.cmarket.domain.chat.model.ChatRoomState state, boolean canPay) {
+    }
+
     private Optional<ChatRoom> findExistingChatRoom(Long productId, Long buyerId, Long sellerId) {
         // 상품 ID와 두 사용자 ID로 직접 조회
         // JOIN을 사용하여 두 사용자가 모두 활성 상태로 참여한 채팅방만 조회
