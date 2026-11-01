@@ -108,6 +108,10 @@ public class PaymentService {
         try {
             approvedAt = paymentGateway.confirm(cmd.paymentKey(), cmd.orderId(), payment.getAmount());
         } catch (PaymentGatewayException e) {
+            if (e.isRetryable()) {
+                // 답을 못 받았을 뿐 승인됐을 수 있다. READY 로 두면 새로고침이 같은 Idempotency-Key 로 다시 확정한다
+                throw new BusinessException(ErrorCode.PAYMENT_RETRY_LATER);
+            }
             payment.markFailed(e.getMessage());
             paymentRepository.save(payment);
             throw new BusinessException(ErrorCode.PAYMENT_FAILED);

@@ -98,6 +98,7 @@ public enum ErrorCode {
     PAYMENT_NOT_ALLOWED(400, "지금은 결제할 수 없습니다."),
     PAYMENT_AMOUNT_MISMATCH(400, "결제 금액이 상품 가격과 다릅니다. 다시 시도해 주세요."),
     PAYMENT_FAILED(400, "결제에 실패했습니다."),
+    PAYMENT_RETRY_LATER(503, "결제 확인이 늦어지고 있어요. 잠시 뒤 이 화면을 새로고침해 주세요."),
     CHAT_ROOM_USER_LEFT(400, "상대방이 채팅방을 나갔습니다."),
     MESSAGE_TOO_LONG(400, "메시지는 1000자를 초과할 수 없습니다."),
     PRIVACY_VIOLATION(400, "개인정보가 포함된 메시지는 전송할 수 없습니다."),

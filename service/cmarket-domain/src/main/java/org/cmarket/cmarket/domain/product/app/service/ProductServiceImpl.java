@@ -328,9 +328,13 @@ public class ProductServiceImpl implements ProductService {
         }
         List<ChatSystemNotice> notices = List.of();
         if (oldTradeStatus == TradeStatus.RESERVED && reservedBuyerId != null && next == TradeStatus.SELLING) {
-            product.clearReservation();
             notices = chatTradeNoticeService.post(productId, userId, reservedBuyerId,
                     "예약이 풀렸어요", "예약이 풀려서 다시 대화할 수 있어요");
+        }
+        // 이 주소로 바꾸면 예약자는 늘 비운다. 예약자는 새 예약 주소로만 정한다(결제 완료는 결제 쪽이 바꾼다).
+        // 남겨 두면 판매완료 → 판매중 → (앱의) 예약중에서 예전 예약자로 예약이 되살아난다(최종 검토 I1)
+        if (reservedBuyerId != null) {
+            product.clearReservation();
         }
 
         // 거래 상태 변경

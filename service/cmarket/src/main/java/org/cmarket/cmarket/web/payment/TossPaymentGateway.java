@@ -8,6 +8,7 @@ import org.cmarket.cmarket.domain.payment.app.PaymentGatewayException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
@@ -18,7 +19,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * 토스 결제 승인 API 를 부른다 (#1126)
@@ -34,12 +34,29 @@ public class TossPaymentGateway implements PaymentGateway {
     private static final String CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
+    private static final int CONNECT_TIMEOUT_MS = 5_000;
+    // 토스 권장 읽기 시간 초과가 길다(승인은 카드사까지 다녀온다). 그래도 끝없이 기다리며 주문 행을 잠그지 않게 한다
+    private static final int READ_TIMEOUT_MS = 30_000;
+
     private final TossKeyGuard keyGuard;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @org.springframework.beans.factory.annotation.Autowired
     public TossPaymentGateway(TossKeyGuard keyGuard) {
+        this(keyGuard, defaultRestTemplate());
+    }
+
+    TossPaymentGateway(TossKeyGuard keyGuard, RestTemplate restTemplate) {
         this.keyGuard = keyGuard;
+        this.restTemplate = restTemplate;
+    }
+
+    private static RestTemplate defaultRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        factory.setReadTimeout(READ_TIMEOUT_MS);
+        return new RestTemplate(factory);
     }
 
     @Override
@@ -48,7 +65,8 @@ public class TossPaymentGateway implements PaymentGateway {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder()
                 .encodeToString((keyGuard.secretKey() + ":").getBytes(StandardCharsets.UTF_8)));
-        headers.set("Idempotency-Key", UUID.randomUUID().toString());
+        // 주문마다 고정한다. 새로고침으로 같은 주문을 다시 확정하면 토스가 첫 승인 결과를 그대로 돌려준다(최종 검토 I2)
+        headers.set("Idempotency-Key", "confirm-" + orderId);
         Map<String, Object> body = Map.of("paymentKey", paymentKey, "orderId", orderId, "amount", amount);
         try {
             String response = restTemplate.postForObject(CONFIRM_URL, new HttpEntity<>(body, headers), String.class);
@@ -66,13 +84,14 @@ public class TossPaymentGateway implements PaymentGateway {
             } catch (Exception ignored) {
                 // 오류 본문을 못 읽으면 기본 문구로 둔다
             }
+            boolean retryable = e.getStatusCode().is5xxServerError();
             log.warn("토스 결제 승인 거절 orderId={} status={} code={}", orderId, e.getStatusCode().value(), code);
-            throw new PaymentGatewayException(code, message);
+            throw new PaymentGatewayException(code, message, retryable);
         } catch (PaymentGatewayException e) {
             throw e;
         } catch (Exception e) {
             log.warn("토스 결제 승인 호출 실패 orderId={} error={}", orderId, e.getClass().getSimpleName());
-            throw new PaymentGatewayException("NETWORK_ERROR", "결제 승인 중 문제가 생겼습니다. 잠시 뒤 다시 시도해 주세요.");
+            throw new PaymentGatewayException("NETWORK_ERROR", "결제 승인 중 문제가 생겼습니다. 잠시 뒤 다시 시도해 주세요.", true);
         }
     }
 }

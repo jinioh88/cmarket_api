@@ -179,6 +179,17 @@ class PaymentServiceTest {
     }
 
     @Test
+    void confirm_gatewayNetworkError_keepsReady() {
+        // 최종 검토 I2: 연결이 끊겼을 뿐 토스는 승인했을 수 있다. 실패로 닫지 않고 새로고침으로 다시 확정하게 둔다
+        when(paymentGateway.confirm(anyString(), anyString(), anyLong()))
+                .thenThrow(new PaymentGatewayException("NETWORK_ERROR", "결제 승인 중 문제가 생겼습니다.", true));
+
+        assertCode(() -> paymentService.confirm("buyer@b.com", cmd(50000L)), ErrorCode.PAYMENT_RETRY_LATER);
+        assertThat(order.getStatus()).isEqualTo(PaymentStatus.READY);
+        assertThat(product.getTradeStatus()).isEqualTo(TradeStatus.RESERVED);
+    }
+
+    @Test
     void confirm_gatewayFails_marksFailed() {
         when(paymentGateway.confirm(anyString(), anyString(), anyLong()))
                 .thenThrow(new PaymentGatewayException("REJECT_CARD_COMPANY", "카드사에서 거절했습니다."));

@@ -127,7 +127,20 @@ class ProductTradeStatusRuleTest {
         patch(TradeStatus.COMPLETED);
 
         assertThat(product.getTradeStatus()).isEqualTo(TradeStatus.COMPLETED);
-        assertThat(product.getReservedBuyerId()).isEqualTo(7L);
+        // 결제 없이 끝낸 거래라 예약자를 남기지 않는다 — 남기면 뒤에 옛 방식 예약이 그 사람으로 되살아난다
+        assertThat(product.getReservedBuyerId()).isNull();
+    }
+
+    @Test
+    void patch_manualCompletedThenSellingThenLegacyReserved_hasNoBuyer() {
+        // 최종 검토 I1: 예약자 A 를 남긴 채 판매완료 → 판매중 → (앱의) 예약중이면 A 로 예약이 되살아났다
+        product.reserveFor(7L);
+        patch(TradeStatus.COMPLETED);
+        patch(TradeStatus.SELLING);
+        patch(TradeStatus.RESERVED);
+
+        assertThat(product.getTradeStatus()).isEqualTo(TradeStatus.RESERVED);
+        assertThat(product.getReservedBuyerId()).isNull();
     }
 
     @Test
