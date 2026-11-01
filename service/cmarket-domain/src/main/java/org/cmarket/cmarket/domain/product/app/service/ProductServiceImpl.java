@@ -3,7 +3,14 @@ package org.cmarket.cmarket.domain.product.app.service;
 import lombok.RequiredArgsConstructor;
 import org.cmarket.cmarket.domain.auth.model.User;
 import org.cmarket.cmarket.domain.auth.repository.UserRepository;
+import org.cmarket.cmarket.domain.chat.app.dto.ChatSystemNotice;
+import org.cmarket.cmarket.domain.chat.app.service.ChatTradeNoticeService;
+import org.cmarket.cmarket.domain.exception.BusinessException;
+import org.cmarket.cmarket.domain.exception.ErrorCode;
 import org.cmarket.cmarket.domain.notification.app.dto.NotificationCreateCommand;
+import org.cmarket.cmarket.domain.payment.model.PaymentStatus;
+import org.cmarket.cmarket.domain.payment.repository.PaymentRepository;
+import org.cmarket.cmarket.domain.product.app.dto.TradeStatusChangeResult;
 import org.cmarket.cmarket.domain.notification.app.event.NotificationCreatedEvent;
 import org.cmarket.cmarket.domain.notification.model.NotificationType;
 import org.cmarket.cmarket.domain.product.app.dto.FavoriteItemDto;
@@ -56,6 +63,8 @@ public class ProductServiceImpl implements ProductService {
     private final UserBlockRepository userBlockRepository;
     private final ViewLogService viewLogService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PaymentRepository paymentRepository;
+    private final ChatTradeNoticeService chatTradeNoticeService;
     
     @Override
     public ProductDto createProduct(String email, ProductCreateCommand command) {
@@ -285,7 +294,7 @@ public class ProductServiceImpl implements ProductService {
     
     @Override
     @Transactional
-    public ProductDto updateTradeStatus(Long productId, TradeStatusUpdateCommand command, String email) {
+    public TradeStatusChangeResult updateTradeStatus(Long productId, TradeStatusUpdateCommand command, String email) {
         // 상품 조회 (소프트 삭제된 상품 제외)
         Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                 .orElseThrow(() -> new org.cmarket.cmarket.domain.product.app.exception.ProductNotFoundException("상품을 찾을 수 없습니다."));
@@ -306,8 +315,26 @@ public class ProductServiceImpl implements ProductService {
         // 판매요청 상품의 경우 초기 tradeStatus가 null일 수 있으므로 null 체크 필요
         boolean statusChanged = oldTradeStatus == null || !oldTradeStatus.equals(command.tradeStatus());
         
+        // 예약·결제 규칙 (설계 6절, #1126). 예약자가 비어 있는 RESERVED 는 옛 방식이라 지금처럼 둔다
+        Long reservedBuyerId = product.getReservedBuyerId();
+        TradeStatus next = command.tradeStatus();
+        if (oldTradeStatus == TradeStatus.COMPLETED && next != TradeStatus.COMPLETED
+                && paymentRepository.existsByProductIdAndStatus(productId, PaymentStatus.DONE)) {
+            throw new BusinessException(ErrorCode.PAID_PRODUCT_STATUS_LOCKED);
+        }
+        if (oldTradeStatus == TradeStatus.RESERVED && reservedBuyerId != null && next == TradeStatus.RESERVED) {
+            // 예약자를 바로 다른 사람으로 바꾸지 않는다. 판매중으로 되돌린 뒤 다시 예약한다
+            throw new BusinessException(ErrorCode.TRADE_STATUS_CHANGE_NOT_ALLOWED);
+        }
+        List<ChatSystemNotice> notices = List.of();
+        if (oldTradeStatus == TradeStatus.RESERVED && reservedBuyerId != null && next == TradeStatus.SELLING) {
+            product.clearReservation();
+            notices = chatTradeNoticeService.post(productId, userId, reservedBuyerId,
+                    "예약이 풀렸어요", "예약이 풀려서 다시 대화할 수 있어요");
+        }
+
         // 거래 상태 변경
-        product.updateTradeStatus(command.tradeStatus());
+        product.updateTradeStatus(next);
         
         // 저장
         Product updatedProduct = productRepository.save(product);
@@ -336,7 +363,7 @@ public class ProductServiceImpl implements ProductService {
         }
         
         // DTO로 변환하여 반환
-        return ProductDto.fromEntity(updatedProduct);
+        return new TradeStatusChangeResult(ProductDto.fromEntity(updatedProduct), notices);
     }
     
     @Override

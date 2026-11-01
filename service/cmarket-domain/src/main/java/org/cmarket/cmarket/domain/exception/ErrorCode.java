@@ -87,6 +87,17 @@ public enum ErrorCode {
     
     // 채팅 관련 (400)
     SELF_CHAT_NOT_ALLOWED(400, "본인과의 채팅은 불가능합니다."),
+    CHAT_PRODUCT_RESERVED(400, "예약된 상품이라 새 채팅을 시작할 수 없습니다."),
+    CHAT_ROOM_PAUSED(400, "지금은 이 채팅방에 메시지를 보낼 수 없습니다."),
+
+    // 예약·결제 관련 (400, #1126)
+    TRADE_STATUS_CHANGE_NOT_ALLOWED(400, "지금 상태에서는 바꿀 수 없습니다."),
+    PAID_PRODUCT_STATUS_LOCKED(400, "결제가 끝난 상품은 상태를 바꿀 수 없습니다."),
+    RESERVATION_BUYER_NOT_PARTNER(400, "이 상품으로 채팅한 사람만 예약할 수 있습니다."),
+    RESERVATION_NOT_ALLOWED(400, "판매중인 판매 상품만 예약할 수 있습니다."),
+    PAYMENT_NOT_ALLOWED(400, "지금은 결제할 수 없습니다."),
+    PAYMENT_AMOUNT_MISMATCH(400, "결제 금액이 상품 가격과 다릅니다. 다시 시도해 주세요."),
+    PAYMENT_FAILED(400, "결제에 실패했습니다."),
     CHAT_ROOM_USER_LEFT(400, "상대방이 채팅방을 나갔습니다."),
     MESSAGE_TOO_LONG(400, "메시지는 1000자를 초과할 수 없습니다."),
     PRIVACY_VIOLATION(400, "개인정보가 포함된 메시지는 전송할 수 없습니다."),

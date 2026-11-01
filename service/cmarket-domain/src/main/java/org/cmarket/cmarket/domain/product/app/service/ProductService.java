@@ -56,7 +56,7 @@ public interface ProductService {
      * @param email 현재 로그인한 사용자 이메일
      * @return 수정된 상품 정보
      */
-    org.cmarket.cmarket.domain.product.app.dto.ProductDto updateTradeStatus(
+    org.cmarket.cmarket.domain.product.app.dto.TradeStatusChangeResult updateTradeStatus(
             Long productId,
             org.cmarket.cmarket.domain.product.app.dto.TradeStatusUpdateCommand command,
             String email

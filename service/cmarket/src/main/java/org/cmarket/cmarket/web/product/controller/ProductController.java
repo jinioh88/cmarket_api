@@ -39,9 +39,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductController {
     
     private final ProductService productService;
+    private final org.cmarket.cmarket.web.chat.controller.ChatWebSocketController chatWebSocketController;
     
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService,
+                             org.cmarket.cmarket.web.chat.controller.ChatWebSocketController chatWebSocketController) {
         this.productService = productService;
+        this.chatWebSocketController = chatWebSocketController;
     }
     
     /**
@@ -173,11 +176,14 @@ public class ProductController {
         org.cmarket.cmarket.domain.product.app.dto.TradeStatusUpdateCommand command = request.toCommand();
         
         // 앱 서비스 호출
-        org.cmarket.cmarket.domain.product.app.dto.ProductDto productDto = 
+        org.cmarket.cmarket.domain.product.app.dto.TradeStatusChangeResult result =
                 productService.updateTradeStatus(productId, command, email);
-        
+
+        // 예약이 풀리면 방마다 남긴 한 줄을 웹소켓으로 보낸다 (#1126, 나가기와 같은 방식)
+        result.notices().forEach(n -> chatWebSocketController.sendSystemMessage(n.chatRoomId(), n.content()));
+
         // 앱 DTO → 웹 DTO 변환
-        ProductResponse response = ProductResponse.fromDto(productDto);
+        ProductResponse response = ProductResponse.fromDto(result.product());
         
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse<>(ResponseCode.SUCCESS, response));
