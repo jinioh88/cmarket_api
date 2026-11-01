@@ -76,6 +76,11 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(name = "trade_status", length = 20)
     private TradeStatus tradeStatus;
+
+    // 웹 마이페이지에서 상대를 골라 예약하면 저장한다(#1126). 응답 DTO 에는 넣지 않는다 — 화면에 드러나면 안 된다.
+    // 빌더로 받지 않고 reserveFor 로만 바꾼다. 비어 있는 RESERVED 는 옛 방식 예약이다.
+    @Column(name = "reserved_buyer_id")
+    private Long reservedBuyerId;
     
     @Column(name = "main_image_url", length = 500)
     private String mainImageUrl;  // 대표 이미지 URL
@@ -181,6 +186,23 @@ public class Product {
      */
     public void updateTradeStatus(TradeStatus tradeStatus) {
         this.tradeStatus = tradeStatus;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 예약자를 정해 예약중으로 바꾼다
+     */
+    public void reserveFor(Long buyerId) {
+        this.tradeStatus = TradeStatus.RESERVED;
+        this.reservedBuyerId = buyerId;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 예약자를 지운다 (예약을 풀 때)
+     */
+    public void clearReservation() {
+        this.reservedBuyerId = null;
         this.updatedAt = LocalDateTime.now();
     }
     
