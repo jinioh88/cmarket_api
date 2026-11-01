@@ -81,10 +81,13 @@ public class ChatServiceImpl implements ChatService {
             throw new BusinessException(ErrorCode.SELF_CHAT_NOT_ALLOWED);
         }
 
-        // 4-1. 예약자가 있는 예약중 상품은 예약자만 채팅할 수 있다 (#1126). 이미 있는 방을 돌려주는 경우도 같다
-        if (product.getTradeStatus() == org.cmarket.cmarket.domain.product.model.TradeStatus.RESERVED
+        // 4-1. 예약자가 있는 예약중 상품은 예약자만 **새** 채팅을 시작할 수 있다 (#1126).
+        //      이미 대화하던 사람에게는 그 방을 돌려준다 — 들어가면 「예약된 상품이에요」가 보이고 보내기는 막힌다
+        //      (사용자 결정 2026-11-01, 설계 6절)
+        boolean reservedForOther = product.getTradeStatus() == org.cmarket.cmarket.domain.product.model.TradeStatus.RESERVED
                 && product.getReservedBuyerId() != null
-                && !product.getReservedBuyerId().equals(buyer.getId())) {
+                && !product.getReservedBuyerId().equals(buyer.getId());
+        if (reservedForOther && findExistingChatRoom(command.getProductId(), buyer.getId(), seller.getId()).isEmpty()) {
             throw new BusinessException(ErrorCode.CHAT_PRODUCT_RESERVED);
         }
         

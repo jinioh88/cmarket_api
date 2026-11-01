@@ -124,6 +124,17 @@ class ChatTradeGuardTest {
     }
 
     @Test
+    void createChatRoom_reservedForOther_existingRoom_returned() {
+        // 사용자 결정(2026-11-01): 이미 대화하던 사람은 그 방으로 보낸다. 들어가면 「예약된 상품이에요」가 보이고 보내기는 막힌다
+        product.reserveFor(7L);
+        when(chatRoomRepository.findByProductIdAndUsers(anyLong(), anyLong(), anyLong()))
+                .thenReturn(Optional.of(rooms.get(200L)));
+
+        assertThat(chatService.createChatRoom("other@b.com", ChatRoomCreateCommand.builder().productId(10L).build())
+                .getChatRoomId()).isEqualTo(200L);
+    }
+
+    @Test
     void createChatRoom_reservedBuyer_allowed() {
         product.reserveFor(7L);
         when(chatRoomRepository.findByProductIdAndUsers(anyLong(), anyLong(), anyLong()))
