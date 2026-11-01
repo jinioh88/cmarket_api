@@ -40,11 +40,51 @@ public class ProductController {
     
     private final ProductService productService;
     private final org.cmarket.cmarket.web.chat.controller.ChatWebSocketController chatWebSocketController;
+    private final org.cmarket.cmarket.domain.product.app.service.ProductReservationService productReservationService;
     
     public ProductController(ProductService productService,
-                             org.cmarket.cmarket.web.chat.controller.ChatWebSocketController chatWebSocketController) {
+                             org.cmarket.cmarket.web.chat.controller.ChatWebSocketController chatWebSocketController,
+                             org.cmarket.cmarket.domain.product.app.service.ProductReservationService productReservationService) {
         this.productService = productService;
         this.chatWebSocketController = chatWebSocketController;
+        this.productReservationService = productReservationService;
+    }
+
+    /**
+     * 예약 상대 후보 (이 상품으로 채팅한 사람). 판매자 본인만 (#1126)
+     *
+     * GET /api/products/{productId}/chat-partners
+     */
+    @GetMapping("/{productId}/chat-partners")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<java.util.List<org.cmarket.cmarket.web.product.dto.ChatPartnerResponse>>> getChatPartners(
+            @PathVariable Long productId
+    ) {
+        String email = SecurityUtils.getCurrentUserEmail();
+        java.util.List<org.cmarket.cmarket.web.product.dto.ChatPartnerResponse> partners =
+                productReservationService.listChatPartners(productId, email).stream()
+                        .map(org.cmarket.cmarket.web.product.dto.ChatPartnerResponse::fromDto)
+                        .toList();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, partners));
+    }
+
+    /**
+     * 고른 상대로 예약을 건다. 판매자 본인만 (#1126)
+     *
+     * POST /api/products/{productId}/reservation
+     */
+    @PostMapping("/{productId}/reservation")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessResponse<Void>> reserveProduct(
+            @PathVariable Long productId,
+            @Valid @RequestBody org.cmarket.cmarket.web.product.dto.ReservationRequest request
+    ) {
+        String email = SecurityUtils.getCurrentUserEmail();
+        productReservationService.reserve(productId, request.buyerId(), email)
+                .forEach(n -> chatWebSocketController.sendSystemMessage(n.chatRoomId(), n.content()));
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse<>(ResponseCode.SUCCESS, null));
     }
     
     /**
