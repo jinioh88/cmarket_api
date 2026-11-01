@@ -135,7 +135,7 @@ public class PaymentService {
                 .map(org.cmarket.cmarket.domain.chat.model.ChatRoom::getId)
                 .orElse(null);
         return new PaymentResultDto(payment.getOrderId(), payment.getAmount(), payment.getProductId(),
-                product.getTitle(), payment.getApprovedAt(), chatRoomId, notices);
+                product.getTitle(), product.getMainImageUrl(), payment.getApprovedAt(), chatRoomId, notices);
     }
 
     private User findUser(String email) {

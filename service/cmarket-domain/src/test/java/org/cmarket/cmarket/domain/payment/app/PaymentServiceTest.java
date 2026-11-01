@@ -63,7 +63,7 @@ class PaymentServiceTest {
     @BeforeEach
     void setUp() {
         product = Product.builder().sellerId(1L).productType(ProductType.SELL).title("신발").price(50000L)
-                .tradeStatus(TradeStatus.SELLING).build();
+                .mainImageUrl("https://cdn.example/shoe.png").tradeStatus(TradeStatus.SELLING).build();
         product.reserveFor(7L);
         when(productRepository.findByIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(product));
         when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -135,6 +135,8 @@ class PaymentServiceTest {
         assertThat(result.approvedAt()).isEqualTo(approvedAt);
         // 성공 페이지의 「채팅으로 돌아가기」가 결제한 그 방으로 가게 방 번호를 함께 준다
         assertThat(result.chatRoomId()).isEqualTo(100L);
+        // 결제 완료 확인창에 상품 사진도 보인다(2026-11-01 사용자 요청)
+        assertThat(result.productImageUrl()).isEqualTo("https://cdn.example/shoe.png");
         verify(paymentGateway).confirm("pk_1", "CM-ORDER-1", 50000L);
     }
 
